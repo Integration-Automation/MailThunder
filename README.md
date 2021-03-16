@@ -1,1 +1,1 @@
-# Python_SMTP_MailServer
+# Python_MailServer
