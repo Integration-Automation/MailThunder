@@ -26,12 +26,9 @@ for num in data[0].split():
     msg = email.message_from_string(data[0][1].decode('utf-8'))
     sub = msg.get('subject')
     sub_decode = email.header.decode_header(sub)[0][0]
-
     if type(sub_decode) is not str:
-        print("subject:")
-        print(sub_decode.decode('utf-8'))
+        print("subject:", sub_decode.decode('utf-8'))
     else:
-        print("subject:")
-        print(sub_decode)
+        print("subject:", sub_decode)
 
 imap.close()
