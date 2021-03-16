@@ -1,7 +1,9 @@
 import imaplib
 import json
+import pprint
 
-mail = imaplib.IMAP4_SSL('imap.gmail.com')
+imap_host = 'imap.gmail.com'
+
 with open('detail.je', 'r+') as File:
     try:
         detailJson = json.loads(File.read())
@@ -9,13 +11,19 @@ with open('detail.je', 'r+') as File:
         password = detailJson['password']
     except Exception as e:
         print(e)
-mail.login(email, password)
-mail.list()
-mail.select("inbox")
-result, data = mail.search(None, "ALL")
-ids = data[0]
-id_list = ids.split()
-latest_email_id = id_list[-1]
-result, data = mail.fetch(latest_email_id, "(RFC822)")
-raw_email = data[0][1]
-print(raw_email)
+
+# connect to host using SSL
+imap = imaplib.IMAP4_SSL(imap_host)
+
+# login to server
+imap.login(email, password)
+
+imap.select('Inbox')
+
+tmp, data = imap.search(None, 'ALL')
+for num in data[0].split():
+    tmp, data = imap.fetch(num, '(RFC822)')
+    print('Message: {0}\n'.format(num))
+    pprint.pprint(data[0][1])
+    break
+imap.close()
