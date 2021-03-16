@@ -1,13 +1,13 @@
+import email
 import imaplib
 import json
-import pprint
 
 imap_host = 'imap.gmail.com'
 
 with open('detail.je', 'r+') as File:
     try:
         detailJson = json.loads(File.read())
-        email = detailJson['email']
+        user = detailJson['user']
         password = detailJson['password']
     except Exception as e:
         print(e)
@@ -16,14 +16,22 @@ with open('detail.je', 'r+') as File:
 imap = imaplib.IMAP4_SSL(imap_host)
 
 # login to server
-imap.login(email, password)
+imap.login(user, password)
 
 imap.select('Inbox')
 
 tmp, data = imap.search(None, 'ALL')
 for num in data[0].split():
     tmp, data = imap.fetch(num, '(RFC822)')
-    print('Message: {0}\n'.format(num))
-    pprint.pprint(data[0][1])
-    break
+    msg = email.message_from_string(data[0][1].decode('utf-8'))
+    sub = msg.get('subject')
+    sub_decode = email.header.decode_header(sub)[0][0]
+
+    if type(sub_decode) is not str:
+        print("subject:")
+        print(sub_decode.decode('utf-8'))
+    else:
+        print("subject:")
+        print(sub_decode)
+
 imap.close()
