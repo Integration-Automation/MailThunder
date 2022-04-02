@@ -1,1 +1,1 @@
-# Python_MailServer
+# python mail wrapper
