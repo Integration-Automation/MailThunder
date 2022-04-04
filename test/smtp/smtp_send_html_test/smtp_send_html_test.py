@@ -7,6 +7,7 @@ print(config.sections())
 
 user = config.get("USER", "user")
 password = config.get("USER", "password")
+another_use = config.get("USER", "another_user")
 
 host = "smtp.gmail.com"
 port = 465
@@ -17,5 +18,5 @@ with open("autocontorl.html", "r+") as file:
 message = smtp_wrapper.create_message_with_attach(html_string,
     {"Subject": "test_subject", "To": user, "From": user},
     "autocontorl.html", use_html=True)
-smtp_wrapper.sendmail(user,  user, message.as_string())
+smtp_wrapper.sendmail(user,  another_use, message.as_string())
 smtp_wrapper.quit()
