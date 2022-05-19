@@ -4,8 +4,8 @@ with open("README.md", "r") as README:
     long_description = README.read()
 
 setuptools.setup(
-    name="je_mail_wrapper",
-    version="0.0.01",
+    name="je_mail_thunder",
+    version="0.0.02",
     author="JE-Chen",
     author_email="zenmailman@gmail.com",
     description="mail wrapper",

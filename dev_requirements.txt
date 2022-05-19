@@ -1,1 +1,5 @@
 je_mail_wrapper_dev
+wheel
+twine
+sphinx
+sphinx-rtd-theme
