@@ -1,5 +1,5 @@
 from configparser import ConfigParser
-from mail_wrapper_je import IMAPWrapper
+from je_mail_thunder import IMAPWrapper
 
 config = ConfigParser()
 config.read("../../test_config/config.ini")

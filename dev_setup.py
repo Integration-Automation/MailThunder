@@ -4,8 +4,8 @@ with open("README.md", "r") as README:
     long_description = README.read()
 
 setuptools.setup(
-    name="je_mail_wrapper_dev",
-    version="0.0.01",
+    name="je_mail_thunder_dev",
+    version="0.0.02",
     author="JE-Chen",
     author_email="zenmailman@gmail.com",
     description="mail wrapper",
@@ -26,5 +26,5 @@ setuptools.setup(
     ]
 )
 
-# python setup.py sdist bdist_wheel
+# python dev_setup.py sdist bdist_wheel
 # python -m twine upload dist/*
