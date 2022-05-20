@@ -1,4 +1,4 @@
-je_mail_wrapper_dev
+je_mail_thunder_dev
 wheel
 twine
 sphinx
