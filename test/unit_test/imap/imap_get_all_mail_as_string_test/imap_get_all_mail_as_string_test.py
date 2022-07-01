@@ -1,4 +1,5 @@
 from configparser import ConfigParser
+
 from je_mail_thunder import IMAPWrapper
 
 config = ConfigParser()

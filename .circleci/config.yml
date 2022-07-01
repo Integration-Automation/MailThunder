@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  python: circleci/python@1.4.0
+  python: circleci/python@2.0.3
 
 jobs:
   build-and-test-dev:
@@ -12,6 +12,10 @@ jobs:
       - run:
           command: pip install --user -r dev_requirements.txt
           name: pip requirements.txt
+      # content test
+      - run:
+          command: python ./test/unit_test/content/content_test.py
+          name: content test
 
   build-and-test-stable:
     executor: python/default
@@ -21,6 +25,10 @@ jobs:
       - run:
           command: pip install --user -r requirements.txt
           name: pip requirements.txt
+      # content test
+      - run:
+          command: python ./test/unit_test/content/content_test.py
+          name: content test
 
 workflows:
   main:
