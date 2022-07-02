@@ -25,3 +25,6 @@ jobs:
         pip install -r requirements.txt
     - name: content test
       run: python ./test/unit_test/content/content_test.py
+    - name: argparse test
+      run: |
+      python -m je_mail_thunder --user ${secrets.EMAIL_USER} --password ${secrets.EMAIL_PASSWORD} --function send_mail --setting ${secrets.EMAIL_SETTING}

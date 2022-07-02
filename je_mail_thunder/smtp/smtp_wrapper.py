@@ -7,12 +7,17 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from mimetypes import guess_type
 from os import path
+from je_mail_thunder.utils.save_mail_user_content.mail_thunder_content_save import read_output_content
 
 
 class SMTPWrapper(SMTP_SSL):
 
-    def __init__(self, host: str, port: int):
+    def __init__(self, host: str = "smtp.gmail.com", port: int = 465):
         super().__init__(host, port)
+        user_info = read_output_content()
+        if user_info is not None and type(user_info) == dict:
+            if "user" in user_info.keys() and "password" in user_info.keys():
+                self.login(user_info.get("user"), user_info.get("password"))
 
     @staticmethod
     def create_message(message_content: str, message_setting_dict: dict, **kwargs):
@@ -23,7 +28,7 @@ class SMTPWrapper(SMTP_SSL):
         return message
 
     @staticmethod
-    def create_message_with_attach(message_content: str,  message_setting_dict: dict,
+    def create_message_with_attach(message_content: str, message_setting_dict: dict,
                                    attach_file: str, use_html: bool = False):
         message = MIMEMultipart()
         for key, value in message_setting_dict.items():
@@ -58,6 +63,12 @@ class SMTPWrapper(SMTP_SSL):
         mime_part.add_header("Content-Disposition", "attachment", filename=filename)
         mime_part.add_header("Content-ID", "{filename}".format(filename=filename))
         message.attach(mime_part)
-
         return message
-    
+
+    def create_message_with_attach_and_send(self, message_content: str, message_setting_dict: dict,
+                                            attach_file: str, use_html: bool = False):
+
+        self.send_message(self.create_message_with_attach(message_content, message_setting_dict, attach_file, use_html))
+
+    def create_message_and_send(self, message_content: str, message_setting_dict: dict, **kwargs):
+        self.send_message(self.create_message(message_content, message_setting_dict, **kwargs))

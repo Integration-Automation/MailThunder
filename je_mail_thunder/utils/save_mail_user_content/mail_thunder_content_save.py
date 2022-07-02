@@ -19,7 +19,9 @@ def read_output_content():
         file_path = Path(cwd + "/mail_thunder_content.json")
         if file_path.exists() and file_path.is_file():
             with open(cwd + "/mail_thunder_content.json", "r+") as read_file:
-                return read_file.read()
+                user_info = json.loads(read_file.read())
+                mail_thunder_content_data_dict.update(user_info)
+                return user_info
     except MailThunderContentException:
         raise MailThunderContentException
     finally:
