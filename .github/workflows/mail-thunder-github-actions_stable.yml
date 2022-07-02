@@ -30,5 +30,4 @@ jobs:
     - name: content test
       run: python ./test/unit_test/content/content_test.py
     - name: argparse test
-      run: |
-      python -m je_mail_thunder --user "$EMAIL_USER"  --password "$EMAIL_PASSWORD"  --function send_mail --setting "$EMAIL_SETTING"
+      run: python -m je_mail_thunder --user "$EMAIL_USER"  --password "$EMAIL_PASSWORD"  --function send_mail --setting "$EMAIL_SETTING"
