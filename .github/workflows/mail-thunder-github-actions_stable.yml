@@ -15,6 +15,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: Set env
+      env:
+        EMAIL_USER: ${{ secrets.EMAIL_USER }}
+        EMAIL_PASSWORD: ${{secrets.EMAIL_PASSWORD}}
+        EMAIL_SETTING: ${{secrets.EMAIL_SETTING}}
     - name: Set up Python 3.5
       uses: actions/setup-python@v3
       with:
@@ -26,4 +31,4 @@ jobs:
     - name: content test
       run: python ./test/unit_test/content/content_test.py
     - name: argparse test
-      run: python -m je_mail_thunder --user ${{secrets.EMAIL_USER}}  --password ${{secrets.EMAIL_PASSWORD}}  --function send_mail --setting ${{secrets.EMAIL_SETTING}}
+      run: python -m je_mail_thunder --user "$env:EMAIL_USER"  --password "$env:EMAIL_PASSWORD" --function send_mail --setting "$env:EMAIL_SETTING"
