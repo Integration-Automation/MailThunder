@@ -21,3 +21,10 @@ mail_thunder_content_data_dict.update(
 print(is_need_to_save_content())
 if is_need_to_save_content():
     write_output_content()
+mail_thunder_content_data_dict.update(
+    {
+        "user": None,
+        "password": None
+    }
+)
+write_output_content()
