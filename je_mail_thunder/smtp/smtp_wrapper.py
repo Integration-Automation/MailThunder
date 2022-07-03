@@ -17,7 +17,8 @@ class SMTPWrapper(SMTP_SSL):
         user_info = read_output_content()
         if user_info is not None and type(user_info) == dict:
             if "user" in user_info.keys() and "password" in user_info.keys():
-                self.login(user_info.get("user"), user_info.get("password"))
+                if user_info.get("user") is not None and user_info.get("password") is not None:
+                    self.login(user_info.get("user"), user_info.get("password"))
 
     @staticmethod
     def create_message(message_content: str, message_setting_dict: dict, **kwargs):
