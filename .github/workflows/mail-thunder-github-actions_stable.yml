@@ -29,8 +29,4 @@ jobs:
     - name: argparse test
       run: python -m je_mail_thunder
       with:
-        args: >
-        --user ${{ secrets.EMAIL_USER }}
-        --password   ${{ secrets.EMAIL_PASSWORD }}
-        --function send_mail
-        --setting ${{ secrets.EMAIL_SETTING }}
+        args: --user ${{ secrets.EMAIL_USER }} --password ${{ secrets.EMAIL_PASSWORD }} --function send_mail --setting ${{ secrets.EMAIL_SETTING }}
