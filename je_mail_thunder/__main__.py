@@ -26,5 +26,6 @@ if __name__ == "__main__":
     for param in args.values():
         if param is None:
             raise MailThunderArgparseException(mail_thunder_login_error)
+    print(args.get("user"), args.get("password"))
     smtp_service.login(args.get("user"), args.get("password"))
     argparse_service_function_dict.get(args.get("function"))(**json.loads(setting))
