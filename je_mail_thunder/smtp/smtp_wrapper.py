@@ -1,3 +1,5 @@
+import smtplib
+import sys
 from smtplib import SMTP_SSL
 from email.message import EmailMessage
 from email.mime.audio import MIMEAudio
@@ -8,11 +10,22 @@ from email.mime.text import MIMEText
 from mimetypes import guess_type
 from os import path
 
+from je_mail_thunder.utils.exception.exception_tags import mail_thunder_smtp_content_login_failed
+from je_mail_thunder.utils.save_mail_user_content.mail_thunder_content_save import read_output_content
+
 
 class SMTPWrapper(SMTP_SSL):
 
-    def __init__(self, host: str, port: int):
+    def __init__(self, host: str = "smtp.gmail.com", port: int = 465):
         super().__init__(host, port)
+        user_info = read_output_content()
+        try:
+            if user_info is not None and type(user_info) == dict:
+                if "user" in user_info.keys() and "password" in user_info.keys():
+                    if user_info.get("user") is not None and user_info.get("password") is not None:
+                        self.login(user_info.get("user"), user_info.get("password"))
+        except smtplib.SMTPAuthenticationError as error:
+            print(repr(error) + " " + mail_thunder_smtp_content_login_failed, file=sys.stderr)
 
     @staticmethod
     def create_message(message_content: str, message_setting_dict: dict, **kwargs):
@@ -23,7 +36,7 @@ class SMTPWrapper(SMTP_SSL):
         return message
 
     @staticmethod
-    def create_message_with_attach(message_content: str,  message_setting_dict: dict,
+    def create_message_with_attach(message_content: str, message_setting_dict: dict,
                                    attach_file: str, use_html: bool = False):
         message = MIMEMultipart()
         for key, value in message_setting_dict.items():
@@ -58,6 +71,12 @@ class SMTPWrapper(SMTP_SSL):
         mime_part.add_header("Content-Disposition", "attachment", filename=filename)
         mime_part.add_header("Content-ID", "{filename}".format(filename=filename))
         message.attach(mime_part)
-
         return message
-    
+
+    def create_message_with_attach_and_send(self, message_content: str, message_setting_dict: dict,
+                                            attach_file: str, use_html: bool = False):
+
+        self.send_message(self.create_message_with_attach(message_content, message_setting_dict, attach_file, use_html))
+
+    def create_message_and_send(self, message_content: str, message_setting_dict: dict, **kwargs):
+        self.send_message(self.create_message(message_content, message_setting_dict, **kwargs))

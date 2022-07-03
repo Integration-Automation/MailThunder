@@ -1,22 +1,17 @@
-from configparser import ConfigParser
 from je_mail_thunder import SMTPWrapper
+from je_mail_thunder import mail_thunder_content_data_dict
 
-config = ConfigParser()
-config.read("../../test_config/config.ini")
-print(config.sections())
+smtp_wrapper = SMTPWrapper()
+# need have mail_thunder_content.json in current folder
+# and need to init SMTPWrapper first
+user = mail_thunder_content_data_dict.get("user")
 
-user = config.get("USER", "user")
-password = config.get("USER", "password")
-another_use = config.get("USER", "another_user")
-
-host = "smtp.gmail.com"
-port = 465
-smtp_wrapper = SMTPWrapper(host, port)
-smtp_wrapper.login(user, password)
-with open("autocontorl.html", "r+") as file:
+with open("test.html", "r+") as file:
     html_string = file.read()
-message = smtp_wrapper.create_message_with_attach(html_string,
+message = smtp_wrapper.create_message_with_attach(
+    html_string,
     {"Subject": "test_subject", "To": user, "From": user},
-    "autocontorl.html", use_html=True)
-smtp_wrapper.sendmail(user,  another_use, message.as_string())
+    "test.html", use_html=True)
+
+smtp_wrapper.send_message(message)
 smtp_wrapper.quit()

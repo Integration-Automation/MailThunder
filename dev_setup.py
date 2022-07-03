@@ -5,7 +5,7 @@ with open("README.md", "r") as README:
 
 setuptools.setup(
     name="je_mail_thunder_dev",
-    version="0.0.03",
+    version="0.0.08",
     author="JE-Chen",
     author_email="zenmailman@gmail.com",
     description="mail wrapper",

@@ -8,3 +8,7 @@ class MailThunderJsonException(Exception):
 
 class MailThunderContentException(Exception):
     pass
+
+
+class MailThunderArgparseException(Exception):
+    pass
