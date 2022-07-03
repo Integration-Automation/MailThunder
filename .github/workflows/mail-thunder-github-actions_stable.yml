@@ -28,6 +28,6 @@ jobs:
     - name: argparse test
       env:
         EMAIL_USER: ${{ secrets.EMAIL_USER }}
-        EMAIL_PASSWORD: ${{secrets.EMAIL_PASSWORD}}
-        EMAIL_SETTING: ${{secrets.EMAIL_SETTING}}
+        EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+        EMAIL_SETTING: ${{ secrets.EMAIL_SETTING }}
       run: python -m je_mail_thunder --user "$env:EMAIL_USER"  --password "$env:EMAIL_PASSWORD" --function send_mail --setting "$env:EMAIL_SETTING"
