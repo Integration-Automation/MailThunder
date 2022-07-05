@@ -4,7 +4,7 @@ from email import policy
 from email import message_from_bytes
 from email.header import decode_header
 
-from je_mail_thunder import read_output_content
+from je_mail_thunder.utils.save_mail_user_content.mail_thunder_content_save import read_output_content
 from je_mail_thunder.utils.exception.exception_tags import mail_thunder_content_login_failed
 
 
