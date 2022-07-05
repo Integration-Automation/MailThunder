@@ -20,6 +20,10 @@ jobs:
       - run:
           command: python -m je_mail_thunder --user $MAIL_USER --password $MAIL_PASSWORD --function send_mail --setting "$MAIL_SETTING"
           name: send mail CLI test
+      # env test
+      - run:
+          command: python ./test/unit_test/os_env/os_env_test.py
+          name: env test
 
   build-and-test-stable:
     executor: python/default
@@ -37,6 +41,10 @@ jobs:
       - run:
           command: python -m je_mail_thunder --user $MAIL_USER --password $MAIL_PASSWORD --function send_mail --setting "$MAIL_SETTING"
           name: send mail CLI test
+      # env test
+      - run:
+          command: python ./test/unit_test/os_env/os_env_test.py
+          name: env test
 
 workflows:
   main:
