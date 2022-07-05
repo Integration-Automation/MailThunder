@@ -1,13 +1,25 @@
+import sys
 from imaplib import IMAP4_SSL
 from email import policy
 from email import message_from_bytes
 from email.header import decode_header
 
+from je_mail_thunder.utils.save_mail_user_content.mail_thunder_content_save import read_output_content
+from je_mail_thunder.utils.exception.exception_tags import mail_thunder_content_login_failed
+
 
 class IMAPWrapper(IMAP4_SSL):
 
-    def __init__(self, host: str):
+    def __init__(self, host: str = 'imap.gmail.com'):
         super().__init__(host)
+        user_info = read_output_content()
+        try:
+            if user_info is not None and type(user_info) == dict:
+                if "user" in user_info.keys() and "password" in user_info.keys():
+                    if user_info.get("user") is not None and user_info.get("password") is not None:
+                        self.login(user_info.get("user"), user_info.get("password"))
+        except Exception as error:
+            print(repr(error) + " " + mail_thunder_content_login_failed, file=sys.stderr)
 
     def search_mailbox(self, search_str: [str, list] = "ALL", charset: str = None):
         response, mail_number_string = self.search(charset, search_str)
