@@ -8,6 +8,7 @@ content data error
 """
 mail_thunder_content_set_compiler_error = "When set compiler using content make an error"
 mail_thunder_content_file_error = "MailThunder content file error"
+mail_thunder_content_login_failed = "can't login with mail thunder content"
 """
 argparse
 """
@@ -16,4 +17,7 @@ mail_thunder_login_error = "need set --user and --password to login"
 """
 SMTP 
 """
-mail_thunder_smtp_content_login_failed = "can't login with mail thunder content"
+
+"""
+IMAP
+"""

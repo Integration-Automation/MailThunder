@@ -1,6 +1,5 @@
 import smtplib
 import sys
-from smtplib import SMTP_SSL
 from email.message import EmailMessage
 from email.mime.audio import MIMEAudio
 from email.mime.base import MIMEBase
@@ -9,8 +8,10 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from mimetypes import guess_type
 from os import path
+from smtplib import SMTP_SSL
 
-from je_mail_thunder.utils.exception.exception_tags import mail_thunder_smtp_content_login_failed
+from je_mail_thunder import get_mail_thunder_os_environ
+from je_mail_thunder.utils.exception.exception_tags import mail_thunder_content_login_failed
 from je_mail_thunder.utils.save_mail_user_content.mail_thunder_content_save import read_output_content
 
 
@@ -21,11 +22,16 @@ class SMTPWrapper(SMTP_SSL):
         user_info = read_output_content()
         try:
             if user_info is not None and type(user_info) == dict:
-                if "user" in user_info.keys() and "password" in user_info.keys():
-                    if user_info.get("user") is not None and user_info.get("password") is not None:
-                        self.login(user_info.get("user"), user_info.get("password"))
+                if user_info.get("user", None) is not None and user_info.get("password", None) is not None:
+                    self.login(user_info.get("user"), user_info.get("password"))
+            else:
+                user_info = get_mail_thunder_os_environ()
+                if user_info is not None and type(user_info) == dict:
+                    if user_info.get("mail_thunder_user", None) is not None and user_info.get(
+                            "mail_thunder_user_password", None) is not None:
+                        self.login(user_info.get("mail_thunder_user"), user_info.get("mail_thunder_user_password"))
         except smtplib.SMTPAuthenticationError as error:
-            print(repr(error) + " " + mail_thunder_smtp_content_login_failed, file=sys.stderr)
+            print(repr(error) + " " + mail_thunder_content_login_failed, file=sys.stderr)
 
     @staticmethod
     def create_message(message_content: str, message_setting_dict: dict, **kwargs):
