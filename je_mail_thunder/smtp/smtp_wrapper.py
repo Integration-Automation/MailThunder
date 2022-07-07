@@ -20,6 +20,7 @@ class SMTPWrapper(SMTP_SSL):
     def __init__(self, host: str = "smtp.gmail.com", port: int = 465):
         super().__init__(host, port)
         self.try_to_login_with_env_or_content()
+        self.login_state = False
 
     @staticmethod
     def create_message(message_content: str, message_setting_dict: dict, **kwargs):
@@ -69,18 +70,26 @@ class SMTPWrapper(SMTP_SSL):
 
     def try_to_login_with_env_or_content(self):
         user_info = read_output_content()
+        self.login_state = False
         try:
             if user_info is not None and type(user_info) == dict:
                 if user_info.get("user", None) is not None and user_info.get("password", None) is not None:
                     self.login(user_info.get("user"), user_info.get("password"))
+                    self.login_state = True
             else:
                 user_info = get_mail_thunder_os_environ()
                 if user_info is not None and type(user_info) == dict:
                     if user_info.get("mail_thunder_user", None) is not None and user_info.get(
                             "mail_thunder_user_password", None) is not None:
                         self.login(user_info.get("mail_thunder_user"), user_info.get("mail_thunder_user_password"))
+                        self.login_state = True
+            return self.login_state
         except smtplib.SMTPAuthenticationError as error:
             print(repr(error) + " " + mail_thunder_content_login_failed, file=sys.stderr)
+            return self.login_state
+
+    def quit(self):
+        self.login_state = False
 
     def create_message_with_attach_and_send(self, message_content: str, message_setting_dict: dict,
                                             attach_file: str, use_html: bool = False):
