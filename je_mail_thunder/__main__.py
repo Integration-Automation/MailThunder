@@ -3,7 +3,8 @@ import argparse
 import json
 
 from je_mail_thunder.smtp.smtp_wrapper import SMTPWrapper
-from je_mail_thunder.utils.exception.exception_tags import mail_thunder_login_error
+from je_mail_thunder.utils.exception.exception_tags import mail_thunder_login_error, \
+    mail_thunder_argparse_get_wrong_function
 from je_mail_thunder.utils.exception.exceptions import MailThunderArgparseException
 
 if __name__ == "__main__":
@@ -38,3 +39,5 @@ if __name__ == "__main__":
         argparse_service_function_dict.get(args.get("function"))(**json.loads(setting))
     elif args.get("function") in only_function_param_function_list:
         argparse_service_function_dict.get(args.get("function"))()
+    else:
+        raise MailThunderArgparseException(mail_thunder_argparse_get_wrong_function)
