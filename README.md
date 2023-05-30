@@ -16,6 +16,18 @@ TODO
 
 > Project Kanban \
 > https://github.com/orgs/Integration-Automation/projects/2/views/1
+> * Quickly Mail automation.
+> * SMTP support.
+> * IMAP4 support.
+> * Mail Thunder script.
+> * Automatically output all mail content as a file.
+> * Automatically send mail.
+> * Automatically send file.
+> * OS Independent.
+> * Remote automation support.
+> * Project & Template support.
+> * Detailed log file.
+> * Scheduler.
 
 ## install 
 
