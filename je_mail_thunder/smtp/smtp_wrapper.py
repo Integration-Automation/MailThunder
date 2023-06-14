@@ -1,5 +1,4 @@
 import smtplib
-import sys
 from email.message import EmailMessage
 from email.mime.audio import MIMEAudio
 from email.mime.base import MIMEBase
@@ -10,7 +9,7 @@ from mimetypes import guess_type
 from os import path
 from smtplib import SMTP_SSL
 
-from je_mail_thunder.utils.exception.exception_tags import mail_thunder_content_login_failed
+from je_mail_thunder.utils.logging.loggin_instance import mail_thunder_logger
 from je_mail_thunder.utils.save_mail_user_content.mail_thunder_content_save import read_output_content
 from je_mail_thunder.utils.save_mail_user_content.save_on_env import get_mail_thunder_os_environ
 
@@ -19,11 +18,21 @@ class SMTPWrapper(SMTP_SSL):
 
     def __init__(self, host: str = "smtp.gmail.com", port: int = 465):
         super().__init__(host, port)
-        self.try_to_login_with_env_or_content()
         self.login_state = False
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.quit()
+
+    def smtp_later_init(self):
+        self.smtp_try_to_login_with_env_or_content()
+
     @staticmethod
-    def create_message(message_content: str, message_setting_dict: dict, **kwargs):
+    def smtp_create_message(message_content: str, message_setting_dict: dict, **kwargs):
+        mail_thunder_logger.info(
+            f"smtp_create_message, message_content{message_content}, message_setting_dict: {message_setting_dict}")
         message = EmailMessage(**kwargs)
         message.set_content(message_content)
         for key, value in message_setting_dict.items():
@@ -31,8 +40,11 @@ class SMTPWrapper(SMTP_SSL):
         return message
 
     @staticmethod
-    def create_message_with_attach(message_content: str, message_setting_dict: dict,
-                                   attach_file: str, use_html: bool = False):
+    def smtp_create_message_with_attach(message_content: str, message_setting_dict: dict,
+                                        attach_file: str, use_html: bool = False):
+        mail_thunder_logger.info(
+            f"smtp_create_message_with_attach, message_content{message_content}, "
+            f"message_setting_dict: {message_setting_dict}, attach_file: {attach_file}, use_html: {use_html}")
         message = MIMEMultipart()
         for key, value in message_setting_dict.items():
             message[key] = value
@@ -68,7 +80,8 @@ class SMTPWrapper(SMTP_SSL):
         message.attach(mime_part)
         return message
 
-    def try_to_login_with_env_or_content(self):
+    def smtp_try_to_login_with_env_or_content(self):
+        mail_thunder_logger.info(f"smtp_try_to_login_with_env_or_content")
         user_info = read_output_content()
         self.login_state = False
         try:
@@ -85,16 +98,26 @@ class SMTPWrapper(SMTP_SSL):
                         self.login_state = True
             return self.login_state
         except smtplib.SMTPAuthenticationError as error:
-            print(repr(error) + " " + mail_thunder_content_login_failed, file=sys.stderr)
+            mail_thunder_logger.info(f"smtp_try_to_login_with_env_or_content, failed: {repr(error)}")
             return self.login_state
 
     def quit(self):
+        mail_thunder_logger.info(f"SMTP quit")
         self.login_state = False
 
-    def create_message_with_attach_and_send(self, message_content: str, message_setting_dict: dict,
-                                            attach_file: str, use_html: bool = False):
+    def smtp_create_message_with_attach_and_send(self, message_content: str, message_setting_dict: dict,
+                                                 attach_file: str, use_html: bool = False):
+        mail_thunder_logger.info(
+            f"smtp_create_message_with_attach_and_send, message_content: {message_content}, "
+            f"message_setting_dict: {message_setting_dict}, attach_file:{attach_file}, use_html:{use_html}")
+        self.send_message(
+            self.smtp_create_message_with_attach(message_content, message_setting_dict, attach_file, use_html))
 
-        self.send_message(self.create_message_with_attach(message_content, message_setting_dict, attach_file, use_html))
+    def smtp_create_message_and_send(self, message_content: str, message_setting_dict: dict, **kwargs):
+        mail_thunder_logger.info(
+            f"smtp_create_message_and_send, message_content: {message_content}, "
+            f"message_setting_dict: {message_setting_dict}, params:{kwargs}")
+        self.send_message(self.smtp_create_message(message_content, message_setting_dict, **kwargs))
 
-    def create_message_and_send(self, message_content: str, message_setting_dict: dict, **kwargs):
-        self.send_message(self.create_message(message_content, message_setting_dict, **kwargs))
+
+smtp_instance = SMTPWrapper()
