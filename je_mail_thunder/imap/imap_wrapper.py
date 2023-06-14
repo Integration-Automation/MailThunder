@@ -5,7 +5,7 @@ from email.header import decode_header
 from imaplib import IMAP4_SSL
 from typing import List, Dict, Union
 
-from je_mail_thunder import get_mail_thunder_os_environ
+from je_mail_thunder.utils.save_mail_user_content.save_on_env import get_mail_thunder_os_environ
 from je_mail_thunder.utils.exception.exception_tags import mail_thunder_content_login_failed
 from je_mail_thunder.utils.logging.loggin_instance import mail_thunder_logger
 from je_mail_thunder.utils.save_mail_user_content.mail_thunder_content_save import read_output_content

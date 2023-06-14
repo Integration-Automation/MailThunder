@@ -2,6 +2,8 @@ import builtins
 import types
 from inspect import getmembers, isbuiltin
 
+from je_mail_thunder.utils.save_mail_user_content.save_on_env import set_mail_thunder_os_environ, \
+    get_mail_thunder_os_environ
 from je_mail_thunder.imap.imap_wrapper import imap_instance
 from je_mail_thunder.smtp.smtp_wrapper import smtp_instance
 from je_mail_thunder.utils.exception.exception_tags import cant_execute_action_error, executor_list_error, \
@@ -27,7 +29,11 @@ class Executor(object):
             "imap_search_mailbox": imap_instance.imap_search_mailbox,
             "imap_mail_content_list": imap_instance.imap_mail_content_list,
             "imap_output_all_mail_as_file": imap_instance.imap_output_all_mail_as_file,
-            "imap_quit": imap_instance.imap_quit
+            "imap_quit": imap_instance.imap_quit,
+            # Content
+            "set_mail_thunder_os_environ": set_mail_thunder_os_environ,
+            "get_mail_thunder_os_environ": get_mail_thunder_os_environ
+
         }
         # get all builtin function and add to event dict
         for function in getmembers(builtins, isbuiltin):
