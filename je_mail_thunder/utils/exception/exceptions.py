@@ -2,13 +2,25 @@ class MailThunderException(Exception):
     pass
 
 
-class MailThunderJsonException(Exception):
+class MailThunderJsonException(MailThunderException):
     pass
 
 
-class MailThunderContentException(Exception):
+class MailThunderContentException(MailThunderException):
     pass
 
 
-class MailThunderArgparseException(Exception):
+class MailThunderArgparseException(MailThunderException):
+    pass
+
+
+class ExecuteActionException(MailThunderException):
+    pass
+
+
+class AddCommandException(MailThunderException):
+    pass
+
+
+class JsonActionException(MailThunderException):
     pass

@@ -12,6 +12,20 @@
 
 ### Documentation
 TODO
+
+### Notice
+* Default is using Google service provide, but you can change init setting to choose what service provide you want to use.
+* We need set the mail_thunder_content.json on current working dir.
+``` json
+{
+  "user": "example@gmail.com",
+  "password": "password"
+}
+```
+* Set application password:
+  * https://support.google.com/accounts/answer/185833
+* Enable IMAP:
+  * https://support.google.com/mail/answer/7126229?hl=en
 ---
 
 > Project Kanban \
