@@ -11,9 +11,10 @@ user = config.get("USER", "user")
 password = config.get("USER", "password")
 
 imap_wrapper = IMAPWrapper(host=imap_host)
+imap_wrapper.imap_later_init()
 imap_wrapper.login(user, password)
 imap_wrapper.select()
-mail_message_list = imap_wrapper.search_mailbox()
+mail_message_list = imap_wrapper.imap_search_mailbox()
 for mail in mail_message_list:
     print(str(mail[2]))
 imap_wrapper.close()

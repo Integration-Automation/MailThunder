@@ -11,9 +11,10 @@ user = config.get("USER", "user")
 password = config.get("USER", "password")
 
 imap_wrapper = IMAPWrapper(host=imap_host)
+imap_wrapper.imap_later_init()
 imap_wrapper.login(user, password)
 imap_wrapper.select()
-mail_list = imap_wrapper.mail_content_list()
+mail_list = imap_wrapper.imap_mail_content_list()
 for mail in mail_list:
     print(mail.get("SUBJECT"))
     print(mail.get("FROM"))

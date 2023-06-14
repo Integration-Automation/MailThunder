@@ -1,26 +1,20 @@
 import sys
-from imaplib import IMAP4_SSL
-from email import policy
 from email import message_from_bytes
+from email import policy
 from email.header import decode_header
+from imaplib import IMAP4_SSL
 from typing import List, Dict, Union
 
-from je_mail_thunder.utils.save_mail_user_content.mail_thunder_content_save import read_output_content
+from je_mail_thunder import get_mail_thunder_os_environ
 from je_mail_thunder.utils.exception.exception_tags import mail_thunder_content_login_failed
+from je_mail_thunder.utils.logging.loggin_instance import mail_thunder_logger
+from je_mail_thunder.utils.save_mail_user_content.mail_thunder_content_save import read_output_content
 
 
 class IMAPWrapper(IMAP4_SSL):
 
     def __init__(self, host: str = 'imap.gmail.com'):
         super().__init__(host)
-        user_info = read_output_content()
-        try:
-            if user_info is not None and type(user_info) == dict:
-                if "user" in user_info.keys() and "password" in user_info.keys():
-                    if user_info.get("user") is not None and user_info.get("password") is not None:
-                        self.login(user_info.get("user"), user_info.get("password"))
-        except Exception as error:
-            print(repr(error) + " " + mail_thunder_content_login_failed, file=sys.stderr)
 
     def __enter__(self):
         return self
@@ -29,11 +23,37 @@ class IMAPWrapper(IMAP4_SSL):
         self.close()
         self.logout()
 
-    def select_mailbox(self, mailbox: str = "INBOX", readonly: bool = False):
+    def imap_later_init(self):
+        mail_thunder_logger.info(f"imap_later_init")
+        self.imap_try_to_login_with_env_or_content()
+
+    def imap_try_to_login_with_env_or_content(self):
+        mail_thunder_logger.info(f"imap_try_to_login_with_env_or_content")
+        user_info = read_output_content()
+        try:
+            if user_info is not None and type(user_info) == dict:
+                if user_info.get("user", None) is not None and user_info.get("password", None) is not None:
+                    self.login(user_info.get("user"), user_info.get("password"))
+            else:
+                user_info = get_mail_thunder_os_environ()
+                if user_info is not None and type(user_info) == dict:
+                    if user_info.get("mail_thunder_user", None) is not None and user_info.get(
+                            "mail_thunder_user_password", None) is not None:
+                        self.login(user_info.get("mail_thunder_user"), user_info.get("mail_thunder_user_password"))
+            return self.login_state
+        except Exception as error:
+            mail_thunder_logger.info(
+                f"imap_try_to_login_with_env_or_content, "
+                f"failed: {repr(error) + ' ' + mail_thunder_content_login_failed}")
+            return self.login_state
+
+    def imap_select_mailbox(self, mailbox: str = "INBOX", readonly: bool = False):
+        mail_thunder_logger.info(f"imap_select_mailbox, mailbox: {mailbox}, readonly: {readonly}")
         select_status = self.select(mailbox=mailbox, readonly=readonly)
         return True if select_status[0] == "OK" else False
 
-    def search_mailbox(self, search_str: [str, list] = "ALL", charset: str = None) -> list:
+    def imap_search_mailbox(self, search_str: [str, list] = "ALL", charset: str = None) -> list:
+        mail_thunder_logger.info(f"imap_search_mailbox, search_str: {search_str}, charset: {charset}")
         response, mail_number_string = self.search(charset, search_str)
         mail_detail_list = list()
         for num_of_mail in mail_number_string[0].split():
@@ -43,9 +63,10 @@ class IMAPWrapper(IMAP4_SSL):
             mail_detail_list.append([response, mail_data[0][0], message])
         return mail_detail_list
 
-    def mail_content_list(
+    def imap_mail_content_list(
             self, search_str: [str, list] = "ALL", charset: str = None) -> List[Dict[str, Union[str, bytes]]]:
-        mail_list = self.search_mailbox(search_str, charset)
+        mail_thunder_logger.info(f"imap_mail_content_list, search_str: {search_str}, charset: {charset}")
+        mail_list = self.imap_search_mailbox(search_str, charset)
         mail_content_dict = dict()
         mail_content_list = list()
         for mail_data in mail_list:
@@ -59,17 +80,16 @@ class IMAPWrapper(IMAP4_SSL):
                     body = part.get_payload(decode=False)
             else:
                 body = mail.get_payload(decode=False)
-
             body = str(decode_header(str(body))[0][0])
             mail_content_dict.update({"BODY": body})
             mail_content_list.append(mail_content_dict)
             mail_content_dict = dict()
         return mail_content_list
 
-    def output_all_mail_as_file(
+    def imap_output_all_mail_as_file(
             self, search_str: [str, list] = "ALL", charset: str = None) -> List[Dict[str, Union[str, bytes]]]:
-        name_dict: Dict[str, int] = dict()
-        all_mail = self.mail_content_list(search_str=search_str, charset=charset)
+        mail_thunder_logger.info(f"imap_mail_content_list, search_str: {search_str}, charset: {charset}")
+        all_mail = self.imap_mail_content_list(search_str=search_str, charset=charset)
         for mail in all_mail:
             with open(mail.get("SUBJECT"), "w+") as file:
                 if isinstance(mail.get("BODY"), bytes):
@@ -78,3 +98,10 @@ class IMAPWrapper(IMAP4_SSL):
                     file.write(mail.get("BODY"))
         return all_mail
 
+    def imap_quit(self):
+        mail_thunder_logger.info(f"imap_quit")
+        self.close()
+        self.logout()
+
+
+imap_instance = IMAPWrapper()

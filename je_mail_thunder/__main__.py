@@ -13,9 +13,9 @@ if __name__ == "__main__":
         smtp_service = SMTPWrapper()
 
         argparse_service_function_dict = {
-            "send_mail": smtp_service.create_message_and_send,
-            "send_mail_with_attach": smtp_service.create_message_with_attach_and_send,
-            "login_with_env_or_content": smtp_service.try_to_login_with_env_or_content
+            "send_mail": smtp_service.smtp_create_message_and_send,
+            "send_mail_with_attach": smtp_service.smtp_create_message_with_attach_and_send,
+            "login_with_env_or_content": smtp_service.smtp_try_to_login_with_env_or_content
         }
 
         all_param_required_function_list = ["send_mail", "send_mail_with_attach"]

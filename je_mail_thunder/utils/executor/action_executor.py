@@ -2,9 +2,12 @@ import builtins
 import types
 from inspect import getmembers, isbuiltin
 
+from je_mail_thunder.imap.imap_wrapper import imap_instance
+from je_mail_thunder.smtp.smtp_wrapper import smtp_instance
 from je_mail_thunder.utils.exception.exception_tags import cant_execute_action_error, executor_list_error, \
     action_is_null_error, add_command_exception
 from je_mail_thunder.utils.exception.exceptions import ExecuteActionException, AddCommandException
+from je_mail_thunder.utils.json.json_file import read_action_json
 from je_mail_thunder.utils.logging.loggin_instance import mail_thunder_logger
 from je_mail_thunder.utils.package_manager.package_manager_class import package_manager
 
@@ -13,6 +16,18 @@ class Executor(object):
 
     def __init__(self):
         self.event_dict: dict = {
+            # SMTP
+            "smtp_later_init": smtp_instance.smtp_later_init,
+            "smtp_create_message_with_attach_and_send": smtp_instance.smtp_create_message_with_attach_and_send,
+            "smtp_create_message_and_send": smtp_instance.smtp_create_message_and_send,
+            "smtp_quit": smtp_instance.quit,
+            # IMAP
+            "imap_later_init": imap_instance.imap_later_init,
+            "imap_select_mailbox": imap_instance.imap_select_mailbox,
+            "imap_search_mailbox": imap_instance.imap_search_mailbox,
+            "imap_mail_content_list": imap_instance.imap_mail_content_list,
+            "imap_output_all_mail_as_file": imap_instance.imap_output_all_mail_as_file,
+            "imap_quit": imap_instance.imap_quit
         }
         # get all builtin function and add to event dict
         for function in getmembers(builtins, isbuiltin):
