@@ -32,8 +32,9 @@ class Executor(object):
             "imap_quit": imap_instance.imap_quit,
             # Content
             "set_mail_thunder_os_environ": set_mail_thunder_os_environ,
-            "get_mail_thunder_os_environ": get_mail_thunder_os_environ
-
+            "get_mail_thunder_os_environ": get_mail_thunder_os_environ,
+            # Package Manager
+            "add_package_to_executor": package_manager.add_package_to_executor,
         }
         # get all builtin function and add to event dict
         for function in getmembers(builtins, isbuiltin):
