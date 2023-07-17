@@ -1,9 +1,8 @@
 import builtins
 import types
 from inspect import getmembers, isbuiltin
+from typing import Union, Any
 
-from je_mail_thunder.utils.save_mail_user_content.save_on_env import set_mail_thunder_os_environ, \
-    get_mail_thunder_os_environ
 from je_mail_thunder.imap.imap_wrapper import imap_instance
 from je_mail_thunder.smtp.smtp_wrapper import smtp_instance
 from je_mail_thunder.utils.exception.exception_tags import cant_execute_action_error, executor_list_error, \
@@ -12,6 +11,9 @@ from je_mail_thunder.utils.exception.exceptions import ExecuteActionException, A
 from je_mail_thunder.utils.json.json_file import read_action_json
 from je_mail_thunder.utils.logging.loggin_instance import mail_thunder_logger
 from je_mail_thunder.utils.package_manager.package_manager_class import package_manager
+from je_mail_thunder.utils.save_mail_user_content.save_on_env import set_mail_thunder_os_environ, \
+    get_mail_thunder_os_environ
+from je_mail_thunder.utils.scheduler.extend_apscheduler import scheduler_manager
 
 
 class Executor(object):
@@ -35,6 +37,13 @@ class Executor(object):
             "get_mail_thunder_os_environ": get_mail_thunder_os_environ,
             # Package Manager
             "add_package_to_executor": package_manager.add_package_to_executor,
+            # Scheduler
+            "scheduler_event_trigger": self.scheduler_event_trigger,
+            "remove_blocking_scheduler_job": scheduler_manager.remove_blocking_job,
+            "remove_nonblocking_scheduler_job": scheduler_manager.remove_nonblocking_job,
+            "start_blocking_scheduler": scheduler_manager.start_block_scheduler,
+            "start_nonblocking_scheduler": scheduler_manager.start_nonblocking_scheduler,
+            "start_all_scheduler": scheduler_manager.start_all_scheduler,
         }
         # get all builtin function and add to event dict
         for function in getmembers(builtins, isbuiltin):
@@ -100,6 +109,16 @@ class Executor(object):
         for file in execute_files_list:
             execute_detail_list.append(self.execute_action(read_action_json(file)))
         return execute_detail_list
+
+    def scheduler_event_trigger(
+            self, function: str, id: str = None, args: Union[list, tuple] = None,
+            kwargs: dict = None, scheduler_type: str = "nonblocking", wait_type: str = "secondly",
+            wait_value: int = 1, **trigger_args: Any) -> None:
+        if scheduler_type == "nonblocking":
+            scheduler_event = scheduler_manager.nonblocking_scheduler_event_dict.get(wait_type)
+        else:
+            scheduler_event = scheduler_manager.blocking_scheduler_event_dict.get(wait_type)
+        scheduler_event(self.event_dict.get(function), id, args, kwargs, wait_value, **trigger_args)
 
 
 executor = Executor()
