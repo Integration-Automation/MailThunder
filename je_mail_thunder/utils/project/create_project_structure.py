@@ -2,11 +2,11 @@ from os import getcwd
 from pathlib import Path
 from threading import Lock
 
-from file_automation.utils.json.json_file import write_action_json
-from file_automation.utils.logging.loggin_instance import file_automation_logger
-from file_automation.utils.project.template.template_executor import executor_template_1, \
+from je_mail_thunder.utils.json.json_file import write_action_json
+from je_mail_thunder.utils.logging.loggin_instance import mail_thunder_logger
+from je_mail_thunder.utils.project.template.template_executor import executor_template_1, \
     executor_template_2, bad_executor_template_1
-from file_automation.utils.project.template.template_keyword import template_keyword_1, \
+from je_mail_thunder.utils.project.template.template_keyword import template_keyword_1, \
     template_keyword_2, bad_template_1
 
 
@@ -59,13 +59,10 @@ def create_template(parent_name: str, project_path: str = None) -> None:
             lock.release()
 
 
-def create_project_dir(project_path: str = None, parent_name: str = "FileAutomation") -> None:
-    file_automation_logger.info(f"create_project_dir, project_path: {project_path}, parent_name: {parent_name}")
+def create_project_dir(project_path: str = None, parent_name: str = "MailThunder") -> None:
+    mail_thunder_logger.info(f"create_project_dir, project_path: {project_path}, parent_name: {parent_name}")
     if project_path is None:
         project_path = getcwd()
     create_dir(project_path + "/" + parent_name + "/keyword")
     create_dir(project_path + "/" + parent_name + "/executor")
     create_template(parent_name)
-
-
-create_project_dir()
