@@ -23,7 +23,7 @@ class IMAPWrapper(IMAP4_SSL):
         self.logout()
 
     def imap_later_init(self):
-        mail_thunder_logger.info(f"imap_later_init")
+        mail_thunder_logger.info(f"MT_imap_later_init")
         try:
             self.imap_try_to_login_with_env_or_content()
         except Exception as error:
@@ -120,7 +120,7 @@ class IMAPWrapper(IMAP4_SSL):
                 f"imap_mail_content_list, search_str: {search_str}, charset: {charset}, failed: {repr(error)}")
 
     def imap_quit(self):
-        mail_thunder_logger.info(f"imap_quit")
+        mail_thunder_logger.info(f"MT_imap_quit")
         try:
             self.close()
             self.logout()
@@ -129,4 +129,3 @@ class IMAPWrapper(IMAP4_SSL):
 
 
 imap_instance = IMAPWrapper()
-

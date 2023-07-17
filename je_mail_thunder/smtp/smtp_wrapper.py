@@ -27,7 +27,7 @@ class SMTPWrapper(SMTP_SSL):
         self.quit()
 
     def smtp_later_init(self):
-        mail_thunder_logger.info("smtp_later_init")
+        mail_thunder_logger.info("MT_smtp_later_init")
         try:
             self.smtp_try_to_login_with_env_or_content()
         except Exception as error:
