@@ -16,10 +16,11 @@ from je_mail_thunder.utils.json.json_file import read_action_json
 from je_mail_thunder.utils.file_process.get_dir_file_list import get_dir_files_as_list
 # Execute
 from je_mail_thunder.utils.executor.action_executor import execute_action, execute_files, add_command_to_executor
-
+# Project
+from je_mail_thunder.utils.project.create_project_structure import create_project_dir
 __all__ = [
     "IMAPWrapper", "imap_instance", "SMTPWrapper", "smtp_instance", "is_need_to_save_content",
     "mail_thunder_content_data_dict", "read_output_content", "write_output_content", "get_mail_thunder_os_environ",
     "set_mail_thunder_os_environ", "read_action_json", "get_dir_files_as_list", "execute_action", "execute_files",
-    "add_command_to_executor",
+    "add_command_to_executor", "create_project_dir"
 ]

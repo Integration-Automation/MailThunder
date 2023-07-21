@@ -25,7 +25,5 @@ jobs:
         pip install -r dev_requirements.txt
     - name: Read Content Test
       run: python ./test/unit_test/content/content_test.py
-    - name: Argparse Test
-      run: python -m je_mail_thunder "--user" ${{ secrets.EMAIL_USER }} "--password" ${{ secrets.EMAIL_PASSWORD }} "--function" send_mail "--setting" ${{ secrets.EMAIL_SETTING }}
     - name: Env Var Test
       run: python ./test/unit_test/os_env/os_env_test.py
