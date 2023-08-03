@@ -129,4 +129,7 @@ dmypy.json
 .pyre/
 
 # Mailthunder setting
-**/mail_thunder_content*
+**/mail_thunder_content.json
+
+# Pycharm
+.idea/*

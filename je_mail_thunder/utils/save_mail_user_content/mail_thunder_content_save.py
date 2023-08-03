@@ -15,7 +15,7 @@ def read_output_content():
     lock = Lock()
     try:
         lock.acquire()
-        cwd = os.getcwd()
+        cwd = str(Path.cwd())
         file_path = Path(cwd + "/mail_thunder_content.json")
         if file_path.exists() and file_path.is_file():
             with open(cwd + "/mail_thunder_content.json", "r+") as read_file:
@@ -35,7 +35,7 @@ def write_output_content():
     lock = Lock()
     try:
         lock.acquire()
-        cwd = os.getcwd()
+        cwd = str(Path.cwd())
         with open(cwd + "/mail_thunder_content.json", "w+") as file_to_write:
             file_to_write.write(reformat_json(json.dumps(mail_thunder_content_data_dict)))
     except MailThunderContentException:
