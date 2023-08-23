@@ -23,6 +23,10 @@ class IMAPWrapper(IMAP4_SSL):
         self.logout()
 
     def imap_later_init(self):
+        """
+        Try to log in
+        :return: None
+        """
         mail_thunder_logger.info(f"MT_imap_later_init")
         try:
             self.imap_try_to_login_with_env_or_content()
@@ -30,6 +34,10 @@ class IMAPWrapper(IMAP4_SSL):
             mail_thunder_logger.error(f"imap_later_init, failed: {repr(error)}")
 
     def imap_try_to_login_with_env_or_content(self):
+        """
+        Try to find user and password on cwd /mail_thunder_content.json or env var
+        :return: None
+        """
         mail_thunder_logger.info(f"imap_try_to_login_with_env_or_content")
         try:
             user_info = read_output_content()
@@ -48,6 +56,11 @@ class IMAPWrapper(IMAP4_SSL):
                 f"failed: {repr(error) + ' ' + mail_thunder_content_login_failed}")
 
     def imap_select_mailbox(self, mailbox: str = "INBOX", readonly: bool = False):
+        """
+        :param mailbox: Mailbox we want to select like INBOX
+        :param readonly: Readonly or not
+        :return: None
+        """
         mail_thunder_logger.info(f"imap_select_mailbox, mailbox: {mailbox}, readonly: {readonly}")
         try:
             select_status = self.select(mailbox=mailbox, readonly=readonly)
@@ -57,12 +70,19 @@ class IMAPWrapper(IMAP4_SSL):
                 f"imap_select_mailbox, mailbox: {mailbox}, readonly: {readonly}, failed: {repr(error)}")
 
     def imap_search_mailbox(self, search_str: [str, list] = "ALL", charset: str = None) -> list:
+        """
+        Get all mail detail as list
+        :param search_str: Search pattern
+        :param charset: Charset pattern
+        :return: All mail detail as list [mail_response, mail_decode, mail_content]
+        """
         mail_thunder_logger.info(f"imap_search_mailbox, search_str: {search_str}, charset: {charset}")
         try:
             response, mail_number_string = self.search(charset, search_str)
             mail_detail_list = list()
             for num_of_mail in mail_number_string[0].split():
                 response, mail_data = self.fetch(num_of_mail, "(RFC822)")
+                mail_data: List[List]
                 # [0][1] is message data [0][0] is message decode like RFC822 {565}
                 message = message_from_bytes(mail_data[0][1], policy=policy.default)
                 mail_detail_list.append([response, mail_data[0][0], message])
@@ -74,6 +94,12 @@ class IMAPWrapper(IMAP4_SSL):
     def imap_mail_content_list(
             self, search_str: [str, list] = "ALL", charset: str = None) -> List[Dict[str, Union[str, bytes]]]:
         mail_thunder_logger.info(f"imap_mail_content_list, search_str: {search_str}, charset: {charset}")
+        """
+        Get all mail content as list
+        :param search_str: Search pattern
+        :param charset: Charset pattern 
+        :return: All mail content as list [{"SUBJECT": "mail_subject", "FROM": "mail_from", "TO": "mail_to"}]
+        """
         try:
             mail_list = self.imap_search_mailbox(search_str, charset)
             mail_content_dict = dict()
@@ -101,6 +127,12 @@ class IMAPWrapper(IMAP4_SSL):
     def imap_output_all_mail_as_file(
             self, search_str: [str, list] = "ALL", charset: str = None) -> List[Dict[str, Union[str, bytes]]]:
         mail_thunder_logger.info(f"imap_mail_content_list, search_str: {search_str}, charset: {charset}")
+        """
+        Get all mail content data and output as file
+        :param search_str: Search pattern
+        :param charset: Charset pattern 
+        :return: All mail content as list [{"SUBJECT": "mail_subject", "FROM": "mail_from", "TO": "mail_to"}]
+        """
         try:
             all_mail = self.imap_mail_content_list(search_str=search_str, charset=charset)
             same_name_dict: Dict[str, int] = dict()
@@ -120,6 +152,10 @@ class IMAPWrapper(IMAP4_SSL):
                 f"imap_mail_content_list, search_str: {search_str}, charset: {charset}, failed: {repr(error)}")
 
     def imap_quit(self):
+        """
+        Quit service and close connect
+        :return: None
+        """
         mail_thunder_logger.info(f"MT_imap_quit")
         try:
             self.close()

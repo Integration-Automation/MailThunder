@@ -2,8 +2,7 @@ from je_mail_thunder import SMTPWrapper
 from je_mail_thunder import mail_thunder_content_data_dict
 
 smtp_wrapper = SMTPWrapper()
-# need have mail_thunder_content.json in current folder
-# and need to init SMTPWrapper first
+smtp_wrapper.smtp_later_init()
 user = mail_thunder_content_data_dict.get("user")
 with open("test.html", "r+") as file:
     html_string = file.read()
