@@ -124,13 +124,13 @@ class SMTPWrapper(SMTP_SSL):
             user_info = read_output_content()
             self.login_state = False
             try:
-                if user_info is not None and type(user_info) == dict:
+                if user_info is not None and isinstance(user_info, dict):
                     if user_info.get("user", None) is not None and user_info.get("password", None) is not None:
                         self.login(user_info.get("user"), user_info.get("password"))
                         self.login_state = True
                 else:
                     user_info = get_mail_thunder_os_environ()
-                    if user_info is not None and type(user_info) == dict:
+                    if user_info is not None and isinstance(user_info, dict):
                         if user_info.get("mail_thunder_user", None) is not None and user_info.get(
                                 "mail_thunder_user_password", None) is not None:
                             self.login(user_info.get("mail_thunder_user"), user_info.get("mail_thunder_user_password"))
@@ -147,7 +147,7 @@ class SMTPWrapper(SMTP_SSL):
         Quit service and close connect
         :return: None
         """
-        mail_thunder_logger.info(f"SMTP quit")
+        mail_thunder_logger.info("SMTP quit")
         self.login_state = False
 
     def smtp_create_message_with_attach_and_send(self, message_content: str, message_setting_dict: dict,

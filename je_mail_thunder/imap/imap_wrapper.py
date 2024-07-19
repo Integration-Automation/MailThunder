@@ -27,7 +27,7 @@ class IMAPWrapper(IMAP4_SSL):
         Try to log in
         :return: None
         """
-        mail_thunder_logger.info(f"MT_imap_later_init")
+        mail_thunder_logger.info("MT_imap_later_init")
         try:
             self.imap_try_to_login_with_env_or_content()
         except Exception as error:
@@ -38,15 +38,15 @@ class IMAPWrapper(IMAP4_SSL):
         Try to find user and password on cwd /mail_thunder_content.json or env var
         :return: None
         """
-        mail_thunder_logger.info(f"imap_try_to_login_with_env_or_content")
+        mail_thunder_logger.info("imap_try_to_login_with_env_or_content")
         try:
             user_info = read_output_content()
-            if user_info is not None and type(user_info) == dict:
+            if user_info is not None and isinstance(user_info, dict):
                 if user_info.get("user", None) is not None and user_info.get("password", None) is not None:
                     self.login(user_info.get("user"), user_info.get("password"))
             else:
                 user_info = get_mail_thunder_os_environ()
-                if user_info is not None and type(user_info) == dict:
+                if user_info is not None and isinstance(user_info, dict):
                     if user_info.get("mail_thunder_user", None) is not None and user_info.get(
                             "mail_thunder_user_password", None) is not None:
                         self.login(user_info.get("mail_thunder_user"), user_info.get("mail_thunder_user_password"))
