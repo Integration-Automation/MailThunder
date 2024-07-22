@@ -75,7 +75,7 @@ class Executor(object):
                 raise ExecuteActionException(executor_list_error)
         execute_record_dict = dict()
         try:
-            if len(action_list) < 0 or isinstance(action_list, list) is False:
+            if len(action_list) == 0 or isinstance(action_list, list) is False:
                 raise ExecuteActionException(action_is_null_error)
         except Exception as error:
             mail_thunder_logger.error(
