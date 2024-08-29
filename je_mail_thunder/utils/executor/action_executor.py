@@ -19,17 +19,17 @@ class Executor(object):
     def __init__(self):
         self.event_dict: dict = {
             # SMTP
-            "MT_smtp_later_init": smtp_instance.smtp_later_init,
-            "MT_smtp_create_message_with_attach_and_send": smtp_instance.smtp_create_message_with_attach_and_send,
-            "MT_smtp_create_message_and_send": smtp_instance.smtp_create_message_and_send,
+            "MT_smtp_later_init": smtp_instance.later_init,
+            "MT_smtp_create_message_with_attach_and_send": smtp_instance.create_message_with_attach_and_send,
+            "MT_smtp_create_message_and_send": smtp_instance.create_message_and_send,
             "smtp_quit": smtp_instance.quit,
             # IMAP
-            "MT_imap_later_init": imap_instance.imap_later_init,
-            "MT_imap_select_mailbox": imap_instance.imap_select_mailbox,
-            "MT_imap_search_mailbox": imap_instance.imap_search_mailbox,
-            "MT_imap_mail_content_list": imap_instance.imap_mail_content_list,
-            "MT_imap_output_all_mail_as_file": imap_instance.imap_output_all_mail_as_file,
-            "MT_imap_quit": imap_instance.imap_quit,
+            "MT_imap_later_init": imap_instance.later_init,
+            "MT_imap_select_mailbox": imap_instance.select_mailbox,
+            "MT_imap_search_mailbox": imap_instance.search_mailbox,
+            "MT_imap_mail_content_list": imap_instance.mail_content_list,
+            "MT_imap_output_all_mail_as_file": imap_instance.output_all_mail_as_file,
+            "MT_imap_quit": imap_instance.quit,
             # Content
             "MT_set_mail_thunder_os_environ": set_mail_thunder_os_environ,
             "MT_get_mail_thunder_os_environ": get_mail_thunder_os_environ,

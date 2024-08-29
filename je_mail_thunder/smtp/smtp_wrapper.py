@@ -26,19 +26,19 @@ class SMTPWrapper(SMTP_SSL):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.quit()
 
-    def smtp_later_init(self):
+    def later_init(self):
         """
         Try to log in
         :return: None
         """
         mail_thunder_logger.info("MT_smtp_later_init")
         try:
-            self.smtp_try_to_login_with_env_or_content()
+            self.try_to_login_with_env_or_content()
         except Exception as error:
             mail_thunder_logger.error(f"smtp_later_init, failed: {error}")
 
     @staticmethod
-    def smtp_create_message(message_content: str, message_setting_dict: dict, **kwargs):
+    def create_message(message_content: str, message_setting_dict: dict, **kwargs):
         """
         Create new EmailMessage instance
         :param message_content: Mail content
@@ -60,8 +60,8 @@ class SMTPWrapper(SMTP_SSL):
                 f"message_setting_dict: {message_setting_dict}, failed: {repr(error)}")
 
     @staticmethod
-    def smtp_create_message_with_attach(message_content: str, message_setting_dict: dict,
-                                        attach_file: str, use_html: bool = False):
+    def create_message_with_attach(message_content: str, message_setting_dict: dict,
+                                   attach_file: str, use_html: bool = False):
         """
         Create new EmailMessage with attach file instance
         :param message_content: Mail content
@@ -114,7 +114,7 @@ class SMTPWrapper(SMTP_SSL):
                 f"message_setting_dict: {message_setting_dict}, attach_file: {attach_file}, "
                 f"use_html: {use_html}, failed: {repr(error)}")
 
-    def smtp_try_to_login_with_env_or_content(self):
+    def try_to_login_with_env_or_content(self):
         """
         Try to find user and password on cwd /mail_thunder_content.json or env var
         :return: None
@@ -150,8 +150,8 @@ class SMTPWrapper(SMTP_SSL):
         mail_thunder_logger.info("SMTP quit")
         self.login_state = False
 
-    def smtp_create_message_with_attach_and_send(self, message_content: str, message_setting_dict: dict,
-                                                 attach_file: str, use_html: bool = False):
+    def create_message_with_attach_and_send(self, message_content: str, message_setting_dict: dict,
+                                            attach_file: str, use_html: bool = False):
         """
         Create new EmailMessage with attach file instance then send EmailMessage instance
         :param message_content: Mail content
@@ -165,14 +165,14 @@ class SMTPWrapper(SMTP_SSL):
             f"message_setting_dict: {message_setting_dict}, attach_file:{attach_file}, use_html:{use_html}")
         try:
             self.send_message(
-                self.smtp_create_message_with_attach(message_content, message_setting_dict, attach_file, use_html))
+                self.create_message_with_attach(message_content, message_setting_dict, attach_file, use_html))
         except Exception as error:
             mail_thunder_logger.info(
                 f"smtp_create_message_with_attach_and_send, message_content: {message_content}, "
                 f"message_setting_dict: {message_setting_dict}, attach_file:{attach_file}, "
                 f"use_html:{use_html}, failed: {repr(error)}")
 
-    def smtp_create_message_and_send(self, message_content: str, message_setting_dict: dict, **kwargs):
+    def create_message_and_send(self, message_content: str, message_setting_dict: dict, **kwargs):
         """
         Create new EmailMessage instance then send EmailMessage instance
         :param message_content: Mail content
@@ -183,7 +183,7 @@ class SMTPWrapper(SMTP_SSL):
             f"smtp_create_message_and_send, message_content: {message_content}, "
             f"message_setting_dict: {message_setting_dict}, params:{kwargs}")
         try:
-            self.send_message(self.smtp_create_message(message_content, message_setting_dict, **kwargs))
+            self.send_message(self.create_message(message_content, message_setting_dict, **kwargs))
         except Exception as error:
             mail_thunder_logger.info(
                 f"smtp_create_message_and_send, message_content: {message_content}, "
