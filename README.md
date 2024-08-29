@@ -37,11 +37,8 @@ TODO
 > * Automatically output all mail content as a file.
 > * Automatically send mail.
 > * Automatically send file.
-> * OS Independent.
-> * Remote automation support.
-> * Project & Template support.
-> * Detailed log file.
-> * Scheduler.
+> * Socket server.
+> * Script Project & Template support.
 
 ## install 
 
