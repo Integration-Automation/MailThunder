@@ -3,7 +3,7 @@ MailThunder SMTP API
 
 .. code-block:: python
 
-    def smtp_later_init(self):
+    def later_init(self):
         """
         Try to log in
         :return: None
@@ -12,7 +12,7 @@ MailThunder SMTP API
 .. code-block:: python
 
     @staticmethod
-    def smtp_create_message(message_content: str, message_setting_dict: dict, **kwargs):
+    def create_message(message_content: str, message_setting_dict: dict, **kwargs):
         """
         Create new EmailMessage instance
         :param message_content: Mail content
@@ -24,7 +24,7 @@ MailThunder SMTP API
 .. code-block:: python
 
     @staticmethod
-    def smtp_create_message_with_attach(message_content: str, message_setting_dict: dict,
+    def create_message_with_attach(message_content: str, message_setting_dict: dict,
                                         attach_file: str, use_html: bool = False):
         """
         Create new EmailMessage with attach file instance
@@ -37,7 +37,7 @@ MailThunder SMTP API
 
 .. code-block:: python
 
-    def smtp_try_to_login_with_env_or_content(self):
+    def try_to_login_with_env_or_content(self):
         """
         Try to find user and password on cwd /mail_thunder_content.json or env var
         :return: None
@@ -53,7 +53,7 @@ MailThunder SMTP API
 
 .. code-block:: python
 
-    def smtp_create_message_with_attach_and_send(self, message_content: str, message_setting_dict: dict,
+    def create_message_with_attach_and_send(self, message_content: str, message_setting_dict: dict,
                                                  attach_file: str, use_html: bool = False):
         """
         Create new EmailMessage with attach file instance then send EmailMessage instance
@@ -66,7 +66,7 @@ MailThunder SMTP API
 
 .. code-block:: python
 
-    def smtp_create_message_and_send(self, message_content: str, message_setting_dict: dict, **kwargs):
+    def create_message_and_send(self, message_content: str, message_setting_dict: dict, **kwargs):
         """
         Create new EmailMessage instance then send EmailMessage instance
         :param message_content: Mail content

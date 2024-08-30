@@ -5,7 +5,10 @@ imap_host = 'imap.gmail.com'
 # Init IMAPWrapper
 imap_wrapper = IMAPWrapper(host=imap_host)
 
-set_mail_thunder_os_environ("test_user", "test_password")
+set_mail_thunder_os_environ(
+    "test_user", # your user
+    "test_password" # your password
+)
 
 imap_wrapper.later_init()
 # Select INBOX

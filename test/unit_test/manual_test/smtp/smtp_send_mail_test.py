@@ -6,8 +6,8 @@ smtp_wrapper = SMTPWrapper()
 # and need to init SMTPWrapper first
 
 mail_thunder_content_data_dict.update({
-    "user": "test_user",
-    "password": "test_password",
+    "user": "test_user", # your user
+    "password": "test_password", # your password
 })
 
 user = mail_thunder_content_data_dict.get("user")

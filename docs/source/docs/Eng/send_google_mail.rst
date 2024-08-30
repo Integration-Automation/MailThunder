@@ -6,19 +6,19 @@ Send Google Mail via SMTP
     from je_mail_thunder import SMTPWrapper
     from je_mail_thunder import mail_thunder_content_data_dict
 
-    # Init SMTPWrapper
     smtp_wrapper = SMTPWrapper()
-    smtp_wrapper.smtp_later_init()
+    # need have mail_thunder_content.json in current folder
+    # and need to init SMTPWrapper first
+
+    mail_thunder_content_data_dict.update({
+        "user": "test_user", # your user
+        "password": "test_password", # your password
+    })
+
     user = mail_thunder_content_data_dict.get("user")
-    # Read html file
-    with open("test.html", "r+") as file:
-        html_string = file.read()
-    # Create message instance
-    message = smtp_wrapper.smtp_create_message_with_attach(
-        html_string,
-        {"Subject": "test_subject", "To": user, "From": user},
-        "test.html", use_html=True)
-    # Send message instance
+
+    smtp_wrapper.try_to_login_with_env_or_content()
+
+    message = smtp_wrapper.create_message("test", {"Subject": "test_subject", "To": user, "From": user})
     smtp_wrapper.send_message(message)
-    # QUIT
     smtp_wrapper.quit()
