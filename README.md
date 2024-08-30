@@ -12,7 +12,7 @@
 
 ### Documentation
 
-https://mailthunder.readthedocs.io/en/latest/
+Doc: https://mailthunder.readthedocs.io/en/latest/
 
 ### Notice
 * Default is using Google service provide, but you can change init setting to choose what service provide you want to use.
