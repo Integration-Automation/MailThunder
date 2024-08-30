@@ -1,4 +1,4 @@
-寄送郵件使用 Google 信箱
+使用 Google 信箱寄送郵件
 ----
 
 .. code-block:: python
@@ -6,20 +6,18 @@
     from je_mail_thunder import SMTPWrapper
     from je_mail_thunder import mail_thunder_content_data_dict
 
-    # 初始化 SMTPWrapper
     smtp_wrapper = SMTPWrapper()
-    smtp_wrapper.smtp_later_init()
+
+    mail_thunder_content_data_dict.update({
+        "user": "test_user", # 你的使用者
+        "password": "test_password", # 你的密碼 (google 需使用應用程式密碼)
+    })
+
     user = mail_thunder_content_data_dict.get("user")
-    # 讀取 html 檔案
-    with open("test.html", "r+") as file:
-        html_string = file.read()
-    # 建立訊息
-    message = smtp_wrapper.smtp_create_message_with_attach(
-        html_string,
-        {"Subject": "test_subject", "To": user, "From": user},
-        "test.html", use_html=True)
-    # 傳送訊息
+
+    smtp_wrapper.try_to_login_with_env_or_content()
+
+    message = smtp_wrapper.create_message("test", {"Subject": "test_subject", "To": user, "From": user})
     smtp_wrapper.send_message(message)
-    # 退出
     smtp_wrapper.quit()
 

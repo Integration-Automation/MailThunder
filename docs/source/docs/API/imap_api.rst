@@ -3,7 +3,7 @@ MailThunder IMAP API
 
 .. code-block:: python
 
-    def imap_later_init(self):
+    def later_init(self):
         """
         Try to log in
         :return: None
@@ -11,7 +11,7 @@ MailThunder IMAP API
 
 .. code-block:: python
 
-    def imap_try_to_login_with_env_or_content(self):
+    def try_to_login_with_env_or_content(self):
         """
         Try to find user and password on cwd /mail_thunder_content.json or env var
         :return: None
@@ -19,7 +19,7 @@ MailThunder IMAP API
 
 .. code-block:: python
 
-    def imap_select_mailbox(self, mailbox: str = "INBOX", readonly: bool = False):
+    def select_mailbox(self, mailbox: str = "INBOX", readonly: bool = False):
         """
         :param mailbox: Mailbox we want to select like INBOX
         :param readonly: Readonly or not
@@ -28,7 +28,7 @@ MailThunder IMAP API
 
 .. code-block:: python
 
-    def imap_search_mailbox(self, search_str: [str, list] = "ALL", charset: str = None) -> list:
+    def search_mailbox(self, search_str: [str, list] = "ALL", charset: str = None) -> list:
         """
         Get all mail detail as list
         :param search_str: Search pattern
@@ -38,7 +38,7 @@ MailThunder IMAP API
 
 .. code-block:: python
 
-    def imap_mail_content_list(
+    def mail_content_list(
             self, search_str: [str, list] = "ALL", charset: str = None) -> List[Dict[str, Union[str, bytes]]]:
         mail_thunder_logger.info(f"imap_mail_content_list, search_str: {search_str}, charset: {charset}")
         """
@@ -50,7 +50,7 @@ MailThunder IMAP API
 
 .. code-block:: python
 
-    def imap_output_all_mail_as_file(
+    def output_all_mail_as_file(
             self, search_str: [str, list] = "ALL", charset: str = None) -> List[Dict[str, Union[str, bytes]]]:
         mail_thunder_logger.info(f"imap_mail_content_list, search_str: {search_str}, charset: {charset}")
         """
@@ -62,7 +62,7 @@ MailThunder IMAP API
 
 .. code-block:: python
 
-    def imap_quit(self):
+    def quit(self):
         """
         Quit service and close connect
         :return: None
