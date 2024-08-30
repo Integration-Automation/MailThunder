@@ -11,8 +11,8 @@
 [![MailThunder Stable Python3.11](https://github.com/Intergration-Automation-Testing/MailThunder/actions/workflows/mail_thunder_stable_python3_11.yml/badge.svg)](https://github.com/Intergration-Automation-Testing/MailThunder/actions/workflows/mail_thunder_stable_python3_11.yml)
 
 ### Documentation
-
-Doc: https://mailthunder.readthedocs.io/en/latest/
+ 
+Docs: <https://mailthunder.readthedocs.io/en/latest/>
 
 ### Notice
 * Default is using Google service provide, but you can change init setting to choose what service provide you want to use.
