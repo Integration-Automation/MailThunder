@@ -1,4 +1,4 @@
-name: MailThunder Dev Python3.8
+name: MailThunder Dev Python3.12
 
 on:
   push:
@@ -13,14 +13,14 @@ permissions:
 
 jobs:
   build_dev_version:
-    runs-on: windows-2019
+    runs-on: windows-latest
 
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python 3.8
+    - name: Set up Python 3.12
       uses: actions/setup-python@v3
       with:
-        python-version: "3.8"
+        python-version: "3.12"
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip wheel
