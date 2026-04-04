@@ -7,9 +7,9 @@
 [![Main README](https://img.shields.io/badge/Main-README-green.svg)](../README.md)
 [![GitHub](https://img.shields.io/badge/GitHub-Repository-black.svg)](https://github.com/Integration-Automation/MailThunder)
 
-This directory contains the [Read the Docs](https://readthedocs.io/) documentation source for **MailThunder**.
+This directory contains the [Read the Docs](https://readthedocs.io/) Sphinx documentation source for **MailThunder**.
 
-For the full project overview, installation guide, quick start, and API reference, see the [Main README](../README.md).
+For the full project overview, see the [Main README](../README.md).
 
 ---
 
@@ -17,26 +17,46 @@ For the full project overview, installation guide, quick start, and API referenc
 
 ```
 docs/
-  README.md                         # This file
-  Makefile                          # Unix build script for Sphinx
-  make.bat                          # Windows build script for Sphinx
-  requirements.txt                  # Python dependencies for building docs (sphinx-rtd-theme)
+  README.md                              # This file
+  Makefile                               # Unix build script
+  make.bat                               # Windows build script
+  requirements.txt                       # Sphinx dependencies
   source/
-    conf.py                         # Sphinx configuration
-    index.rst                       # Documentation root (toctree entry point)
+    conf.py                              # Sphinx configuration
+    index.rst                            # Root page (toctree entry point)
     docs/
-      Eng/                          # English documentation
-        eng_index.rst               #   English index page
-        send_google_mail.rst        #   Guide: Sending emails via SMTP
-        read_google_mail.rst        #   Guide: Reading emails via IMAP
-      Zh/                           # Traditional Chinese documentation (繁體中文)
-        zh_index.rst                #   Chinese index page
-        send_google_mail.rst        #   Guide: 使用 SMTP 寄送郵件
-        read_google_mail.rst        #   Guide: 使用 IMAP 讀取郵件
-      API/                          # API reference documentation
-        api_index.rst               #   API index page
-        smtp_api.rst                #   SMTP API reference
-        imap_api.rst                #   IMAP API reference
+      Eng/                               # English documentation
+        eng_index.rst                    #   Overview & architecture
+        installation.rst                 #   Installation guide
+        authentication.rst               #   Authentication setup
+        send_google_mail.rst             #   Sending emails (SMTP)
+        read_google_mail.rst             #   Reading emails (IMAP)
+        scripting_engine.rst             #   JSON scripting engine
+        project_templates.rst            #   Project template scaffolding
+        cli.rst                          #   Command-line interface
+        socket_server.rst                #   TCP socket server
+        package_manager.rst              #   Dynamic package loader
+        logging.rst                      #   Logging system
+        exceptions.rst                   #   Custom exceptions
+      Zh/                                # 繁體中文文件
+        zh_index.rst                     #   總覽與架構
+        installation.rst                 #   安裝指南
+        authentication.rst               #   認證設定
+        send_google_mail.rst             #   寄送郵件 (SMTP)
+        read_google_mail.rst             #   讀取郵件 (IMAP)
+        scripting_engine.rst             #   JSON 腳本引擎
+        project_templates.rst            #   專案模板
+        cli.rst                          #   命令列介面
+        socket_server.rst                #   Socket 伺服器
+        package_manager.rst              #   套件管理器
+        logging.rst                      #   日誌記錄
+        exceptions.rst                   #   例外處理
+      API/                               # API reference
+        api_index.rst                    #   Public exports & module map
+        smtp_api.rst                     #   SMTPWrapper API
+        imap_api.rst                     #   IMAPWrapper API
+        executor_api.rst                 #   Executor API
+        utils_api.rst                    #   Utility functions API
 ```
 
 ---
@@ -50,7 +70,7 @@ make html          # Linux / macOS
 make.bat html      # Windows
 ```
 
-Open `docs/build/html/index.html` in your browser to view.
+Open `docs/build/html/index.html` in your browser.
 
 ---
 
@@ -64,12 +84,3 @@ Configured via `.readthedocs.yaml` in the project root:
 | Python | `3.11` |
 | Sphinx config | `docs/source/conf.py` |
 | Theme | `sphinx-rtd-theme` |
-
----
-
-## Contributing to Documentation
-
-1. Create or edit `.rst` files under `docs/source/docs/`
-2. Add new files to the relevant `toctree` in the index `.rst`
-3. Build locally to verify rendering
-4. Push to trigger a Read the Docs rebuild

@@ -1,10 +1,10 @@
-MailThunder SMTP API
-====================
+SMTPWrapper API
+===============
 
 **Module:** ``je_mail_thunder.smtp.smtp_wrapper``
 
-``SMTPWrapper`` extends ``smtplib.SMTP_SSL`` to provide a high-level interface for sending emails
-with support for plain text, HTML, and attachments.
+``SMTPWrapper`` extends ``smtplib.SMTP_SSL`` to provide a high-level interface for
+sending emails with support for plain text, HTML, and attachments.
 
 ----
 
@@ -13,19 +13,32 @@ Class Definition
 
 .. code-block:: python
 
-    class SMTPWrapper(smtplib.SMTP_SSL):
-        """
-        SMTP wrapper with auto-login and message creation utilities.
+   class SMTPWrapper(smtplib.SMTP_SSL):
+       """
+       SMTP wrapper with auto-login and message creation utilities.
 
-        Inherits all methods from smtplib.SMTP_SSL.
-        Supports context manager (with statement).
+       Inherits all methods from smtplib.SMTP_SSL.
+       Supports context manager (with statement).
+       """
 
-        :param host: SMTP server hostname (default: "smtp.gmail.com")
-        :param port: SMTP server port (default: 465, SSL)
-        """
+       def __init__(self, host: str = "smtp.gmail.com", port: int = 465):
+           ...
 
-        def __init__(self, host: str = "smtp.gmail.com", port: int = 465):
-            ...
+**Parameters:**
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 20 60
+
+   * - Parameter
+     - Default
+     - Description
+   * - ``host``
+     - ``"smtp.gmail.com"``
+     - SMTP server hostname
+   * - ``port``
+     - ``465``
+     - SMTP server port (SSL)
 
 ----
 
@@ -42,226 +55,247 @@ Properties
    * - ``login_state``
      - ``bool``
      - ``True`` if the SMTP session is authenticated, ``False`` otherwise.
+       Set by ``try_to_login_with_env_or_content()`` and reset by ``quit()``.
 
 ----
 
 Methods
 -------
 
-later_init
-~~~~~~~~~~
+later_init()
+~~~~~~~~~~~~
 
 .. code-block:: python
 
-    def later_init(self):
-        """
-        Attempt to log in to the SMTP server.
+   def later_init(self) -> None
 
-        Calls try_to_login_with_env_or_content() internally.
-        Catches and logs all exceptions without raising.
-
-        :return: None
-        """
+Attempt to log in to the SMTP server. Calls ``try_to_login_with_env_or_content()``
+internally. Catches and logs all exceptions without raising.
 
 **Example:**
 
 .. code-block:: python
 
-    smtp = SMTPWrapper()
-    smtp.later_init()
+   smtp = SMTPWrapper()
+   smtp.later_init()
 
 ----
 
-create_message
-~~~~~~~~~~~~~~
+create_message()
+~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
-    @staticmethod
-    def create_message(message_content: str, message_setting_dict: dict, **kwargs) -> EmailMessage:
-        """
-        Create a new EmailMessage instance.
+   @staticmethod
+   def create_message(
+       message_content: str,
+       message_setting_dict: dict,
+       **kwargs
+   ) -> EmailMessage
 
-        :param message_content: The email body content (plain text).
-        :param message_setting_dict: A dict of email headers.
-            Required keys: "Subject", "From", "To".
-            Optional keys: "Cc", "Bcc", "Reply-To", and any other valid EmailMessage header.
-        :param kwargs: Additional keyword arguments passed to the EmailMessage constructor.
-        :return: An EmailMessage instance ready to be sent.
-        """
+Create a new ``EmailMessage`` instance.
+
+**Parameters:**
+
+.. list-table::
+   :header-rows: 1
+   :widths: 25 15 60
+
+   * - Parameter
+     - Type
+     - Description
+   * - ``message_content``
+     - ``str``
+     - The email body content (plain text)
+   * - ``message_setting_dict``
+     - ``dict``
+     - Email headers. Required: ``"Subject"``, ``"From"``, ``"To"``.
+       Optional: ``"Cc"``, ``"Bcc"``, ``"Reply-To"``, any RFC 2822 header.
+   * - ``**kwargs``
+     - ``dict``
+     - Additional keyword arguments passed to the ``EmailMessage`` constructor
+
+**Returns:** ``EmailMessage`` instance.
 
 **Example:**
 
 .. code-block:: python
 
-    message = SMTPWrapper.create_message(
-        message_content="Hello!",
-        message_setting_dict={
-            "Subject": "Test",
-            "From": "sender@gmail.com",
-            "To": "receiver@gmail.com"
-        }
-    )
+   message = SMTPWrapper.create_message(
+       message_content="Hello!",
+       message_setting_dict={
+           "Subject": "Test",
+           "From": "sender@gmail.com",
+           "To": "receiver@gmail.com"
+       }
+   )
 
 ----
 
-create_message_with_attach
+create_message_with_attach()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+   @staticmethod
+   def create_message_with_attach(
+       message_content: str,
+       message_setting_dict: dict,
+       attach_file: str,
+       use_html: bool = False
+   ) -> MIMEMultipart
+
+Create a new ``MIMEMultipart`` message with an attachment. MIME type is
+auto-detected using ``mimetypes.guess_type()``.
+
+**Parameters:**
+
+.. list-table::
+   :header-rows: 1
+   :widths: 25 15 60
+
+   * - Parameter
+     - Type
+     - Description
+   * - ``message_content``
+     - ``str``
+     - Email body (plain text or HTML)
+   * - ``message_setting_dict``
+     - ``dict``
+     - Email headers (Subject, From, To, etc.)
+   * - ``attach_file``
+     - ``str``
+     - Path to the file to attach
+   * - ``use_html``
+     - ``bool``
+     - If ``True``, body is ``MIMEText(content, "html")``. Default: ``False``.
+
+**Returns:** ``MIMEMultipart`` instance.
+
+**MIME type handling:**
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 40 40
+
+   * - Main Type
+     - Handler
+     - Class
+   * - ``text``
+     - ``open(file, "r+")``
+     - ``MIMEText``
+   * - ``image``
+     - ``open(file, "rb")``
+     - ``MIMEImage``
+   * - ``audio``
+     - ``open(file, "rb")``
+     - ``MIMEAudio``
+   * - other
+     - ``open(file, "rb")``
+     - ``MIMEBase`` with ``set_payload()``
+
+The attachment gets ``Content-Disposition: attachment`` and ``Content-ID`` headers
+set to the filename.
+
+----
+
+create_message_and_send()
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
-    @staticmethod
-    def create_message_with_attach(
-        message_content: str,
-        message_setting_dict: dict,
-        attach_file: str,
-        use_html: bool = False
-    ) -> MIMEMultipart:
-        """
-        Create a new MIMEMultipart message with an attachment.
+   def create_message_and_send(
+       self,
+       message_content: str,
+       message_setting_dict: dict,
+       **kwargs
+   ) -> None
 
-        The MIME type of the attachment is automatically detected using
-        mimetypes.guess_type(). Supported categories:
-        - text/*: read as text
-        - image/*: read as binary image
-        - audio/*: read as binary audio
-        - other: read as binary with application/octet-stream fallback
+Create a new ``EmailMessage`` and immediately send it via ``send_message()``.
 
-        :param message_content: The email body content (plain text or HTML).
-        :param message_setting_dict: A dict of email headers (Subject, From, To, etc.).
-        :param attach_file: Absolute or relative path to the file to attach.
-        :param use_html: If True, the message_content is treated as HTML (default: False).
-        :return: A MIMEMultipart instance with the attachment.
-        """
+**Parameters:** Same as ``create_message()``.
 
 **Example:**
 
 .. code-block:: python
 
-    message = SMTPWrapper.create_message_with_attach(
-        message_content="See attached.",
-        message_setting_dict={
-            "Subject": "Report",
-            "From": "sender@gmail.com",
-            "To": "receiver@gmail.com"
-        },
-        attach_file="/path/to/report.pdf",
-        use_html=False
-    )
+   with SMTPWrapper() as smtp:
+       smtp.later_init()
+       smtp.create_message_and_send(
+           message_content="Hello!",
+           message_setting_dict={
+               "Subject": "Quick Email",
+               "From": "sender@gmail.com",
+               "To": "receiver@gmail.com"
+           }
+       )
 
 ----
 
-create_message_and_send
-~~~~~~~~~~~~~~~~~~~~~~~
+create_message_with_attach_and_send()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
-    def create_message_and_send(self, message_content: str, message_setting_dict: dict, **kwargs):
-        """
-        Create a new EmailMessage and immediately send it.
+   def create_message_with_attach_and_send(
+       self,
+       message_content: str,
+       message_setting_dict: dict,
+       attach_file: str,
+       use_html: bool = False
+   ) -> None
 
-        Combines create_message() and send_message() in one call.
+Create a ``MIMEMultipart`` message with attachment and immediately send it.
 
-        :param message_content: The email body content (plain text).
-        :param message_setting_dict: A dict of email headers (Subject, From, To, etc.).
-        :param kwargs: Additional keyword arguments passed to create_message().
-        :return: None
-        """
-
-**Example:**
-
-.. code-block:: python
-
-    with SMTPWrapper() as smtp:
-        smtp.later_init()
-        smtp.create_message_and_send(
-            message_content="Hello!",
-            message_setting_dict={
-                "Subject": "Quick Email",
-                "From": "sender@gmail.com",
-                "To": "receiver@gmail.com"
-            }
-        )
+**Parameters:** Same as ``create_message_with_attach()``.
 
 ----
 
-create_message_with_attach_and_send
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+try_to_login_with_env_or_content()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
-    def create_message_with_attach_and_send(
-        self,
-        message_content: str,
-        message_setting_dict: dict,
-        attach_file: str,
-        use_html: bool = False
-    ):
-        """
-        Create a new MIMEMultipart message with an attachment and immediately send it.
+   def try_to_login_with_env_or_content(self) -> bool
 
-        Combines create_message_with_attach() and send_message() in one call.
+Attempt to log in using credentials from the config file or environment variables.
 
-        :param message_content: The email body content (plain text or HTML).
-        :param message_setting_dict: A dict of email headers (Subject, From, To, etc.).
-        :param attach_file: Path to the file to attach.
-        :param use_html: If True, the message_content is treated as HTML (default: False).
-        :return: None
-        """
+**Authentication flow:**
 
-**Example:**
+1. Read ``mail_thunder_content.json`` from ``Path.cwd()``
+2. If valid ``user`` + ``password`` keys found → ``self.login(user, password)``
+3. Else read ``mail_thunder_user`` + ``mail_thunder_user_password`` env vars
+4. If env vars set → ``self.login(user, password)``
+5. On ``SMTPAuthenticationError`` → log error, return ``False``
 
-.. code-block:: python
-
-    with SMTPWrapper() as smtp:
-        smtp.later_init()
-        smtp.create_message_with_attach_and_send(
-            message_content="Please review the attached document.",
-            message_setting_dict={
-                "Subject": "Document Review",
-                "From": "sender@gmail.com",
-                "To": "receiver@gmail.com"
-            },
-            attach_file="/path/to/document.pdf",
-            use_html=False
-        )
+**Returns:** ``True`` if login succeeded, ``False`` otherwise.
+Sets ``self.login_state`` accordingly.
 
 ----
 
-try_to_login_with_env_or_content
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+quit()
+~~~~~~
 
 .. code-block:: python
 
-    def try_to_login_with_env_or_content(self) -> bool:
-        """
-        Attempt to log in using credentials from config file or environment variables.
+   def quit(self) -> None
 
-        Authentication flow:
-        1. Try to read mail_thunder_content.json from the current working directory.
-        2. If found and valid, log in with "user" and "password" keys.
-        3. If not found, read mail_thunder_user and mail_thunder_user_password env vars.
-        4. If env vars are set, log in with those credentials.
-
-        :return: True if login succeeded, False otherwise.
-        """
+Disconnect from the SMTP server. Resets ``login_state`` to ``False``.
+Catches and logs exceptions (e.g., if already disconnected).
 
 ----
 
-quit
-~~~~
+Context Manager
+---------------
+
+``SMTPWrapper`` supports the ``with`` statement. ``quit()`` is called on exit:
 
 .. code-block:: python
 
-    def quit(self):
-        """
-        Disconnect from the SMTP server and close the connection.
-
-        Resets login_state to False. Catches and logs exceptions
-        (e.g., if already disconnected).
-
-        :return: None
-        """
+   with SMTPWrapper() as smtp:
+       smtp.later_init()
+       smtp.create_message_and_send(...)
+   # smtp.quit() called automatically
 
 ----
 
@@ -270,42 +304,24 @@ Global Instance
 
 .. code-block:: python
 
-    smtp_instance: SMTPWrapper | None
+   smtp_instance: SMTPWrapper | None
 
-A pre-created ``SMTPWrapper`` instance that attempts to connect to ``smtp.gmail.com:465``
-at import time. Set to ``None`` if the connection fails (e.g., no network).
-
+A pre-created ``SMTPWrapper`` instance that attempts to connect to
+``smtp.gmail.com:465`` at import time. Set to ``None`` if the connection fails.
 Used internally by the JSON scripting executor.
 
 ----
 
-Context Manager
----------------
+Inherited from SMTP_SSL
+------------------------
 
-``SMTPWrapper`` supports the ``with`` statement:
+All standard ``smtplib.SMTP_SSL`` methods are available:
 
-.. code-block:: python
-
-    with SMTPWrapper() as smtp:
-        smtp.later_init()
-        # ... send emails ...
-    # smtp.quit() is called automatically on exit
-
-----
-
-Inherited Methods
------------------
-
-Since ``SMTPWrapper`` extends ``smtplib.SMTP_SSL``, all standard SMTP methods are available:
-
-- ``login(user, password)`` — Manual SMTP authentication
+- ``login(user, password)`` — Manual authentication
 - ``send_message(msg)`` — Send an ``EmailMessage`` or ``MIMEMultipart``
 - ``sendmail(from_addr, to_addrs, msg)`` — Low-level send
 - ``ehlo()`` / ``helo()`` — SMTP handshake
 - ``noop()`` — No-operation (keepalive)
-- ``starttls()`` — Upgrade to TLS (not needed for SSL connections)
 
-See `smtplib.SMTP_SSL documentation <https://docs.python.org/3/library/smtplib.html#smtplib.SMTP_SSL>`_
-for the full list.
-
-----
+See `smtplib documentation <https://docs.python.org/3/library/smtplib.html>`_
+for the full reference.

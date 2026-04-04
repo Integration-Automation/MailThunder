@@ -1,14 +1,17 @@
-MailThunder API Reference
-=========================
+API Reference
+=============
 
-This section provides the complete API reference for MailThunder's public classes and functions.
+This section provides the complete API reference for all public classes, methods,
+and functions in MailThunder.
 
 .. toctree::
-    :maxdepth: 4
-    :caption: API Documentation
+   :maxdepth: 3
+   :caption: API Documentation
 
-    smtp_api.rst
-    imap_api.rst
+   smtp_api
+   imap_api
+   executor_api
+   utils_api
 
 ----
 
@@ -19,151 +22,76 @@ All public APIs are accessible from the top-level ``je_mail_thunder`` package:
 
 .. code-block:: python
 
-    from je_mail_thunder import (
-        # SMTP
-        SMTPWrapper,
-        smtp_instance,
-        # IMAP
-        IMAPWrapper,
-        imap_instance,
-        # Authentication
-        set_mail_thunder_os_environ,
-        get_mail_thunder_os_environ,
-        mail_thunder_content_data_dict,
-        is_need_to_save_content,
-        read_output_content,
-        write_output_content,
-        # Executor
-        execute_action,
-        execute_files,
-        add_command_to_executor,
-        # JSON
-        read_action_json,
-        # File Utilities
-        get_dir_files_as_list,
-        # Project
-        create_project_dir,
-    )
+   from je_mail_thunder import (
+       # SMTP
+       SMTPWrapper,              # SMTP wrapper class
+       smtp_instance,            # Pre-created SMTP instance (or None)
+
+       # IMAP
+       IMAPWrapper,              # IMAP wrapper class
+       imap_instance,            # Pre-created IMAP instance (or None)
+
+       # Authentication
+       set_mail_thunder_os_environ,        # Set auth env vars
+       get_mail_thunder_os_environ,        # Get auth env vars
+       mail_thunder_content_data_dict,     # Global credential dict
+       is_need_to_save_content,            # Check if credentials need saving
+       read_output_content,                # Read mail_thunder_content.json
+       write_output_content,               # Write mail_thunder_content.json
+
+       # Executor
+       execute_action,           # Execute action list
+       execute_files,            # Execute multiple action files
+       add_command_to_executor,  # Register custom commands
+
+       # JSON
+       read_action_json,         # Read JSON action file
+
+       # File Utilities
+       get_dir_files_as_list,    # List directory files
+
+       # Project
+       create_project_dir,       # Scaffold project with templates
+   )
 
 ----
 
-Executor Functions
-------------------
+Module Map
+----------
 
-**Module:** ``je_mail_thunder.utils.executor.action_executor``
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
 
-.. code-block:: python
-
-    def execute_action(action_list: [list, dict]) -> dict:
-        """
-        Execute a list of action commands.
-
-        :param action_list: A list of action commands, or a dict with an "auto_control" key.
-            Each action is a list where:
-            - [0] is the command name (str)
-            - [1] (optional) is a dict for keyword arguments or a list for positional arguments
-        :return: A dict mapping "execute: [action]" to the return value of each command.
-        """
-
-.. code-block:: python
-
-    def execute_files(execute_files_list: list) -> list:
-        """
-        Execute multiple JSON action files.
-
-        :param execute_files_list: A list of file paths to JSON action files.
-        :return: A list of execution result dicts (one per file).
-        """
-
-.. code-block:: python
-
-    def add_command_to_executor(command_dict: dict):
-        """
-        Add custom functions to the executor.
-
-        :param command_dict: A dict mapping command names (str) to callable functions.
-            Values must be types.MethodType or types.FunctionType.
-        :raises AddCommandException: If a value is not a valid function type.
-        """
-
-----
-
-Utility Functions
------------------
-
-**Authentication:**
-
-.. code-block:: python
-
-    def set_mail_thunder_os_environ(mail_thunder_user: str, mail_thunder_user_password: str):
-        """
-        Set authentication environment variables.
-
-        :param mail_thunder_user: Email address
-        :param mail_thunder_user_password: Email password or app password
-        """
-
-.. code-block:: python
-
-    def get_mail_thunder_os_environ() -> dict:
-        """
-        Get authentication environment variables.
-
-        :return: {"mail_thunder_user": str or None, "mail_thunder_user_password": str or None}
-        """
-
-**Content File:**
-
-.. code-block:: python
-
-    def read_output_content() -> dict:
-        """
-        Read mail_thunder_content.json from the current working directory.
-
-        :return: Dict with "user" and "password" keys, or None if file not found.
-        """
-
-.. code-block:: python
-
-    def write_output_content():
-        """
-        Write content data to mail_thunder_content.json in the current working directory.
-        """
-
-**JSON:**
-
-.. code-block:: python
-
-    def read_action_json(file_path: str) -> dict:
-        """
-        Read and parse a JSON action file.
-
-        :param file_path: Path to the JSON file.
-        :return: Parsed JSON data as dict or list.
-        """
-
-**File Utilities:**
-
-.. code-block:: python
-
-    def get_dir_files_as_list(path: str) -> list:
-        """
-        Get all file paths in a directory as a list.
-
-        :param path: Directory path to scan.
-        :return: List of file path strings.
-        """
-
-**Project:**
-
-.. code-block:: python
-
-    def create_project_dir(project_path=None, parent_name=None):
-        """
-        Create a project directory with pre-built templates.
-
-        :param project_path: Path where the project will be created (default: current directory).
-        :param parent_name: Name of the project root directory.
-        """
-
-----
+   * - Import Path
+     - Description
+   * - ``je_mail_thunder.smtp.smtp_wrapper``
+     - ``SMTPWrapper`` class, ``smtp_instance``
+   * - ``je_mail_thunder.imap.imap_wrapper``
+     - ``IMAPWrapper`` class, ``imap_instance``
+   * - ``je_mail_thunder.utils.executor.action_executor``
+     - ``Executor`` class, ``execute_action()``, ``execute_files()``, ``add_command_to_executor()``
+   * - ``je_mail_thunder.utils.save_mail_user_content.save_on_env``
+     - ``set_mail_thunder_os_environ()``, ``get_mail_thunder_os_environ()``
+   * - ``je_mail_thunder.utils.save_mail_user_content.mail_thunder_content_save``
+     - ``read_output_content()``, ``write_output_content()``
+   * - ``je_mail_thunder.utils.save_mail_user_content.mail_thunder_content_data``
+     - ``mail_thunder_content_data_dict``, ``is_need_to_save_content()``
+   * - ``je_mail_thunder.utils.json.json_file``
+     - ``read_action_json()``, ``write_action_json()``
+   * - ``je_mail_thunder.utils.json_format.json_process``
+     - ``reformat_json()``
+   * - ``je_mail_thunder.utils.file_process.get_dir_file_list``
+     - ``get_dir_files_as_list()``
+   * - ``je_mail_thunder.utils.project.create_project_structure``
+     - ``create_project_dir()``
+   * - ``je_mail_thunder.utils.package_manager.package_manager_class``
+     - ``PackageManager`` class, ``package_manager``
+   * - ``je_mail_thunder.utils.socket_server.mail_thunder_socket_server``
+     - ``TCPServer``, ``TCPServerHandler``, ``start_autocontrol_socket_server()``
+   * - ``je_mail_thunder.utils.logging.loggin_instance``
+     - ``mail_thunder_logger``
+   * - ``je_mail_thunder.utils.exception.exceptions``
+     - All custom exception classes
+   * - ``je_mail_thunder.utils.exception.exception_tags``
+     - Error tag strings
