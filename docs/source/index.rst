@@ -75,7 +75,7 @@ Quick Example
 ----
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 4
    :caption: English Documentation
 
    docs/Eng/eng_index
@@ -92,7 +92,7 @@ Quick Example
    docs/Eng/exceptions
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 4
    :caption: 繁體中文文件
 
    docs/Zh/zh_index
@@ -109,7 +109,7 @@ Quick Example
    docs/Zh/exceptions
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 4
    :caption: API Reference
 
    docs/API/api_index

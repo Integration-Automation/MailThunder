@@ -4,17 +4,6 @@ API Reference
 This section provides the complete API reference for all public classes, methods,
 and functions in MailThunder.
 
-.. toctree::
-   :maxdepth: 3
-   :caption: API Documentation
-
-   smtp_api
-   imap_api
-   executor_api
-   utils_api
-
-----
-
 Public Exports
 --------------
 
