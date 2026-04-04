@@ -164,4 +164,7 @@ class IMAPWrapper(IMAP4_SSL):
             mail_thunder_logger.error(f"imap_quit, failed: {repr(error)}")
 
 
-imap_instance = IMAPWrapper()
+try:
+    imap_instance = IMAPWrapper()
+except Exception:
+    imap_instance = None

@@ -1,5 +1,4 @@
 import json
-import os
 from pathlib import Path
 from threading import Lock
 
@@ -7,14 +6,15 @@ from je_mail_thunder.utils.exception.exceptions import MailThunderContentExcepti
 from je_mail_thunder.utils.json_format.json_process import reformat_json
 from je_mail_thunder.utils.save_mail_user_content.mail_thunder_content_data import mail_thunder_content_data_dict
 
+_lock = Lock()
+
 
 def read_output_content():
     """
     read the editor content
     """
-    lock = Lock()
     try:
-        lock.acquire()
+        _lock.acquire()
         cwd = str(Path.cwd())
         file_path = Path(cwd + "/mail_thunder_content.json")
         if file_path.exists() and file_path.is_file():
@@ -25,20 +25,19 @@ def read_output_content():
     except MailThunderContentException:
         raise MailThunderContentException
     finally:
-        lock.release()
+        _lock.release()
 
 
 def write_output_content():
     """
     write the editor content
     """
-    lock = Lock()
     try:
-        lock.acquire()
+        _lock.acquire()
         cwd = str(Path.cwd())
         with open(cwd + "/mail_thunder_content.json", "w+") as file_to_write:
             file_to_write.write(reformat_json(json.dumps(mail_thunder_content_data_dict)))
     except MailThunderContentException:
         raise MailThunderContentException
     finally:
-        lock.release()
+        _lock.release()

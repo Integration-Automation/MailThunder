@@ -31,7 +31,7 @@ def create_template(parent_name: str, project_path: str = None) -> None:
         write_action_json(project_path + "/" + parent_name + "/keyword/keyword1.json", template_keyword_1)
         write_action_json(project_path + "/" + parent_name + "/keyword/keyword2.json", template_keyword_2)
         write_action_json(project_path + "/" + parent_name + "/keyword/bad_keyword_1.json", bad_template_1)
-    if executor_dir_path.exists() and keyword_dir_path.is_dir():
+    if executor_dir_path.exists() and executor_dir_path.is_dir():
         lock.acquire()
         try:
             with open(project_path + "/" + parent_name + "/executor/executor_one_file.py", "w+") as file:
@@ -65,4 +65,4 @@ def create_project_dir(project_path: str = None, parent_name: str = "MailThunder
         project_path = getcwd()
     create_dir(project_path + "/" + parent_name + "/keyword")
     create_dir(project_path + "/" + parent_name + "/executor")
-    create_template(parent_name)
+    create_template(parent_name, project_path)

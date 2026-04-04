@@ -1,6 +1,6 @@
-# SMTP Wrapper
-from je_mail_thunder.imap.imap_wrapper import IMAPWrapper, imap_instance
 # IMAP Wrapper
+from je_mail_thunder.imap.imap_wrapper import IMAPWrapper, imap_instance
+# SMTP Wrapper
 from je_mail_thunder.smtp.smtp_wrapper import SMTPWrapper, smtp_instance
 # Content
 from je_mail_thunder.utils.save_mail_user_content.mail_thunder_content_data import is_need_to_save_content

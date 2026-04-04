@@ -23,8 +23,8 @@ def read_action_json(json_file_path: str) -> list:
             )
             with open(json_file_path) as read_file:
                 return json.loads(read_file.read())
-    except JsonActionException:
-        raise JsonActionException(cant_find_json_error)
+    except Exception as error:
+        raise JsonActionException(cant_find_json_error + f": {repr(error)}")
     finally:
         _lock.release()
 
@@ -42,7 +42,7 @@ def write_action_json(json_save_path: str, action_json: list) -> None:
         )
         with open(json_save_path, "w+") as file_to_write:
             file_to_write.write(json.dumps(action_json, indent=4))
-    except JsonActionException:
-        raise JsonActionException(cant_save_json_error)
+    except Exception as error:
+        raise JsonActionException(cant_save_json_error + f": {repr(error)}")
     finally:
         _lock.release()

@@ -87,29 +87,25 @@ class SMTPWrapper(SMTP_SSL):
                 content_type = "application/octet-stream"
             main_type, sub_type = content_type.split("/", 1)
             if main_type == "text":
-                file_read = open(attach_file, "r+")
-                mime_part = MIMEText(file_read.read(), _subtype=sub_type)
-                file_read.close()
+                with open(attach_file, "r+") as file_read:
+                    mime_part = MIMEText(file_read.read(), _subtype=sub_type)
             elif main_type == "image":
-                file_read = open(attach_file, "rb")
-                mime_part = MIMEImage(file_read.read(), _subtype=sub_type)
-                file_read.close()
+                with open(attach_file, "rb") as file_read:
+                    mime_part = MIMEImage(file_read.read(), _subtype=sub_type)
             elif main_type == "audio":
-                file_read = open(attach_file, "rb")
-                mime_part = MIMEAudio(file_read.read(), _subtype=sub_type)
-                file_read.close()
+                with open(attach_file, "rb") as file_read:
+                    mime_part = MIMEAudio(file_read.read(), _subtype=sub_type)
             else:
-                file_read = open(attach_file, "rb")
-                mime_part = MIMEBase(main_type, sub_type)
-                mime_part.set_payload(file_read.read())
-                file_read.close()
+                with open(attach_file, "rb") as file_read:
+                    mime_part = MIMEBase(main_type, sub_type)
+                    mime_part.set_payload(file_read.read())
             filename = path.basename(attach_file)
             mime_part.add_header("Content-Disposition", "attachment", filename=filename)
             mime_part.add_header("Content-ID", "{filename}".format(filename=filename))
             message.attach(mime_part)
             return message
         except Exception as error:
-            mail_thunder_logger.info(
+            mail_thunder_logger.error(
                 f"smtp_create_message_with_attach, message_content{message_content}, "
                 f"message_setting_dict: {message_setting_dict}, attach_file: {attach_file}, "
                 f"use_html: {use_html}, failed: {repr(error)}")
@@ -137,10 +133,10 @@ class SMTPWrapper(SMTP_SSL):
                             self.login_state = True
                 return self.login_state
             except smtplib.SMTPAuthenticationError as error:
-                mail_thunder_logger.info(f"smtp_try_to_login_with_env_or_content, failed: {repr(error)}")
+                mail_thunder_logger.error(f"smtp_try_to_login_with_env_or_content, failed: {repr(error)}")
                 return self.login_state
         except Exception as error:
-            mail_thunder_logger.info(f"smtp_try_to_login_with_env_or_content, failed: {repr(error)}")
+            mail_thunder_logger.error(f"smtp_try_to_login_with_env_or_content, failed: {repr(error)}")
 
     def quit(self):
         """
@@ -149,6 +145,10 @@ class SMTPWrapper(SMTP_SSL):
         """
         mail_thunder_logger.info("SMTP quit")
         self.login_state = False
+        try:
+            super().quit()
+        except Exception as error:
+            mail_thunder_logger.error(f"SMTP quit failed: {repr(error)}")
 
     def create_message_with_attach_and_send(self, message_content: str, message_setting_dict: dict,
                                             attach_file: str, use_html: bool = False):
@@ -167,7 +167,7 @@ class SMTPWrapper(SMTP_SSL):
             self.send_message(
                 self.create_message_with_attach(message_content, message_setting_dict, attach_file, use_html))
         except Exception as error:
-            mail_thunder_logger.info(
+            mail_thunder_logger.error(
                 f"smtp_create_message_with_attach_and_send, message_content: {message_content}, "
                 f"message_setting_dict: {message_setting_dict}, attach_file:{attach_file}, "
                 f"use_html:{use_html}, failed: {repr(error)}")
@@ -185,9 +185,12 @@ class SMTPWrapper(SMTP_SSL):
         try:
             self.send_message(self.create_message(message_content, message_setting_dict, **kwargs))
         except Exception as error:
-            mail_thunder_logger.info(
+            mail_thunder_logger.error(
                 f"smtp_create_message_and_send, message_content: {message_content}, "
                 f"message_setting_dict: {message_setting_dict}, params:{kwargs}, failed: {repr(error)}")
 
 
-smtp_instance = SMTPWrapper()
+try:
+    smtp_instance = SMTPWrapper()
+except Exception:
+    smtp_instance = None

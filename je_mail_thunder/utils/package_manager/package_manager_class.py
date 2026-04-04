@@ -85,11 +85,6 @@ class PackageManager(object):
             )
             self.get_member(
                 package=package,
-                predicate=isfunction,
-                target=target
-            )
-            self.get_member(
-                package=package,
                 predicate=isclass,
                 target=target
             )
