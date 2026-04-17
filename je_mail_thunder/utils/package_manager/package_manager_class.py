@@ -1,7 +1,6 @@
 from importlib import import_module
 from importlib.util import find_spec
 from inspect import getmembers, isfunction, isbuiltin, isclass
-from sys import stderr
 
 from je_mail_thunder.utils.logging.loggin_instance import mail_thunder_logger
 
@@ -27,7 +26,7 @@ class PackageManager(object):
                     self.installed_package_dict.update(
                         {found_spec.name: installed_package})
                 except ModuleNotFoundError as error:
-                    print(repr(error), file=stderr)
+                    mail_thunder_logger.error(repr(error))
         return self.installed_package_dict.get(package, None)
 
     def add_package_to_executor(self, package):
@@ -62,10 +61,10 @@ class PackageManager(object):
                 target.event_dict.update(
                     {str(package) + "_" + str(member[0]): member[1]})
         elif installed_package is None:
-            print(repr(ModuleNotFoundError(f"Can't find package {package}")),
-                  file=stderr)
+            mail_thunder_logger.error(
+                repr(ModuleNotFoundError(f"Can't find package {package}")))
         else:
-            print(f"Executor error {self.executor}", file=stderr)
+            mail_thunder_logger.error(f"Executor error {self.executor}")
 
     def add_package_to_target(self, package, target):
         """
@@ -89,7 +88,7 @@ class PackageManager(object):
                 target=target
             )
         except Exception as error:
-            print(repr(error), file=stderr)
+            mail_thunder_logger.error(repr(error))
 
 
 package_manager = PackageManager()
