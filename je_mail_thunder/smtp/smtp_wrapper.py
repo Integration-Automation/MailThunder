@@ -101,7 +101,7 @@ class SMTPWrapper(SMTP_SSL):
                     mime_part.set_payload(file_read.read())
             filename = path.basename(attach_file)
             mime_part.add_header("Content-Disposition", "attachment", filename=filename)
-            mime_part.add_header("Content-ID", "{filename}".format(filename=filename))
+            mime_part.add_header("Content-ID", filename)
             message.attach(mime_part)
             return message
         except Exception as error:
@@ -110,33 +110,42 @@ class SMTPWrapper(SMTP_SSL):
                 f"message_setting_dict: {message_setting_dict}, attach_file: {attach_file}, "
                 f"use_html: {use_html}, failed: {repr(error)}")
 
+    @staticmethod
+    def _resolve_credentials():
+        user_info = read_output_content()
+        if isinstance(user_info, dict):
+            user = user_info.get("user")
+            password = user_info.get("password")
+            if user is not None and password is not None:
+                return user, password
+        env_info = get_mail_thunder_os_environ()
+        if isinstance(env_info, dict):
+            user = env_info.get("mail_thunder_user")
+            password = env_info.get("mail_thunder_user_password")
+            if user is not None and password is not None:
+                return user, password
+        return None
+
     def try_to_login_with_env_or_content(self):
         """
         Try to find user and password on cwd /mail_thunder_content.json or env var
         :return: None
         """
-        mail_thunder_logger.info(f"smtp_try_to_login_with_env_or_content")
+        mail_thunder_logger.info("smtp_try_to_login_with_env_or_content")
+        self.login_state = False
         try:
-            user_info = read_output_content()
-            self.login_state = False
-            try:
-                if user_info is not None and isinstance(user_info, dict):
-                    if user_info.get("user", None) is not None and user_info.get("password", None) is not None:
-                        self.login(user_info.get("user"), user_info.get("password"))
-                        self.login_state = True
-                else:
-                    user_info = get_mail_thunder_os_environ()
-                    if user_info is not None and isinstance(user_info, dict):
-                        if user_info.get("mail_thunder_user", None) is not None and user_info.get(
-                                "mail_thunder_user_password", None) is not None:
-                            self.login(user_info.get("mail_thunder_user"), user_info.get("mail_thunder_user_password"))
-                            self.login_state = True
+            credentials = self._resolve_credentials()
+            if credentials is None:
                 return self.login_state
-            except smtplib.SMTPAuthenticationError as error:
-                mail_thunder_logger.error(f"smtp_try_to_login_with_env_or_content, failed: {repr(error)}")
-                return self.login_state
-        except Exception as error:
+            self.login(*credentials)
+            self.login_state = True
+            return self.login_state
+        except smtplib.SMTPAuthenticationError as error:
             mail_thunder_logger.error(f"smtp_try_to_login_with_env_or_content, failed: {repr(error)}")
+            return self.login_state
+        except OSError as error:
+            mail_thunder_logger.error(f"smtp_try_to_login_with_env_or_content, failed: {repr(error)}")
+            return self.login_state
 
     def quit(self):
         """
@@ -192,5 +201,6 @@ class SMTPWrapper(SMTP_SSL):
 
 try:
     smtp_instance = SMTPWrapper()
-except Exception:
+except OSError as _smtp_init_error:
+    mail_thunder_logger.error(f"smtp_instance init failed: {repr(_smtp_init_error)}")
     smtp_instance = None

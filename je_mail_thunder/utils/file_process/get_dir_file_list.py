@@ -6,7 +6,7 @@ from typing import List
 
 
 def get_dir_files_as_list(
-        dir_path: str = getcwd(),
+        dir_path: str = None,
         default_search_file_extension: str = ".json") -> List[str]:
     """
     get dir file when end with default_search_file_extension
@@ -14,8 +14,10 @@ def get_dir_files_as_list(
     :param default_search_file_extension: which extension we want to search
     :return: [] if nothing searched or [file1, file2.... files] file was searched
     """
+    if dir_path is None:
+        dir_path = getcwd()
     return [
-        abspath(join(root, file)) for root, dirs, files in walk(dir_path)
+        abspath(join(root, file)) for root, _, files in walk(dir_path)
         for file in files
         if file.endswith(default_search_file_extension.lower())
     ]
