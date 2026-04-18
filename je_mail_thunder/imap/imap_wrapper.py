@@ -35,6 +35,22 @@ class IMAPWrapper(IMAP4_SSL):
         except Exception as error:
             mail_thunder_logger.error(f"imap_later_init, failed: {repr(error)}")
 
+    @staticmethod
+    def _resolve_credentials():
+        user_info = read_output_content()
+        if isinstance(user_info, dict):
+            user = user_info.get("user")
+            password = user_info.get("password")
+            if user is not None and password is not None:
+                return user, password
+        env_info = get_mail_thunder_os_environ()
+        if isinstance(env_info, dict):
+            user = env_info.get("mail_thunder_user")
+            password = env_info.get("mail_thunder_user_password")
+            if user is not None and password is not None:
+                return user, password
+        return None
+
     def try_to_login_with_env_or_content(self):
         """
         Try to find user and password on cwd /mail_thunder_content.json or env var
@@ -42,17 +58,10 @@ class IMAPWrapper(IMAP4_SSL):
         """
         mail_thunder_logger.info("imap_try_to_login_with_env_or_content")
         try:
-            user_info = read_output_content()
-            if user_info is not None and isinstance(user_info, dict):
-                if user_info.get("user", None) is not None and user_info.get("password", None) is not None:
-                    self.login(user_info.get("user"), user_info.get("password"))
-            else:
-                user_info = get_mail_thunder_os_environ()
-                if user_info is not None and isinstance(user_info, dict):
-                    if user_info.get("mail_thunder_user", None) is not None and user_info.get(
-                            "mail_thunder_user_password", None) is not None:
-                        self.login(user_info.get("mail_thunder_user"), user_info.get("mail_thunder_user_password"))
-        except Exception as error:
+            credentials = self._resolve_credentials()
+            if credentials is not None:
+                self.login(*credentials)
+        except OSError as error:
             mail_thunder_logger.info(
                 f"imap_try_to_login_with_env_or_content, "
                 f"failed: {repr(error) + ' ' + mail_thunder_content_login_failed}")
@@ -66,7 +75,7 @@ class IMAPWrapper(IMAP4_SSL):
         mail_thunder_logger.info(f"imap_select_mailbox, mailbox: {mailbox}, readonly: {readonly}")
         try:
             select_status = self.select(mailbox=mailbox, readonly=readonly)
-            return True if select_status[0] == "OK" else False
+            return select_status[0] == "OK"
         except Exception as error:
             mail_thunder_logger.error(
                 f"imap_select_mailbox, mailbox: {mailbox}, readonly: {readonly}, failed: {repr(error)}")
@@ -180,7 +189,7 @@ class IMAPWrapper(IMAP4_SSL):
         Quit service and close connect
         :return: None
         """
-        mail_thunder_logger.info(f"MT_imap_quit")
+        mail_thunder_logger.info("MT_imap_quit")
         try:
             self.close()
             self.logout()
@@ -190,5 +199,6 @@ class IMAPWrapper(IMAP4_SSL):
 
 try:
     imap_instance = IMAPWrapper()
-except Exception:
+except OSError as _imap_init_error:
+    mail_thunder_logger.error(f"imap_instance init failed: {repr(_imap_init_error)}")
     imap_instance = None

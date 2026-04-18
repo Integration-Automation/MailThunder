@@ -108,3 +108,76 @@ je_mail_thunder/
 - Use `mail_thunder_logger` for all logging. No `print()` in library code (only in CLI/socket server output).
 - Exception hierarchy rooted at `MailThunderException`. New exceptions must subclass it.
 - All public methods need docstrings following the existing `:param` / `:return:` style.
+
+## Linter Compliance (SonarQube / Codacy / Pylint / Flake8)
+
+All code must pass static analysis from SonarQube, Codacy, Pylint, and Flake8. The rules below encode the most common quality-gate failures for this codebase — follow them proactively rather than waiting for a linter report.
+
+### Complexity & Size Limits
+- **Cognitive Complexity ≤ 15** per function (SonarQube `python:S3776`). Refactor deeply nested conditionals into early-returns or helper functions.
+- **Cyclomatic Complexity ≤ 10** per function (Pylint `R0912`). Split branchy logic.
+- **Function length ≤ 50 lines**, **class length ≤ 300 lines**, **module length ≤ 750 lines** (SonarQube defaults). Decompose longer units.
+- **Parameters ≤ 7** per function (Pylint `R0913`). Group related arguments into dataclasses or dicts.
+- **Max line length: 120 characters** (Flake8 `E501`, configured project-wide).
+- **Max nesting depth ≤ 4** (SonarQube `python:S134`).
+
+### Naming (PEP 8 / Pylint `C0103`)
+- `snake_case` for functions, methods, variables, modules; `PascalCase` for classes; `UPPER_SNAKE_CASE` for module-level constants.
+- No single-letter names except loop counters (`i`, `j`, `k`) or well-known math conventions.
+- Avoid shadowing builtins (`list`, `dict`, `id`, `type`, `input`, `file`) — SonarQube `python:S5806`.
+
+### Exception Handling (SonarQube / Bandit)
+- **Never use bare `except:`** — always catch specific exceptions (SonarQube `python:S5754`, Bandit `B110`).
+- **Do not swallow exceptions silently**. Log via `mail_thunder_logger.error(...)` and re-raise or convert to a `MailThunderException` subclass.
+- **Do not use `except Exception as e: pass`** — Codacy `PyLint-W0702/W0703`.
+- Chain exceptions with `raise NewError(...) from original_error` to preserve traceback (SonarQube `python:S5708`).
+
+### Duplication & Dead Code
+- **No duplicated blocks ≥ 3 lines** (SonarQube `python:S4144` / `common-py:DuplicatedBlocks`). Extract shared logic into helpers.
+- **No unused imports / variables / parameters / private functions** (Pylint `W0611`, `W0612`, `W0613`, `W0238`).
+- **No unreachable code** after `return` / `raise` / `break` (SonarQube `python:S1763`).
+- **No commented-out code** (SonarQube `python:S125`).
+- **No `TODO` / `FIXME` without an issue reference** (SonarQube `python:S1135`). Either fix it or file a ticket and reference it.
+
+### Comparison & Logic Correctness
+- Use `is None` / `is not None` rather than `== None` (Pylint `C0121`, SonarQube `python:S5727`).
+- Use `isinstance(x, T)` instead of `type(x) == T` (Pylint `C0123`).
+- Do not compare boolean literals with `==` (`if flag:` not `if flag == True:`) — SonarQube `python:S1125`.
+- No constant conditions in `if` / `while` (SonarQube `python:S1145`).
+- No identical expressions on both sides of binary operators (SonarQube `python:S1764`).
+
+### Mutable Defaults & Side Effects
+- **Never use mutable default arguments** (`def f(x=[])`) — Pylint `W0102`, SonarQube `python:S5717`. Use `None` and initialize inside the function.
+- No side effects at import time beyond logger setup and module-level singleton construction that already exists in this project.
+
+### Security Hotspots (Bandit / SonarQube)
+- **No hardcoded credentials / tokens / IPs** (Bandit `B105`-`B107`, SonarQube `python:S2068`).
+- **No `assert` for runtime validation** — asserts are stripped in optimized mode (Bandit `B101`).
+- **No `pickle` / `marshal` / `shelve` on untrusted data** (Bandit `B301`).
+- **No `yaml.load` without `SafeLoader`** (Bandit `B506`).
+- **No weak hashing** (`md5`, `sha1`) for security purposes (Bandit `B303`, `B324`).
+- **No `random` module for security tokens** — use `secrets` (Bandit `B311`).
+- **No `tempfile.mktemp`** — use `NamedTemporaryFile` (Bandit `B306`).
+- **No binding to `0.0.0.0`** without explicit user opt-in (Bandit `B104`).
+- **No SSL context disabling cert verification** (Bandit `B501`).
+- **No XML parsing with `xml.etree` / `xml.sax` / `minidom`** on untrusted input — use `defusedxml` (Bandit `B314`-`B320`).
+
+### Imports & Structure
+- No wildcard imports (`from x import *`) outside `__init__.py` re-export (Pylint `W0401`).
+- No relative imports beyond one level (`from ..x`). Prefer absolute (`from je_mail_thunder.x`).
+- Imports ordered: stdlib, third-party, local — separated by blank lines (Flake8 `isort`).
+- No circular imports (Pylint `R0401`).
+
+### Formatting
+- 4-space indentation, no tabs (Flake8 `W191`).
+- Two blank lines between top-level defs, one blank line between methods (PEP 8 / Flake8 `E302`/`E303`).
+- No trailing whitespace (Flake8 `W291`), files end with a single newline (Flake8 `W292`).
+- No multiple statements on one line (Flake8 `E701`/`E702`).
+
+### Documentation
+- Every public module, class, and function has a docstring (Pylint `C0111` / `missing-docstring`). Use `:param` / `:return:` / `:raises:` style already in use.
+- No misleading docstrings — update them when behavior changes.
+
+### Enforcement Workflow
+- Before committing: run `pip install pylint flake8 bandit` and locally execute `pylint je_mail_thunder`, `flake8 je_mail_thunder`, `bandit -r je_mail_thunder`.
+- Treat any new SonarQube / Codacy finding on changed lines as a blocker. Do not suppress rules (`# noqa`, `# pylint: disable=`) without a comment explaining why and which specific rule is being suppressed.

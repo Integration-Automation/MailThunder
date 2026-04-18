@@ -47,30 +47,30 @@ class TCPServerHandler(socketserver.BaseRequestHandler):
         except UnicodeDecodeError as error:
             print(repr(error), file=sys.stderr, flush=True)
             return
-        socket = self.request
+        client_socket = self.request
         print("command is: " + command_string, flush=True)
         if command_string == "quit_server":
             self.server.shutdown()
             self.server.close_flag = True
             print("Now quit server", flush=True)
-        else:
+            return
+        try:
+            execute_str = json.loads(command_string)
+            _validate_payload(execute_str)
+            for _, execute_return in execute_action(execute_str).items():
+                client_socket.sendto(str(execute_return).encode("utf-8"), self.client_address)
+                client_socket.sendto("\n".encode("utf-8"), self.client_address)
+            client_socket.sendto("Return_Data_Over_JE".encode("utf-8"), self.client_address)
+            client_socket.sendto("\n".encode("utf-8"), self.client_address)
+        except (ValueError, OSError, TypeError) as error:
+            print(repr(error), file=sys.stderr)
             try:
-                execute_str = json.loads(command_string)
-                _validate_payload(execute_str)
-                for execute_function, execute_return in execute_action(execute_str).items():
-                    socket.sendto(str(execute_return).encode("utf-8"), self.client_address)
-                    socket.sendto("\n".encode("utf-8"), self.client_address)
-                socket.sendto("Return_Data_Over_JE".encode("utf-8"), self.client_address)
-                socket.sendto("\n".encode("utf-8"), self.client_address)
-            except Exception as error:
-                print(repr(error), file=sys.stderr)
-                try:
-                    socket.sendto(str(error).encode("utf-8"), self.client_address)
-                    socket.sendto("\n".encode("utf-8"), self.client_address)
-                    socket.sendto("Return_Data_Over_JE".encode("utf-8"), self.client_address)
-                    socket.sendto("\n".encode("utf-8"), self.client_address)
-                except Exception as error:
-                    print(repr(error))
+                client_socket.sendto(str(error).encode("utf-8"), self.client_address)
+                client_socket.sendto("\n".encode("utf-8"), self.client_address)
+                client_socket.sendto("Return_Data_Over_JE".encode("utf-8"), self.client_address)
+                client_socket.sendto("\n".encode("utf-8"), self.client_address)
+            except OSError as send_error:
+                print(repr(send_error))
 
 
 class TCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):

@@ -14,7 +14,7 @@ from je_mail_thunder.utils.save_mail_user_content.save_on_env import set_mail_th
     get_mail_thunder_os_environ
 
 
-class Executor(object):
+class Executor:
 
     def __init__(self):
         self.event_dict: dict = {
@@ -52,25 +52,25 @@ class Executor(object):
         else:
             raise ExecuteActionException(cant_execute_action_error + " " + str(action))
 
-    def execute_action(self, action_list: [list, dict]) -> dict:
+    def execute_action(self, action_list) -> dict:
         """
         use to execute all action on action list(action file or program list)
         :param action_list the list include action
         for loop the list and execute action
         """
         if isinstance(action_list, dict):
-            action_list: list = action_list.get("auto_control")
-            if action_list is None:
+            actions = action_list.get("auto_control")
+            if actions is None:
                 raise ExecuteActionException(executor_list_error)
-        execute_record_dict = dict()
-        try:
-            if len(action_list) == 0 or isinstance(action_list, list) is False:
-                raise ExecuteActionException(action_is_null_error)
-        except Exception as error:
+        else:
+            actions = action_list
+        execute_record_dict = {}
+        if not isinstance(actions, list) or len(actions) == 0:
             mail_thunder_logger.error(
-                f"Execute {action_list} failed. {repr(error)}"
+                f"Execute {action_list} failed. {action_is_null_error}"
             )
-        for action in action_list:
+            return execute_record_dict
+        for action in actions:
             try:
                 event_response = self._execute_event(action)
                 execute_record = "execute: " + str(action)
@@ -93,7 +93,7 @@ class Executor(object):
         :param execute_files_list: list include execute files path
         :return: every execute detail as list
         """
-        execute_detail_list: list = list()
+        execute_detail_list: list = []
         for file in execute_files_list:
             execute_detail_list.append(self.execute_action(read_action_json(file)))
         return execute_detail_list

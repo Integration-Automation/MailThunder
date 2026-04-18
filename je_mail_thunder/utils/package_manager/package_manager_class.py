@@ -5,11 +5,10 @@ from inspect import getmembers, isfunction, isbuiltin, isclass
 from je_mail_thunder.utils.logging.loggin_instance import mail_thunder_logger
 
 
-class PackageManager(object):
+class PackageManager:
 
     def __init__(self):
-        self.installed_package_dict = {
-        }
+        self.installed_package_dict = {}
         self.executor = None
         self.callback_executor = None
 
@@ -30,20 +29,20 @@ class PackageManager(object):
         return self.installed_package_dict.get(package, None)
 
     def add_package_to_executor(self, package):
-        mail_thunder_logger.info(f"add_package_to_executor, package: {package}")
         """
         :param package: package's function will add to executor
         """
+        mail_thunder_logger.info(f"add_package_to_executor, package: {package}")
         self.add_package_to_target(
             package=package,
             target=self.executor
         )
 
     def add_package_to_callback_executor(self, package):
-        mail_thunder_logger.info(f"add_package_to_callback_executor, package: {package}")
         """
         :param package: package's function will add to callback_executor
         """
+        mail_thunder_logger.info(f"add_package_to_callback_executor, package: {package}")
         self.add_package_to_target(
             package=package,
             target=self.callback_executor
@@ -87,7 +86,7 @@ class PackageManager(object):
                 predicate=isclass,
                 target=target
             )
-        except Exception as error:
+        except (AttributeError, ImportError) as error:
             mail_thunder_logger.error(repr(error))
 
 
