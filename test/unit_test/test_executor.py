@@ -1,6 +1,3 @@
-import os
-import types
-
 import pytest
 
 from je_mail_thunder.utils.exception.exceptions import AddCommandException, ExecuteActionException

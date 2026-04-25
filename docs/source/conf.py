@@ -16,7 +16,7 @@ sys.path.insert(2, str(Path(__file__).parent.parent))
 # -- Project information -----------------------------------------------------
 
 project = "MailThunder"
-copyright = "2020 ~ Now, JE-Chen"
+project_copyright = "2020 ~ Now, JE-Chen"
 author = "JE-Chen"
 
 # -- General configuration ---------------------------------------------------

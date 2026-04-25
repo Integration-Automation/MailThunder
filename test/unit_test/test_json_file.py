@@ -1,9 +1,6 @@
 import json
 import os
 
-import pytest
-
-from je_mail_thunder.utils.exception.exceptions import JsonActionException
 from je_mail_thunder.utils.json.json_file import read_action_json, write_action_json
 
 TEST_JSON_PATH = "test_action.json"

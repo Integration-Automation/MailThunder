@@ -1,5 +1,4 @@
 import os
-import shutil
 import tempfile
 
 from je_mail_thunder.utils.file_process.get_dir_file_list import get_dir_files_as_list

@@ -1,8 +1,15 @@
+import re
 from importlib import import_module
 from importlib.util import find_spec
 from inspect import getmembers, isfunction, isbuiltin, isclass
 
 from je_mail_thunder.utils.logging.loggin_instance import mail_thunder_logger
+
+_MODULE_NAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$")
+
+
+def _is_safe_module_name(package: str) -> bool:
+    return isinstance(package, str) and bool(_MODULE_NAME_PATTERN.fullmatch(package))
 
 
 class PackageManager:
@@ -17,9 +24,13 @@ class PackageManager:
         :param package: package to check exists or not
         :return: package if find else None
         """
+        if not _is_safe_module_name(package):
+            mail_thunder_logger.error(
+                f"check_package: rejected non-conforming module name: {package!r}")
+            return None
         if self.installed_package_dict.get(package, None) is None:
             found_spec = find_spec(package)
-            if found_spec is not None:
+            if found_spec is not None and _is_safe_module_name(found_spec.name):
                 try:
                     installed_package = import_module(found_spec.name)
                     self.installed_package_dict.update(
