@@ -1,5 +1,6 @@
 import json
 import os
+import secrets
 
 from je_mail_thunder.utils.save_mail_user_content.mail_thunder_content_data import mail_thunder_content_data_dict
 from je_mail_thunder.utils.save_mail_user_content.mail_thunder_content_save import (
@@ -21,32 +22,38 @@ def teardown_function():
 
 
 def test_write_and_read_output_content():
-    mail_thunder_content_data_dict.update({"user": "test_user", "password": "test_pw"})
+    fake_user = "test_user"
+    fake_secret = secrets.token_hex(8)
+    mail_thunder_content_data_dict.update({"user": fake_user, "password": fake_secret})
     write_output_content()
     assert os.path.exists(CONTENT_FILE)
     with open(CONTENT_FILE) as f:
         data = json.load(f)
-    assert data["user"] == "test_user"
-    assert data["password"] == "test_pw"
+    assert data["user"] == fake_user
+    assert data["password"] == fake_secret
 
 
 def test_read_output_content_returns_dict():
-    mail_thunder_content_data_dict.update({"user": "u", "password": "p"})
+    fake_user = secrets.token_hex(4)
+    fake_secret = secrets.token_hex(8)
+    mail_thunder_content_data_dict.update({"user": fake_user, "password": fake_secret})
     write_output_content()
     mail_thunder_content_data_dict.update({"user": None, "password": None})
     result = read_output_content()
     assert isinstance(result, dict)
-    assert result["user"] == "u"
-    assert result["password"] == "p"
+    assert result["user"] == fake_user
+    assert result["password"] == fake_secret
 
 
 def test_read_output_content_updates_global_dict():
-    mail_thunder_content_data_dict.update({"user": "u2", "password": "p2"})
+    fake_user = secrets.token_hex(4)
+    fake_secret = secrets.token_hex(8)
+    mail_thunder_content_data_dict.update({"user": fake_user, "password": fake_secret})
     write_output_content()
     mail_thunder_content_data_dict.update({"user": None, "password": None})
     read_output_content()
-    assert mail_thunder_content_data_dict["user"] == "u2"
-    assert mail_thunder_content_data_dict["password"] == "p2"
+    assert mail_thunder_content_data_dict["user"] == fake_user
+    assert mail_thunder_content_data_dict["password"] == fake_secret
 
 
 def test_read_output_content_no_file():

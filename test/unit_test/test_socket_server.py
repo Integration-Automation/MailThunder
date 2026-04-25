@@ -1,12 +1,10 @@
 import json
 import socket
 import time
-import threading
 
 from je_mail_thunder.utils.socket_server.mail_thunder_socket_server import (
     start_autocontrol_socket_server,
 )
-from je_mail_thunder.utils.executor.action_executor import add_command_to_executor
 
 
 def _send_and_recv(host, port, message):
@@ -48,5 +46,5 @@ def test_socket_server_quit():
     finally:
         try:
             server.shutdown()
-        except Exception:
-            pass
+        except OSError as shutdown_error:
+            print(f"socket server shutdown failed: {shutdown_error!r}")
