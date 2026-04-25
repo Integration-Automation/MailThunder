@@ -1,19 +1,17 @@
-# Rename to dev version
-# This is dev version
 [build-system]
-requires = ["setuptools>=82.0.1"]
+requires = [
+    "setuptools>=82.0.1",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "je_mail_thunder"
-version = "0.0.24"
+version = "0.0.25"
 authors = [
     { name = "JE-Chen", email = "jechenmailman@gmail.com" },
 ]
 description = ""
-readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.9"
-license = { text = "MIT" }
 classifiers = [
     "Programming Language :: Python :: 3.9",
     "Development Status :: 2 - Pre-Alpha",
@@ -21,18 +19,31 @@ classifiers = [
     "Environment :: MacOS X",
     "Environment :: X11 Applications",
     "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent"
+    "Operating System :: OS Independent",
 ]
 
-[project.urls]
-"Homepage" = "https://github.com/Intergration-Automation-Testing/MailThunder"
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
 
-[tool.setuptools.packages]
-find = { namespaces = false }
+[project.license]
+text = "MIT"
+
+[project.urls]
+Homepage = "https://github.com/Intergration-Automation-Testing/MailThunder"
+
+[tool.setuptools.packages.find]
+namespaces = false
 
 [tool.pytest.ini_options]
-testpaths = ["test"]
+testpaths = [
+    "test",
+]
 
 [tool.bandit]
-exclude_dirs = ["test"]
-skips = ["B101"]
+exclude_dirs = [
+    "test",
+]
+skips = [
+    "B101",
+]
