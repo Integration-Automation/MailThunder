@@ -1,15 +1,14 @@
-import re
 from importlib import import_module
 from importlib.util import find_spec
 from inspect import getmembers, isfunction, isbuiltin, isclass
 
 from je_mail_thunder.utils.logging.loggin_instance import mail_thunder_logger
 
-_MODULE_NAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$")
-
 
 def _is_safe_module_name(package: str) -> bool:
-    return isinstance(package, str) and bool(_MODULE_NAME_PATTERN.fullmatch(package))
+    if not isinstance(package, str) or not package:
+        return False
+    return all(part.isidentifier() for part in package.split("."))
 
 
 class PackageManager:
