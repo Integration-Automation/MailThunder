@@ -1,5 +1,4 @@
 import os
-import shutil
 import tempfile
 
 from je_mail_thunder.utils.project.create_project_structure import create_project_dir

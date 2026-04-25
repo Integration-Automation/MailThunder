@@ -23,7 +23,7 @@ def read_action_json(json_file_path: str) -> list:
                 )
                 with open(json_file_path) as read_file:
                     return json.loads(read_file.read())
-        except (OSError, ValueError, json.JSONDecodeError) as error:
+        except (OSError, ValueError) as error:
             raise JsonActionException(cant_find_json_error + f": {repr(error)}") from error
 
 

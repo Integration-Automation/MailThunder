@@ -14,7 +14,7 @@ from je_mail_thunder.utils.json.json_file import write_action_json
 
 
 def test_execute_builtin_print(capsys):
-    result = execute_action([["print", ["hello from test"]]])
+    execute_action([["print", ["hello from test"]]])
     captured = capsys.readouterr()
     assert "hello from test" in captured.out
 

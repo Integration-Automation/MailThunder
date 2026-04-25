@@ -119,11 +119,10 @@ class SMTPWrapper(SMTP_SSL):
             if user is not None and password is not None:
                 return user, password
         env_info = get_mail_thunder_os_environ()
-        if isinstance(env_info, dict):
-            user = env_info.get("mail_thunder_user")
-            password = env_info.get("mail_thunder_user_password")
-            if user is not None and password is not None:
-                return user, password
+        user = env_info.get("mail_thunder_user")
+        password = env_info.get("mail_thunder_user_password")
+        if user is not None and password is not None:
+            return user, password
         return None
 
     def try_to_login_with_env_or_content(self):

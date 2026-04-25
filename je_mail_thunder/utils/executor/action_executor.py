@@ -1,6 +1,7 @@
 import builtins
 import types
 from inspect import getmembers, isbuiltin
+from typing import Union
 
 from je_mail_thunder.imap.imap_wrapper import imap_instance
 from je_mail_thunder.smtp.smtp_wrapper import smtp_instance
@@ -52,7 +53,7 @@ class Executor:
         else:
             raise ExecuteActionException(cant_execute_action_error + " " + str(action))
 
-    def execute_action(self, action_list) -> dict:
+    def execute_action(self, action_list: Union[list, dict]) -> dict:
         """
         use to execute all action on action list(action file or program list)
         :param action_list the list include action
@@ -117,7 +118,7 @@ def add_command_to_executor(command_dict: dict):
             raise AddCommandException(add_command_exception)
 
 
-def execute_action(action_list: list) -> dict:
+def execute_action(action_list: Union[list, dict]) -> dict:
     return executor.execute_action(action_list)
 
 

@@ -44,11 +44,10 @@ class IMAPWrapper(IMAP4_SSL):
             if user is not None and password is not None:
                 return user, password
         env_info = get_mail_thunder_os_environ()
-        if isinstance(env_info, dict):
-            user = env_info.get("mail_thunder_user")
-            password = env_info.get("mail_thunder_user_password")
-            if user is not None and password is not None:
-                return user, password
+        user = env_info.get("mail_thunder_user")
+        password = env_info.get("mail_thunder_user_password")
+        if user is not None and password is not None:
+            return user, password
         return None
 
     def try_to_login_with_env_or_content(self):
@@ -90,7 +89,7 @@ class IMAPWrapper(IMAP4_SSL):
         mail_thunder_logger.info(f"imap_search_mailbox, search_str: {search_str}, charset: {charset}")
         try:
             response, mail_number_string = self.search(charset, search_str)
-            mail_detail_list = list()
+            mail_detail_list = []
             for num_of_mail in mail_number_string[0].split():
                 response, mail_data = self.fetch(num_of_mail, "(RFC822)")
                 mail_data: List[List]
@@ -113,8 +112,8 @@ class IMAPWrapper(IMAP4_SSL):
         mail_thunder_logger.info(f"imap_mail_content_list, search_str: {search_str}, charset: {charset}")
         try:
             mail_list = self.search_mailbox(search_str, charset)
-            mail_content_dict = dict()
-            mail_content_list = list()
+            mail_content_dict = {}
+            mail_content_list = []
             for mail_data in mail_list:
                 mail = mail_data[2]
                 mail_content_dict.update({"SUBJECT": mail.get("Subject")})
@@ -129,7 +128,7 @@ class IMAPWrapper(IMAP4_SSL):
                 body = str(decode_header(str(body))[0][0])
                 mail_content_dict.update({"BODY": body})
                 mail_content_list.append(mail_content_dict)
-                mail_content_dict = dict()
+                mail_content_dict = {}
             return mail_content_list
         except Exception as error:
             mail_thunder_logger.error(
@@ -163,7 +162,7 @@ class IMAPWrapper(IMAP4_SSL):
         mail_thunder_logger.info(f"imap_output_all_mail_as_file, search_str: {search_str}, charset: {charset}")
         try:
             all_mail = self.mail_content_list(search_str=search_str, charset=charset)
-            same_name_dict: Dict[str, int] = dict()
+            same_name_dict: Dict[str, int] = {}
             cwd = os.path.abspath(os.getcwd())
             for mail in all_mail:
                 safe_name = self._sanitize_subject_as_filename(mail.get("SUBJECT"))

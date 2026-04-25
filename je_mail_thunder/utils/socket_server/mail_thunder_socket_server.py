@@ -57,7 +57,7 @@ class TCPServerHandler(socketserver.BaseRequestHandler):
         try:
             execute_str = json.loads(command_string)
             _validate_payload(execute_str)
-            for _, execute_return in execute_action(execute_str).items():
+            for execute_return in execute_action(execute_str).values():
                 client_socket.sendto(str(execute_return).encode("utf-8"), self.client_address)
                 client_socket.sendto("\n".encode("utf-8"), self.client_address)
             client_socket.sendto("Return_Data_Over_JE".encode("utf-8"), self.client_address)
