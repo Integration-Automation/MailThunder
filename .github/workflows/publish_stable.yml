@@ -8,15 +8,14 @@ on:
       - 'docs/**'
       - '.github/**'
 
-permissions:
-  contents: write
-
 concurrency:
   group: publish-stable
   cancel-in-progress: false
 
 jobs:
   test:
+    permissions:
+      contents: read
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: true
@@ -44,6 +43,8 @@ jobs:
   publish:
     needs: test
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
