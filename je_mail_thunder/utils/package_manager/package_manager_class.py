@@ -5,6 +5,12 @@ from inspect import getmembers, isfunction, isbuiltin, isclass
 from je_mail_thunder.utils.logging.loggin_instance import mail_thunder_logger
 
 
+def _is_safe_module_name(package: str) -> bool:
+    if not isinstance(package, str) or not package:
+        return False
+    return all(part.isidentifier() for part in package.split("."))
+
+
 class PackageManager:
 
     def __init__(self):
@@ -17,9 +23,13 @@ class PackageManager:
         :param package: package to check exists or not
         :return: package if find else None
         """
+        if not _is_safe_module_name(package):
+            mail_thunder_logger.error(
+                f"check_package: rejected non-conforming module name: {package!r}")
+            return None
         if self.installed_package_dict.get(package, None) is None:
             found_spec = find_spec(package)
-            if found_spec is not None:
+            if found_spec is not None and _is_safe_module_name(found_spec.name):
                 try:
                     installed_package = import_module(found_spec.name)
                     self.installed_package_dict.update(
