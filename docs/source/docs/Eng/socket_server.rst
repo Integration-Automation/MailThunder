@@ -37,11 +37,6 @@ Starting the Server
      - ``9942``
      - TCP port to listen on
 
-The server can also accept ``host`` and ``port`` from ``sys.argv``:
-
-- ``sys.argv[1]`` → ``host``
-- ``sys.argv[2]`` → ``port``
-
 The server thread is a daemon thread — it will be automatically terminated when
 the main program exits.
 

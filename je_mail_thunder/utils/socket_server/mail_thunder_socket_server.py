@@ -89,14 +89,8 @@ class TCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
 def start_mail_thunder_socket_server(host: str = "localhost", port: int = DEFAULT_PORT) -> TCPServer:
     """Start the action server on a daemon thread and return it.
 
-    ``host`` and ``port`` can also come from the command line (``argv[1]``, ``argv[2]``), which
-    overrides the arguments.
+    It binds exactly ``host`` and ``port``; the command line is not consulted.
     """
-    if len(sys.argv) == 2:
-        host = sys.argv[1]
-    elif len(sys.argv) == 3:
-        host = sys.argv[1]
-        port = int(sys.argv[2])
     server = TCPServer((host, port), TCPServerHandler)
     server_thread = threading.Thread(target=server.serve_forever)
     server_thread.daemon = True

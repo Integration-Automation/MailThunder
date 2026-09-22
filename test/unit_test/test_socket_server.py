@@ -69,3 +69,13 @@ def test_default_port_is_9942(start):
     # 9944, the old default, is FileAutomation's HTTP action-server default.
     assert DEFAULT_PORT == 9942
     assert inspect.signature(start).parameters["port"].default == DEFAULT_PORT
+
+
+def test_command_line_arguments_do_not_rebind_the_server(monkeypatch):
+    # A host program run as "prog.py some_arg" used to have "some_arg" taken as the bind host.
+    monkeypatch.setattr("sys.argv", ["prog.py", "not-a-host"])
+    server = start_mail_thunder_socket_server("127.0.0.1", 0)
+    try:
+        assert server.server_address[0] == "127.0.0.1"
+    finally:
+        server.shutdown()

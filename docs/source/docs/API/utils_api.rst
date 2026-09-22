@@ -312,7 +312,7 @@ Start a TCP socket server that accepts JSON action commands.
 **Returns:** ``TCPServer`` instance with ``close_flag`` attribute.
 
 The server runs in a daemon background thread via ``threading.Thread(daemon=True)``.
-Can also read ``host``/``port`` from ``sys.argv[1]``/``sys.argv[2]``.
+It binds exactly the ``host`` and ``port`` it is given.
 
 ``start_autocontrol_socket_server()`` is the old name of the same function. It still works but
 raises ``DeprecationWarning`` and will be removed after at least two further releases.
