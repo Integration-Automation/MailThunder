@@ -1,7 +1,7 @@
 # MailThunder
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](../LICENSE)
-[![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![PyPI](https://img.shields.io/pypi/v/je_mail_thunder)](https://pypi.org/project/je-mail-thunder/)
 
 **MailThunder** 是一款輕量且靈活的 Python 電子郵件自動化工具。它封裝了 SMTP 和 IMAP4 協定，提供 JSON 腳本引擎與專案模板功能，讓寄信、收信與管理郵件內容變得輕鬆簡單。
@@ -61,7 +61,7 @@
 
 ## 系統需求
 
-- Python 3.9 或更新版本
+- Python 3.10 或更新版本
 
 ---
 

@@ -67,7 +67,7 @@ MailThunder 核心模組架構：
 支援平台
 --------
 
-- **Python**: 3.9 以上
+- **Python**: 3.10 以上
 - **作業系統**: Windows、macOS、Linux
 - **相依套件**: 無 (僅使用 Python 標準函式庫)
 

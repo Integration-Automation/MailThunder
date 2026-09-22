@@ -69,7 +69,7 @@ How It Works
 Supported Platforms
 -------------------
 
-- **Python**: 3.9 or later
+- **Python**: 3.10 or later
 - **OS**: Windows, macOS, Linux
 - **Dependencies**: None beyond the Python standard library
 

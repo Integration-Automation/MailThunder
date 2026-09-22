@@ -4,7 +4,7 @@
 
 MailThunder (`je_mail_thunder`) is a Python email automation library wrapping SMTP and IMAP4 protocols. It provides JSON-based scripting, project templates, and a socket server for remote execution.
 
-- **Language**: Python 3.9+
+- **Language**: Python 3.10+
 - **Package**: `je_mail_thunder` (PyPI: `je-mail-thunder`)
 - **License**: MIT
 - **Entry point**: `je_mail_thunder/__main__.py`
