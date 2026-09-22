@@ -226,7 +226,7 @@ Action files use a list of commands. Each command is an array where the first el
 | `MT_smtp_later_init` | Initialize and log in to SMTP | None |
 | `MT_smtp_create_message_and_send` | Create and send an email | `{"message_content": str, "message_setting_dict": dict}` |
 | `MT_smtp_create_message_with_attach_and_send` | Create and send an email with attachment | `{"message_content": str, "message_setting_dict": dict, "attach_file": str, "use_html": bool}` |
-| `smtp_quit` | Disconnect from SMTP server | None |
+| `MT_smtp_quit` | Disconnect from SMTP server (old name `smtp_quit` still accepted) | None |
 | `MT_imap_later_init` | Initialize and log in to IMAP | None |
 | `MT_imap_select_mailbox` | Select a mailbox | `{"mailbox": str, "readonly": bool}` (default: INBOX) |
 | `MT_imap_search_mailbox` | Search and get mail details | `{"search_str": str, "charset": str}` |
@@ -251,7 +251,7 @@ Action files use a list of commands. Each command is an array where the first el
         "From": "sender@gmail.com"
       }
     }],
-    ["smtp_quit"]
+    ["MT_smtp_quit"]
   ]
 }
 ```
@@ -342,7 +342,7 @@ python -m je_mail_thunder -e /path/to/action.json
 python -m je_mail_thunder -d /path/to/actions/
 
 # Execute a JSON string directly
-python -m je_mail_thunder --execute_str '[["MT_smtp_later_init"], ["smtp_quit"]]'
+python -m je_mail_thunder --execute_str '[["MT_smtp_later_init"], ["MT_smtp_quit"]]'
 
 # Create a new project with templates
 python -m je_mail_thunder -c /path/to/project
@@ -378,7 +378,7 @@ client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect(("localhost", 9944))
 
 # Send an action command
-command = json.dumps([["MT_smtp_later_init"], ["smtp_quit"]])
+command = json.dumps([["MT_smtp_later_init"], ["MT_smtp_quit"]])
 client.send(command.encode("utf-8"))
 
 # Receive response

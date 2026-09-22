@@ -67,7 +67,7 @@ MailThunder 內建 TCP Socket 伺服器，接收遠端 JSON 動作命令，
                "From": "sender@gmail.com"
            }
        }],
-       ["smtp_quit"]
+       ["MT_smtp_quit"]
    ])
    client.send(command.encode("utf-8"))
 
@@ -154,7 +154,7 @@ MailThunder 內建 TCP Socket 伺服器，接收遠端 JSON 動作命令，
                "From": "sender@gmail.com"
            }
        }],
-       ["smtp_quit"]
+       ["MT_smtp_quit"]
    ])
    print("結果:", result)
 

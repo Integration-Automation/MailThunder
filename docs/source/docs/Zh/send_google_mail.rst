@@ -254,7 +254,7 @@ MailThunder 使用 ``mimetypes.guess_type()`` 自動偵測附件的 MIME 類型�
            "From": "sender@gmail.com"
          }
        }],
-       ["smtp_quit"]
+       ["MT_smtp_quit"]
      ]
    }
 
@@ -275,7 +275,7 @@ MailThunder 使用 ``mimetypes.guess_type()`` 自動偵測附件的 MIME 類型�
          "attach_file": "/path/to/report.pdf",
          "use_html": false
        }],
-       ["smtp_quit"]
+       ["MT_smtp_quit"]
      ]
    }
 

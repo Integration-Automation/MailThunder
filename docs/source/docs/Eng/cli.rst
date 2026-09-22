@@ -145,7 +145,7 @@ Examples
            "From": "sender@gmail.com"
          }
        }],
-       ["smtp_quit"]
+       ["MT_smtp_quit"]
      ]
    }
    EOF

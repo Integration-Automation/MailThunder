@@ -77,7 +77,7 @@ You can also pass a plain list (without the ``auto_control`` wrapper) directly t
 
    execute_action([
        ["MT_smtp_later_init"],
-       ["smtp_quit"]
+       ["MT_smtp_quit"]
    ])
 
 ----
@@ -99,8 +99,8 @@ Built-in Commands
      - Create and send a plain text email
    * - ``MT_smtp_create_message_with_attach_and_send``
      - Create and send an email with attachment
-   * - ``smtp_quit``
-     - Disconnect from SMTP server
+   * - ``MT_smtp_quit``
+     - Disconnect from SMTP server (the old name ``smtp_quit`` is still accepted)
 
 **IMAP commands:**
 
@@ -181,7 +181,7 @@ Examples
            "From": "sender@gmail.com"
          }
        }],
-       ["smtp_quit"]
+       ["MT_smtp_quit"]
      ]
    }
 
@@ -202,7 +202,7 @@ Examples
          "attach_file": "/path/to/report.pdf",
          "use_html": false
        }],
-       ["smtp_quit"]
+       ["MT_smtp_quit"]
      ]
    }
 
@@ -251,7 +251,7 @@ Examples
            "From": "sender@gmail.com"
          }
        }],
-       ["smtp_quit"]
+       ["MT_smtp_quit"]
      ]
    }
 
@@ -360,7 +360,7 @@ When actions are executed, each command and its return value are printed to stdo
    None
    execute: ['MT_smtp_create_message_and_send', {...}]
    None
-   execute: ['smtp_quit']
+   execute: ['MT_smtp_quit']
    None
 
 If an action fails, the exception is caught, logged, and stored in the result dict:

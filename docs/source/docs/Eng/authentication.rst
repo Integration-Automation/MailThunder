@@ -186,6 +186,6 @@ Set authentication credentials in a JSON action file:
            "To": "receiver@gmail.com"
          }
        }],
-       ["smtp_quit"]
+       ["MT_smtp_quit"]
      ]
    }

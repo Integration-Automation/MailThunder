@@ -127,7 +127,7 @@ MailThunder 透過 ``python -m je_mail_thunder`` 提供命令列介面 (CLI)，
            "From": "sender@gmail.com"
          }
        }],
-       ["smtp_quit"]
+       ["MT_smtp_quit"]
      ]
    }
    EOF

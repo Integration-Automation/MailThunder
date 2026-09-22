@@ -73,7 +73,7 @@ Commands are sent as JSON-encoded action lists (the same format as the
                "From": "sender@gmail.com"
            }
        }],
-       ["smtp_quit"]
+       ["MT_smtp_quit"]
    ])
    client.send(command.encode("utf-8"))
 
@@ -161,7 +161,7 @@ Example: Full Client-Server Interaction
                "From": "sender@gmail.com"
            }
        }],
-       ["smtp_quit"]
+       ["MT_smtp_quit"]
    ])
    print("Result:", result)
 

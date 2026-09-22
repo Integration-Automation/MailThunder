@@ -34,6 +34,8 @@ class Executor:
             "MT_smtp_create_message_with_attach_and_send": deferred(
                 smtp_instance, "create_message_with_attach_and_send"),
             "MT_smtp_create_message_and_send": deferred(smtp_instance, "create_message_and_send"),
+            "MT_smtp_quit": deferred(smtp_instance, "quit"),
+            # Pre-MT_ name, kept so stored action files keep working.
             "smtp_quit": deferred(smtp_instance, "quit"),
             # IMAP
             "MT_imap_later_init": deferred(imap_instance, "later_init"),

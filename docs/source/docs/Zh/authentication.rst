@@ -185,6 +185,6 @@ Gmail 特殊設定
            "To": "receiver@gmail.com"
          }
        }],
-       ["smtp_quit"]
+       ["MT_smtp_quit"]
      ]
    }

@@ -100,3 +100,9 @@ def test_execute_files(tmp_path):
     assert len(results) == 2
     assert any("hello Alice" in str(v) for r in results for v in r.values())
     assert any("hello Bob" in str(v) for r in results for v in r.values())
+
+
+def test_smtp_quit_is_registered_under_both_names():
+    """``MT_smtp_quit`` is the prefixed name; ``smtp_quit`` stays for stored action files."""
+    assert executor.event_dict["MT_smtp_quit"].__name__ == "quit"
+    assert executor.event_dict["smtp_quit"].__name__ == "quit"

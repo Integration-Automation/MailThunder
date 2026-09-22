@@ -41,8 +41,8 @@ Executor Class
      - ``smtp_instance.create_message_with_attach_and_send``
    * - ``MT_smtp_create_message_and_send``
      - ``smtp_instance.create_message_and_send``
-   * - ``smtp_quit``
-     - ``smtp_instance.quit``
+   * - ``MT_smtp_quit``
+     - ``smtp_instance.quit`` (the old name ``smtp_quit`` is still accepted)
    * - ``MT_imap_later_init``
      - ``imap_instance.later_init``
    * - ``MT_imap_select_mailbox``
@@ -120,12 +120,12 @@ per-action, logs them, and continues executing remaining actions.
    result = execute_action([
        ["print", ["Hello!"]],
        ["MT_smtp_later_init"],
-       ["smtp_quit"]
+       ["MT_smtp_quit"]
    ])
    # result = {
    #     "execute: ['print', ['Hello!']]": None,
    #     "execute: ['MT_smtp_later_init']": None,
-   #     "execute: ['smtp_quit']": None,
+   #     "execute: ['MT_smtp_quit']": None,
    # }
 
 ----

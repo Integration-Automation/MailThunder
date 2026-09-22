@@ -40,7 +40,7 @@ executor exposes the same operations to action files, a CLI and a TCP socket ser
   list of actions or `{"auto_control": [...]}`; the key came from AutoControl.
 - **Commands**: examples are `MT_smtp_later_init`, `MT_smtp_create_message_and_send`,
   `MT_imap_select_mailbox`, `MT_imap_output_all_mail_as_file` and `MT_add_package_to_executor`.
-  `smtp_quit` has no `MT_` prefix.
+  `MT_smtp_quit` closes the SMTP connection; its pre-prefix name `smtp_quit` is still registered.
 - **CLI**: `python -m je_mail_thunder` takes:
   - `-e/--execute_file <json>`, `-d/--execute_dir <dir>`, `-c/--create_project <path>` and `--execute_str <json>`;
   - on `win32`/`cygwin`/`msys`, `--execute_str` is decoded with `json.loads` twice;

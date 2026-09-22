@@ -75,7 +75,7 @@ MailThunder 內建強大的 JSON 腳本引擎，讓您無需撰寫 Python 程式
 
    execute_action([
        ["MT_smtp_later_init"],
-       ["smtp_quit"]
+       ["MT_smtp_quit"]
    ])
 
 ----
@@ -97,8 +97,8 @@ MailThunder 內建強大的 JSON 腳本引擎，讓您無需撰寫 Python 程式
      - 建立並寄送純文字郵件
    * - ``MT_smtp_create_message_with_attach_and_send``
      - 建立並寄送附件郵件
-   * - ``smtp_quit``
-     - 斷開 SMTP 連線
+   * - ``MT_smtp_quit``
+     - 斷開 SMTP 連線（舊名 ``smtp_quit`` 仍可用）
 
 **IMAP 命令：**
 
@@ -178,7 +178,7 @@ MailThunder 內建強大的 JSON 腳本引擎，讓您無需撰寫 Python 程式
            "From": "sender@gmail.com"
          }
        }],
-       ["smtp_quit"]
+       ["MT_smtp_quit"]
      ]
    }
 
@@ -227,7 +227,7 @@ MailThunder 內建強大的 JSON 腳本引擎，讓您無需撰寫 Python 程式
            "From": "sender@gmail.com"
          }
        }],
-       ["smtp_quit"]
+       ["MT_smtp_quit"]
      ]
    }
 
@@ -315,7 +315,7 @@ MailThunder 內建強大的 JSON 腳本引擎，讓您無需撰寫 Python 程式
    None
    execute: ['MT_smtp_create_message_and_send', {...}]
    None
-   execute: ['smtp_quit']
+   execute: ['MT_smtp_quit']
    None
 
 若動作失敗，例外會被捕獲、記錄並存入結果字典。

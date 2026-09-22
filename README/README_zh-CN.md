@@ -226,7 +226,7 @@ MailThunder 内置 JSON 脚本引擎，让你无需编写 Python 代码即可自
 | `MT_smtp_later_init` | 初始化并登录 SMTP | 无 |
 | `MT_smtp_create_message_and_send` | 创建并发送邮件 | `{"message_content": str, "message_setting_dict": dict}` |
 | `MT_smtp_create_message_with_attach_and_send` | 创建并发送带附件的邮件 | `{"message_content": str, "message_setting_dict": dict, "attach_file": str, "use_html": bool}` |
-| `smtp_quit` | 断开 SMTP 连接 | 无 |
+| `MT_smtp_quit` | 断开 SMTP 连接（旧名 `smtp_quit` 仍可用） | 无 |
 | `MT_imap_later_init` | 初始化并登录 IMAP | 无 |
 | `MT_imap_select_mailbox` | 选择邮箱 | `{"mailbox": str, "readonly": bool}`（默认：INBOX）|
 | `MT_imap_search_mailbox` | 搜索并获取邮件详细信息 | `{"search_str": str, "charset": str}` |
@@ -251,7 +251,7 @@ MailThunder 内置 JSON 脚本引擎，让你无需编写 Python 代码即可自
         "From": "sender@gmail.com"
       }
     }],
-    ["smtp_quit"]
+    ["MT_smtp_quit"]
   ]
 }
 ```
@@ -342,7 +342,7 @@ python -m je_mail_thunder -e /path/to/action.json
 python -m je_mail_thunder -d /path/to/actions/
 
 # 直接执行 JSON 字符串
-python -m je_mail_thunder --execute_str '[["MT_smtp_later_init"], ["smtp_quit"]]'
+python -m je_mail_thunder --execute_str '[["MT_smtp_later_init"], ["MT_smtp_quit"]]'
 
 # 创建包含模板的新项目
 python -m je_mail_thunder -c /path/to/project
@@ -378,7 +378,7 @@ client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect(("localhost", 9944))
 
 # 发送动作指令
-command = json.dumps([["MT_smtp_later_init"], ["smtp_quit"]])
+command = json.dumps([["MT_smtp_later_init"], ["MT_smtp_quit"]])
 client.send(command.encode("utf-8"))
 
 # 接收响应

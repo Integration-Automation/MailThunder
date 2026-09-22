@@ -79,7 +79,7 @@ Template Files: keyword/
          "From": "example@gmail.com"
        }
      }],
-     ["smtp_quit"]
+     ["MT_smtp_quit"]
    ]
 
 **keyword2.json** — IMAP read and export template:
@@ -187,7 +187,7 @@ Create ``keyword/weekly_report.json``:
          "attach_file": "/data/reports/weekly.pdf",
          "use_html": false
        }],
-       ["smtp_quit"]
+       ["MT_smtp_quit"]
      ]
    }
 
