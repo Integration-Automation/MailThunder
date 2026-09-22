@@ -47,7 +47,7 @@ executor exposes the same operations to action files, a CLI and a TCP socket ser
   - any error prints `repr(error)` to stderr and exits with code 1.
 
   No console script is declared.
-- **TCP socket server**: `je_mail_thunder.utils.socket_server.mail_thunder_socket_server.start_mail_thunder_socket_server(host="localhost", port=9944)` (the old name `start_autocontrol_socket_server` still works with a `DeprecationWarning`).
+- **TCP socket server**: `je_mail_thunder.utils.socket_server.mail_thunder_socket_server.start_mail_thunder_socket_server(host="localhost", port=9942)` (the old name `start_autocontrol_socket_server` still works with a `DeprecationWarning`).
   - The facade does not re-export it.
   - If `sys.argv` carries one or two extra arguments, they override the host and port.
   - `quit_server` shuts it down.
@@ -117,7 +117,9 @@ does not connect either. Login still waits until `later_init`.
   - the action-dict key is `auto_control` (the socket function is now `start_mail_thunder_socket_server`;
     the old name is a deprecated alias);
   - FileAutomation uses the same function name and key;
-  - the default port 9944 is also FileAutomation's default HTTP action-server port.
+  - the default port is 9942, the free slot next to the sibling servers (AutoControl 9938, APITestka 9939,
+    LoadDensity 9940, WebRunner 9941, FileAutomation 9943–9945); it was 9944, FileAutomation's HTTP
+    action-server default.
 - **Builtins policy**: the executor registers only the `SAFE_BUILTINS` allowlist (22 side-effect-free
   builtins such as `print`, `len`, `sorted`); `eval`, `exec`, `open`, `__import__`, `getattr` and the
   like are not commands. LoadDensity and WebRunner instead blacklist `_UNSAFE_BUILTINS`, and APITestka

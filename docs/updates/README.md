@@ -58,6 +58,7 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | ID | Date | Title | Tags | Batch |
 |---|---|---|---|---|
+| U-20260923-06 | 2026-09-23 | Socket server default port moves to 9942 | #change #socket | [2026-09](2026-09.md) |
 | U-20260923-05 | 2026-09-23 | Mail_Thunder.log moves out of the working directory | #done #logging | [2026-09](2026-09.md) |
 | U-20260923-04 | 2026-09-23 | MT_smtp_quit joins the other MT_ commands | #done #api | [2026-09](2026-09.md) |
 | U-20260923-03 | 2026-09-23 | Socket server gets its own name; the AutoControl one is deprecated | #done #api | [2026-09](2026-09.md) |
@@ -73,4 +74,4 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | File | Period | Entries |
 |---|---|---:|
-| [2026-09.md](2026-09.md) | 2026-09 | 10 |
+| [2026-09.md](2026-09.md) | 2026-09 | 11 |

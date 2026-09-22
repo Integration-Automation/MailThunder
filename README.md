@@ -362,9 +362,9 @@ python -m je_mail_thunder -c /path/to/project
 MailThunder includes a TCP socket server that accepts JSON commands remotely:
 
 ```python
-from je_mail_thunder.utils.socket_server.mail_thunder_socket_server import start_autocontrol_socket_server
+from je_mail_thunder.utils.socket_server.mail_thunder_socket_server import start_mail_thunder_socket_server
 
-server = start_autocontrol_socket_server(host="localhost", port=9944)
+server = start_mail_thunder_socket_server(host="localhost", port=9942)
 # Server is now running in a background thread
 ```
 
@@ -375,7 +375,7 @@ import socket
 import json
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.connect(("localhost", 9944))
+client.connect(("localhost", 9942))
 
 # Send an action command
 command = json.dumps([["MT_smtp_later_init"], ["MT_smtp_quit"]])

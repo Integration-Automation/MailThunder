@@ -74,6 +74,11 @@ class TCPServerHandler(socketserver.BaseRequestHandler):
                 print(repr(send_error))
 
 
+# One slot in the sibling servers' range (AutoControl 9938, APITestka 9939, LoadDensity 9940,
+# WebRunner 9941, FileAutomation 9943-9945); 9944 is FileAutomation's HTTP server.
+DEFAULT_PORT = 9942
+
+
 class TCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def __init__(self, server_address, request_handler_class):
@@ -81,7 +86,7 @@ class TCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
         self.close_flag: bool = False
 
 
-def start_mail_thunder_socket_server(host: str = "localhost", port: int = 9944) -> TCPServer:
+def start_mail_thunder_socket_server(host: str = "localhost", port: int = DEFAULT_PORT) -> TCPServer:
     """Start the action server on a daemon thread and return it.
 
     ``host`` and ``port`` can also come from the command line (``argv[1]``, ``argv[2]``), which
@@ -99,7 +104,7 @@ def start_mail_thunder_socket_server(host: str = "localhost", port: int = 9944) 
     return server
 
 
-def start_autocontrol_socket_server(host: str = "localhost", port: int = 9944) -> TCPServer:
+def start_autocontrol_socket_server(host: str = "localhost", port: int = DEFAULT_PORT) -> TCPServer:
     """Deprecated alias of :func:`start_mail_thunder_socket_server`.
 
     The name was copied from AutoControl and says nothing about this package. It keeps working, with

@@ -15,10 +15,10 @@ Starting the Server
 .. code-block:: python
 
    from je_mail_thunder.utils.socket_server.mail_thunder_socket_server import (
-       start_autocontrol_socket_server
+       start_mail_thunder_socket_server
    )
 
-   server = start_autocontrol_socket_server(host="localhost", port=9944)
+   server = start_mail_thunder_socket_server(host="localhost", port=9942)
    # Server is now running in a daemon background thread
 
 **Parameters:**
@@ -34,7 +34,7 @@ Starting the Server
      - ``"localhost"``
      - Host address to bind to
    * - ``port``
-     - ``9944``
+     - ``9942``
      - TCP port to listen on
 
 The server can also accept ``host`` and ``port`` from ``sys.argv``:
@@ -60,7 +60,7 @@ Commands are sent as JSON-encoded action lists (the same format as the
 
    # Connect to the server
    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-   client.connect(("localhost", 9944))
+   client.connect(("localhost", 9942))
 
    # Send an action command list
    command = json.dumps([
@@ -120,12 +120,12 @@ Example: Full Client-Server Interaction
 .. code-block:: python
 
    from je_mail_thunder.utils.socket_server.mail_thunder_socket_server import (
-       start_autocontrol_socket_server
+       start_mail_thunder_socket_server
    )
    import time
 
-   server = start_autocontrol_socket_server("localhost", 9944)
-   print("Server started on localhost:9944")
+   server = start_mail_thunder_socket_server("localhost", 9942)
+   print("Server started on localhost:9942")
 
    # Keep the main thread alive
    try:
@@ -151,7 +151,7 @@ Example: Full Client-Server Interaction
        return response
 
    # Send an email remotely
-   result = send_command("localhost", 9944, [
+   result = send_command("localhost", 9942, [
        ["MT_smtp_later_init"],
        ["MT_smtp_create_message_and_send", {
            "message_content": "Remote email!",
@@ -166,7 +166,7 @@ Example: Full Client-Server Interaction
    print("Result:", result)
 
    # Shut down the server
-   result = send_command("localhost", 9944, "quit_server")
+   result = send_command("localhost", 9942, "quit_server")
 
 .. note::
 

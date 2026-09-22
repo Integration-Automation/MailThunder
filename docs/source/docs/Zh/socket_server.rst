@@ -15,10 +15,10 @@ MailThunder 內建 TCP Socket 伺服器，接收遠端 JSON 動作命令，
 .. code-block:: python
 
    from je_mail_thunder.utils.socket_server.mail_thunder_socket_server import (
-       start_autocontrol_socket_server
+       start_mail_thunder_socket_server
    )
 
-   server = start_autocontrol_socket_server(host="localhost", port=9944)
+   server = start_mail_thunder_socket_server(host="localhost", port=9942)
    # 伺服器正在背景 daemon 執行緒中運行
 
 **參數：**
@@ -34,7 +34,7 @@ MailThunder 內建 TCP Socket 伺服器，接收遠端 JSON 動作命令，
      - ``"localhost"``
      - 綁定的主機地址
    * - ``port``
-     - ``9944``
+     - ``9942``
      - 監聽的 TCP 埠號
 
 伺服器執行緒為 daemon 執行緒 — 當主程式結束時會自動終止。
@@ -54,7 +54,7 @@ MailThunder 內建 TCP Socket 伺服器，接收遠端 JSON 動作命令，
 
    # 連接伺服器
    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-   client.connect(("localhost", 9944))
+   client.connect(("localhost", 9942))
 
    # 傳送動作命令列表
    command = json.dumps([
@@ -114,12 +114,12 @@ MailThunder 內建 TCP Socket 伺服器，接收遠端 JSON 動作命令，
 .. code-block:: python
 
    from je_mail_thunder.utils.socket_server.mail_thunder_socket_server import (
-       start_autocontrol_socket_server
+       start_mail_thunder_socket_server
    )
    import time
 
-   server = start_autocontrol_socket_server("localhost", 9944)
-   print("伺服器已在 localhost:9944 啟動")
+   server = start_mail_thunder_socket_server("localhost", 9942)
+   print("伺服器已在 localhost:9942 啟動")
 
    try:
        while not server.close_flag:
@@ -144,7 +144,7 @@ MailThunder 內建 TCP Socket 伺服器，接收遠端 JSON 動作命令，
        return response
 
    # 遠端寄送郵件
-   result = send_command("localhost", 9944, [
+   result = send_command("localhost", 9942, [
        ["MT_smtp_later_init"],
        ["MT_smtp_create_message_and_send", {
            "message_content": "遠端郵件！",
@@ -159,7 +159,7 @@ MailThunder 內建 TCP Socket 伺服器，接收遠端 JSON 動作命令，
    print("結果:", result)
 
    # 關閉伺服器
-   result = send_command("localhost", 9944, "quit_server")
+   result = send_command("localhost", 9942, "quit_server")
 
 .. note::
 

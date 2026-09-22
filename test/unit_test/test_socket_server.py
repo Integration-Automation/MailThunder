@@ -1,3 +1,4 @@
+import inspect
 import json
 import socket
 import time
@@ -5,6 +6,7 @@ import time
 import pytest
 
 from je_mail_thunder.utils.socket_server.mail_thunder_socket_server import (
+    DEFAULT_PORT,
     start_autocontrol_socket_server,
     start_mail_thunder_socket_server,
 )
@@ -60,3 +62,10 @@ def test_old_name_still_starts_the_server_with_a_deprecation_warning():
         assert server.server_address[1] > 0
     finally:
         server.shutdown()
+
+
+@pytest.mark.parametrize("start", [start_mail_thunder_socket_server, start_autocontrol_socket_server])
+def test_default_port_is_9942(start):
+    # 9944, the old default, is FileAutomation's HTTP action-server default.
+    assert DEFAULT_PORT == 9942
+    assert inspect.signature(start).parameters["port"].default == DEFAULT_PORT

@@ -362,9 +362,9 @@ python -m je_mail_thunder -c /path/to/project
 MailThunder 內建 TCP Socket 伺服器，可接收遠端 JSON 指令：
 
 ```python
-from je_mail_thunder.utils.socket_server.mail_thunder_socket_server import start_autocontrol_socket_server
+from je_mail_thunder.utils.socket_server.mail_thunder_socket_server import start_mail_thunder_socket_server
 
-server = start_autocontrol_socket_server(host="localhost", port=9944)
+server = start_mail_thunder_socket_server(host="localhost", port=9942)
 # 伺服器現在在背景執行緒中運行
 ```
 
@@ -375,7 +375,7 @@ import socket
 import json
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.connect(("localhost", 9944))
+client.connect(("localhost", 9942))
 
 # 傳送動作指令
 command = json.dumps([["MT_smtp_later_init"], ["MT_smtp_quit"]])

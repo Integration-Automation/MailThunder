@@ -299,7 +299,7 @@ start_mail_thunder_socket_server()
 
    def start_mail_thunder_socket_server(
        host: str = "localhost",
-       port: int = 9944
+       port: int = 9942
    ) -> TCPServer
 
 Start a TCP socket server that accepts JSON action commands.
@@ -307,7 +307,7 @@ Start a TCP socket server that accepts JSON action commands.
 **Parameters:**
 
 - ``host`` — Bind address (default: ``"localhost"``)
-- ``port`` — TCP port (default: ``9944``)
+- ``port`` — TCP port (default: ``9942``)
 
 **Returns:** ``TCPServer`` instance with ``close_flag`` attribute.
 
