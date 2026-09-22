@@ -19,7 +19,7 @@ executor exposes the same operations to action files, a CLI and a TCP socket ser
 | `je_mail_thunder/__main__.py` | Legacy flag CLI (`python -m je_mail_thunder`) |
 | `je_mail_thunder/smtp/smtp_wrapper.py` | `SMTPWrapper(SMTP_SSL)` (default `smtp.gmail.com:465`) and the module instance `smtp_instance` |
 | `je_mail_thunder/imap/imap_wrapper.py` | `IMAPWrapper(IMAP4_SSL)` (default `imap.gmail.com`) and the module instance `imap_instance` |
-| `je_mail_thunder/utils/executor/action_executor.py` | `Executor.event_dict` (`MT_*` commands plus every Python builtin), `execute_action`, `execute_files`, `add_command_to_executor` |
+| `je_mail_thunder/utils/executor/action_executor.py` | `Executor.event_dict` (`MT_*` commands plus the `SAFE_BUILTINS` allowlist), `execute_action`, `execute_files`, `add_command_to_executor` |
 | `je_mail_thunder/utils/save_mail_user_content/` | Credential sources: `mail_thunder_content.json` in the working directory (`read_output_content` / `write_output_content`) and the env vars `mail_thunder_user` / `mail_thunder_user_password` (`set_/get_mail_thunder_os_environ`) |
 | `je_mail_thunder/utils/socket_server/mail_thunder_socket_server.py` | TCP server `start_autocontrol_socket_server` with payload validation (`_validate_payload`, `MAX_PAYLOAD_BYTES`, `MAX_ACTIONS`) |
 | `je_mail_thunder/utils/package_manager/` | `package_manager`: loads an installed package's members into the executor |
@@ -116,9 +116,11 @@ so the executor module needs both connections to succeed.
     `auto_control`;
   - FileAutomation uses the same function name and key;
   - the default port 9944 is also FileAutomation's default HTTP action-server port.
-- **Builtins policy (known gap)**: the executor registers every builtin
-  (`getmembers(builtins, isbuiltin)`), including `eval`, `exec`, `open` and `__import__`. In contrast,
-  LoadDensity blacklists `_UNSAFE_BUILTINS` and APITestka registers no builtins.
+- **Builtins policy**: the executor registers only the `SAFE_BUILTINS` allowlist (22 side-effect-free
+  builtins such as `print`, `len`, `sorted`); `eval`, `exec`, `open`, `__import__`, `getattr` and the
+  like are not commands. LoadDensity and WebRunner instead blacklist `_UNSAFE_BUILTINS`, and APITestka
+  registers no builtins (workspace X-12). JSON scripts that PyBreeze or users wrote against the old
+  "every builtin" behaviour lose everything outside the allowlist.
 
 ## 7. Design constraints
 

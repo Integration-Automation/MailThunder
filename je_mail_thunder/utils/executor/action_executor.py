@@ -1,6 +1,5 @@
 import builtins
 import types
-from inspect import getmembers, isbuiltin
 from typing import Union
 
 from je_mail_thunder.imap.imap_wrapper import imap_instance
@@ -13,6 +12,16 @@ from je_mail_thunder.utils.logging.loggin_instance import mail_thunder_logger
 from je_mail_thunder.utils.package_manager.package_manager_class import package_manager
 from je_mail_thunder.utils.save_mail_user_content.save_on_env import set_mail_thunder_os_environ, \
     get_mail_thunder_os_environ
+
+# Builtins a JSON action script may call. Anything that can run code, reach
+# attributes or namespaces, or touch files and stdin (eval, exec, compile,
+# __import__, open, input, getattr, globals, ...) is deliberately left out,
+# because action lists also arrive over the socket server.
+SAFE_BUILTINS = frozenset({
+    "abs", "all", "any", "ascii", "bin", "callable", "chr", "divmod",
+    "format", "hash", "hex", "len", "max", "min", "oct", "ord", "pow",
+    "print", "repr", "round", "sorted", "sum",
+})
 
 
 class Executor:
@@ -37,12 +46,13 @@ class Executor:
             # Package Manager
             "MT_add_package_to_executor": package_manager.add_package_to_executor,
         }
-        # get all builtin function and add to event dict
-        for function in getmembers(builtins, isbuiltin):
-            self.event_dict.update({str(function[0]): function[1]})
+        for name in sorted(SAFE_BUILTINS):
+            self.event_dict[name] = getattr(builtins, name)
 
     def _execute_event(self, action: list):
         event = self.event_dict.get(action[0])
+        if event is None:
+            raise ExecuteActionException(cant_execute_action_error + " " + str(action))
         if len(action) == 2:
             if isinstance(action[1], dict):
                 return event(**action[1])

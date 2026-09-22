@@ -61,8 +61,10 @@ Executor Class
      - ``get_mail_thunder_os_environ``
    * - ``MT_add_package_to_executor``
      - ``package_manager.add_package_to_executor``
-   * - *(all Python builtins)*
-     - ``print``, ``len``, ``range``, ``type``, ``str``, ``int``, etc.
+   * - *(allowlisted Python builtins)*
+     - ``abs``, ``all``, ``any``, ``ascii``, ``bin``, ``callable``, ``chr``, ``divmod``,
+       ``format``, ``hash``, ``hex``, ``len``, ``max``, ``min``, ``oct``, ``ord``, ``pow``,
+       ``print``, ``repr``, ``round``, ``sorted``, ``sum`` (``SAFE_BUILTINS``)
 
 ----
 

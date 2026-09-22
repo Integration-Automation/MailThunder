@@ -147,8 +147,16 @@ MailThunder 內建強大的 JSON 腳本引擎，讓您無需撰寫 Python 程式
 
 **Python 內建函式：**
 
-所有 Python 內建函式（``print``、``len``、``range``、``type``、``str``、
-``int``、``list``、``dict`` 等）自動註冊，可作為命令使用。
+只有一份固定的、沒有副作用的內建函式清單會註冊成命令
+（``je_mail_thunder/utils/executor/action_executor.py`` 的 ``SAFE_BUILTINS``）：
+``abs``、``all``、``any``、``ascii``、``bin``、``callable``、``chr``、``divmod``、
+``format``、``hash``、``hex``、``len``、``max``、``min``、``oct``、``ord``、``pow``、
+``print``、``repr``、``round``、``sorted``、``sum``。
+
+能執行程式碼、存取屬性或命名空間、讀寫檔案或標準輸入的內建函式
+（``eval``、``exec``、``compile``、``__import__``、``open``、``input``、``getattr``、
+``globals`` 等）一律不開放，因為動作清單也可能經由 socket 伺服器送進來。
+未知的命令會記成 ``ExecuteActionException``，其餘動作照常執行。
 
 ----
 

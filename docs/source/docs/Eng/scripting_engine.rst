@@ -149,9 +149,17 @@ Built-in Commands
 
 **Python builtins:**
 
-All Python built-in functions (``print``, ``len``, ``range``, ``type``, ``str``,
-``int``, ``list``, ``dict``, etc.) are automatically registered and available as
-commands.
+A fixed allowlist of side-effect-free built-in functions is registered as commands
+(``SAFE_BUILTINS`` in ``je_mail_thunder/utils/executor/action_executor.py``):
+``abs``, ``all``, ``any``, ``ascii``, ``bin``, ``callable``, ``chr``, ``divmod``,
+``format``, ``hash``, ``hex``, ``len``, ``max``, ``min``, ``oct``, ``ord``, ``pow``,
+``print``, ``repr``, ``round``, ``sorted`` and ``sum``.
+
+Builtins that can run code, reach attributes or namespaces, or touch files and stdin
+(``eval``, ``exec``, ``compile``, ``__import__``, ``open``, ``input``, ``getattr``,
+``globals`` and the like) are not available, because action lists can also arrive
+through the socket server. An unknown command is recorded as an
+``ExecuteActionException`` and the remaining actions still run.
 
 ----
 

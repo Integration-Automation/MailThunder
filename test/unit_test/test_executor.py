@@ -2,6 +2,7 @@ import pytest
 
 from je_mail_thunder.utils.exception.exceptions import AddCommandException, ExecuteActionException
 from je_mail_thunder.utils.executor.action_executor import (
+    SAFE_BUILTINS,
     executor,
     execute_action,
     execute_files,
@@ -21,6 +22,28 @@ def test_execute_builtin_len():
     assert any(v == 3 for v in result.values())
 
 
+@pytest.mark.parametrize("name", [
+    "eval", "exec", "compile", "__import__", "open", "input", "breakpoint",
+    "getattr", "setattr", "delattr", "globals", "locals", "vars", "dir",
+])
+def test_unsafe_builtin_is_not_registered(name):
+    assert name not in executor.event_dict
+
+
+def test_every_safe_builtin_is_registered():
+    for name in SAFE_BUILTINS:
+        assert callable(executor.event_dict[name])
+
+
+def test_eval_action_is_rejected(tmp_path):
+    marker = tmp_path / "pwned.txt"
+    code = f"open({str(marker)!r}, 'w').write('x')"
+    result = execute_action([["eval", [code]], ["exec", [code]]])
+    assert not marker.exists()
+    for value in result.values():
+        assert "ExecuteActionException" in value
+
+
 def test_execute_action_empty_list_logs_error():
     result = execute_action([])
     assert result == {}
@@ -30,7 +53,7 @@ def test_execute_action_invalid_action():
     result = execute_action([["nonexistent_action_xyz"]])
     assert len(result) == 1
     error_value = list(result.values())[0]
-    assert "Error" in error_value or "error" in error_value or "None" in str(type(error_value))
+    assert "ExecuteActionException" in error_value
 
 
 def test_add_command_to_executor():
