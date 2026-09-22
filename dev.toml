@@ -25,7 +25,7 @@ classifiers = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/Intergration-Automation-Testing/MailThunder"
+"Homepage" = "https://github.com/Integration-Automation/MailThunder"
 
 [tool.setuptools.packages]
 find = { namespaces = false }
