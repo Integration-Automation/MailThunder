@@ -61,7 +61,7 @@ MailThunder 核心模組架構：
    JSON 動作檔包含 ``["command_name", arguments]`` 元組列表，依序執行。
    可在執行期載入自訂函式和整個 Python 套件。
 
-5. **日誌記錄**: 所有操作記錄到 ``Mail_Thunder.log`` (檔案處理器，INFO 級別)
+5. **日誌記錄**: 所有操作記錄到 ``~/.je_mail_thunder/logs/Mail_Thunder.log`` (檔案處理器，INFO 級別)
    和 ``stderr`` (串流處理器，WARNING 級別)。
 
 支援平台

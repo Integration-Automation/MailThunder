@@ -24,7 +24,7 @@ executor exposes the same operations to action files, a CLI and a TCP socket ser
 | `je_mail_thunder/utils/socket_server/mail_thunder_socket_server.py` | TCP server `start_mail_thunder_socket_server` (old name `start_autocontrol_socket_server` kept as a deprecated alias) with payload validation (`_validate_payload`, `MAX_PAYLOAD_BYTES`, `MAX_ACTIONS`) |
 | `je_mail_thunder/utils/package_manager/` | `package_manager`: loads an installed package's members into the executor |
 | `je_mail_thunder/utils/project/` | `create_project_dir` scaffolding; `template/template_keyword.py` and `template_executor.py` hold the templates |
-| `je_mail_thunder/utils/{json,json_format,file_process,logging,exception}/` | Action JSON I/O, JSON reformat, directory listing, `mail_thunder_logger`, `MailThunderException` hierarchy |
+| `je_mail_thunder/utils/{json,json_format,file_process,logging,exception}/` | Action JSON I/O, JSON reformat, directory listing, `mail_thunder_logger` (file at `$MAIL_THUNDER_LOG_FILE` or `~/.je_mail_thunder/logs/Mail_Thunder.log`, opened on first use), `MailThunderException` hierarchy |
 | `test/unit_test/` | pytest suite (`testpaths = ["test"]`). `manual_test/` holds scripts that need real mailboxes; its `conftest.py` excludes them from collection |
 | `docs/source/` | Sphinx docs (`docs/Eng`, `docs/Zh`, `docs/API`) |
 

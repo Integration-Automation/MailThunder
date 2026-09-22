@@ -36,7 +36,7 @@ Key Features
 - **Environment variable auth** — Authenticate via config file or OS environment variables
 - **Context manager support** — Use ``with`` statement for both SMTP and IMAP connections
 - **Command-line interface** — Execute action files, directories, or JSON strings from the terminal
-- **Built-in logging** — All operations are logged to ``Mail_Thunder.log``
+- **Built-in logging** — All operations are logged to ``~/.je_mail_thunder/logs/Mail_Thunder.log``
 
 ----
 

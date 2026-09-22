@@ -63,7 +63,7 @@ How It Works
    executed sequentially. Custom functions and entire Python packages can be loaded
    at runtime.
 
-5. **Logging**: All operations are logged to ``Mail_Thunder.log`` (file handler at
+5. **Logging**: All operations are logged to ``~/.je_mail_thunder/logs/Mail_Thunder.log`` (file handler at
    INFO level) and ``stderr`` (stream handler at WARNING level).
 
 Supported Platforms

@@ -38,9 +38,9 @@ MailThunder registers two log handlers:
      - Level
      - Description
    * - File handler
-     - ``Mail_Thunder.log``
+     - ``~/.je_mail_thunder/logs/Mail_Thunder.log``
      - ``INFO``
-     - Logs all operations (INFO and above) to a file in the current working directory
+     - Logs all operations (INFO and above); the file is opened on the first record
    * - Stream handler
      - ``stderr``
      - ``WARNING``
@@ -50,14 +50,14 @@ MailThunder registers two log handlers:
 
 .. code-block:: text
 
-   %(asctime)s | %(name)s | %(levelname)s | %(message)s
+   %(asctime)s | %(process)d | %(name)s | %(levelname)s | %(message)s
 
 **Example log entries:**
 
 .. code-block:: text
 
-   2025-01-15 10:30:00,123 | Mail Thunder | INFO | MT_smtp_later_init
-   2025-01-15 10:30:01,456 | Mail Thunder | INFO | smtp_create_message_and_send, message_content: Hello!, message_setting_dict: {...}
+   2025-01-15 10:30:00,123 | 4812 | Mail Thunder | INFO | MT_smtp_later_init
+   2025-01-15 10:30:01,456 | 4812 | Mail Thunder | INFO | smtp_create_message_and_send, message_content: Hello!, message_setting_dict: {...}
    2025-01-15 10:30:01,789 | Mail Thunder | INFO | SMTP quit
    2025-01-15 10:30:02,012 | Mail Thunder | ERROR | smtp_try_to_login_with_env_or_content, failed: SMTPAuthenticationError(...)
 
@@ -104,15 +104,17 @@ and logged at ERROR level with the full exception representation.
 Log File Location
 -----------------
 
-The log file ``Mail_Thunder.log`` is created in the **current working directory**
-when the module is first imported. The file is opened in ``w+`` mode, meaning
-it is overwritten on each program run.
+The log file is ``~/.je_mail_thunder/logs/Mail_Thunder.log``. Set the
+``MAIL_THUNDER_LOG_FILE`` environment variable to write somewhere else, or to
+``os.devnull`` to turn the file off.
 
-.. note::
-
-   Since the file handler uses ``mode="w+"``, logs from previous runs are not
-   preserved. If you need persistent logging, consider configuring a custom
-   handler or copying the log file after each run.
+- Importing the package writes nothing: the file is opened on the first record.
+- It is appended to by every process on the account, and each line carries the
+  process id. Past 10 MiB it is renamed to ``Mail_Thunder.log.1`` when a process
+  opens it.
+- It is written as UTF-8, so non-ASCII subjects and addresses are kept.
+- If the path cannot be opened, file logging is switched off with one
+  ``RuntimeWarning`` rather than failing the import.
 
 ----
 

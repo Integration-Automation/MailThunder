@@ -37,9 +37,9 @@ MailThunder 註冊兩個日誌處理器：
      - 級別
      - 說明
    * - 檔案處理器
-     - ``Mail_Thunder.log``
+     - ``~/.je_mail_thunder/logs/Mail_Thunder.log``
      - ``INFO``
-     - 將所有操作（INFO 以上）記錄到目前工作目錄的檔案
+     - 將所有操作（INFO 以上）記錄到檔案；第一筆紀錄才開檔
    * - 串流處理器
      - ``stderr``
      - ``WARNING``
@@ -49,14 +49,14 @@ MailThunder 註冊兩個日誌處理器：
 
 .. code-block:: text
 
-   %(asctime)s | %(name)s | %(levelname)s | %(message)s
+   %(asctime)s | %(process)d | %(name)s | %(levelname)s | %(message)s
 
 **日誌範例：**
 
 .. code-block:: text
 
-   2025-01-15 10:30:00,123 | Mail Thunder | INFO | MT_smtp_later_init
-   2025-01-15 10:30:01,456 | Mail Thunder | INFO | smtp_create_message_and_send, message_content: Hello!, ...
+   2025-01-15 10:30:00,123 | 4812 | Mail Thunder | INFO | MT_smtp_later_init
+   2025-01-15 10:30:01,456 | 4812 | Mail Thunder | INFO | smtp_create_message_and_send, message_content: Hello!, ...
    2025-01-15 10:30:01,789 | Mail Thunder | INFO | SMTP quit
    2025-01-15 10:30:02,012 | Mail Thunder | ERROR | smtp_try_to_login_with_env_or_content, failed: ...
 
@@ -103,13 +103,14 @@ SMTP、IMAP、執行器和套件管理器中的所有例外都被捕獲並以 ER
 日誌檔位置
 ----------
 
-日誌檔 ``Mail_Thunder.log`` 在模組首次匯入時於 **目前工作目錄** 建立。
-檔案以 ``w+`` 模式開啟，��示每次程式執行時會被覆寫。
+日誌檔位於 ``~/.je_mail_thunder/logs/Mail_Thunder.log``。設定環境變數
+``MAIL_THUNDER_LOG_FILE`` 可以改寫到別處，設成 ``os.devnull`` 就不寫檔。
 
-.. note::
-
-   由於檔案處理器使用 ``mode="w+"``，先前執行的日誌不會被保留。
-   若需要持久化日誌，請考慮設定自訂處理器或在每次執行後複製日誌檔。
+- 匯入套件不會寫任何檔案：第一筆紀錄才開檔。
+- 同一個帳號的所有行程以附加模式共用這個檔，每行都帶行程編號；超過 10 MiB 時，
+  下一個開檔的行程會先把它改名成 ``Mail_Thunder.log.1``。
+- 以 UTF-8 寫入，非 ASCII 的主旨與地址都會保留。
+- 路徑開不了時，只發一次 ``RuntimeWarning`` 並停止寫檔，不會讓匯入失敗。
 
 ----
 

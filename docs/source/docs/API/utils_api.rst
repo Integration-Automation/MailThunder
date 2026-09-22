@@ -402,6 +402,6 @@ Logging
 
 Pre-configured logger with:
 
-- **File handler:** ``Mail_Thunder.log`` (INFO level, ``w+`` mode)
+- **File handler:** ``~/.je_mail_thunder/logs/Mail_Thunder.log`` or ``$MAIL_THUNDER_LOG_FILE`` (INFO level, append, UTF-8, opened on the first record)
 - **Stream handler:** ``stderr`` (WARNING level)
-- **Format:** ``%(asctime)s | %(name)s | %(levelname)s | %(message)s``
+- **Format:** ``%(asctime)s | %(process)d | %(name)s | %(levelname)s | %(message)s``
