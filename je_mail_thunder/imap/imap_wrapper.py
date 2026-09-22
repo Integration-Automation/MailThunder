@@ -7,6 +7,7 @@ from imaplib import IMAP4_SSL
 from typing import List, Dict, Union
 
 from je_mail_thunder.utils.exception.exception_tags import mail_thunder_content_login_failed
+from je_mail_thunder.utils.lazy_instance.lazy_instance import LazyInstance
 from je_mail_thunder.utils.logging.loggin_instance import mail_thunder_logger
 from je_mail_thunder.utils.save_mail_user_content.mail_thunder_content_save import read_output_content
 from je_mail_thunder.utils.save_mail_user_content.save_on_env import get_mail_thunder_os_environ
@@ -196,8 +197,5 @@ class IMAPWrapper(IMAP4_SSL):
             mail_thunder_logger.error(f"imap_quit, failed: {repr(error)}")
 
 
-try:
-    imap_instance = IMAPWrapper()
-except OSError as _imap_init_error:
-    mail_thunder_logger.error(f"imap_instance init failed: {repr(_imap_init_error)}")
-    imap_instance = None
+# Connects to the IMAP server on first use, not at import (see utils/lazy_instance).
+imap_instance = LazyInstance(IMAPWrapper, "imap_instance")

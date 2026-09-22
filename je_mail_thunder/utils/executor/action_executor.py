@@ -4,6 +4,7 @@ from typing import Union
 
 from je_mail_thunder.imap.imap_wrapper import imap_instance
 from je_mail_thunder.smtp.smtp_wrapper import smtp_instance
+from je_mail_thunder.utils.lazy_instance.lazy_instance import deferred
 from je_mail_thunder.utils.exception.exception_tags import cant_execute_action_error, executor_list_error, \
     action_is_null_error, add_command_exception
 from je_mail_thunder.utils.exception.exceptions import ExecuteActionException, AddCommandException
@@ -29,17 +30,18 @@ class Executor:
     def __init__(self):
         self.event_dict: dict = {
             # SMTP
-            "MT_smtp_later_init": smtp_instance.later_init,
-            "MT_smtp_create_message_with_attach_and_send": smtp_instance.create_message_with_attach_and_send,
-            "MT_smtp_create_message_and_send": smtp_instance.create_message_and_send,
-            "smtp_quit": smtp_instance.quit,
+            "MT_smtp_later_init": deferred(smtp_instance, "later_init"),
+            "MT_smtp_create_message_with_attach_and_send": deferred(
+                smtp_instance, "create_message_with_attach_and_send"),
+            "MT_smtp_create_message_and_send": deferred(smtp_instance, "create_message_and_send"),
+            "smtp_quit": deferred(smtp_instance, "quit"),
             # IMAP
-            "MT_imap_later_init": imap_instance.later_init,
-            "MT_imap_select_mailbox": imap_instance.select_mailbox,
-            "MT_imap_search_mailbox": imap_instance.search_mailbox,
-            "MT_imap_mail_content_list": imap_instance.mail_content_list,
-            "MT_imap_output_all_mail_as_file": imap_instance.output_all_mail_as_file,
-            "MT_imap_quit": imap_instance.quit,
+            "MT_imap_later_init": deferred(imap_instance, "later_init"),
+            "MT_imap_select_mailbox": deferred(imap_instance, "select_mailbox"),
+            "MT_imap_search_mailbox": deferred(imap_instance, "search_mailbox"),
+            "MT_imap_mail_content_list": deferred(imap_instance, "mail_content_list"),
+            "MT_imap_output_all_mail_as_file": deferred(imap_instance, "output_all_mail_as_file"),
+            "MT_imap_quit": deferred(imap_instance, "quit"),
             # Content
             "MT_set_mail_thunder_os_environ": set_mail_thunder_os_environ,
             "MT_get_mail_thunder_os_environ": get_mail_thunder_os_environ,

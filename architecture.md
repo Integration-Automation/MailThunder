@@ -17,8 +17,8 @@ executor exposes the same operations to action files, a CLI and a TCP socket ser
 | --- | --- |
 | `je_mail_thunder/__init__.py` | Public facade (`__all__`) |
 | `je_mail_thunder/__main__.py` | Legacy flag CLI (`python -m je_mail_thunder`) |
-| `je_mail_thunder/smtp/smtp_wrapper.py` | `SMTPWrapper(SMTP_SSL)` (default `smtp.gmail.com:465`) and the module instance `smtp_instance` |
-| `je_mail_thunder/imap/imap_wrapper.py` | `IMAPWrapper(IMAP4_SSL)` (default `imap.gmail.com`) and the module instance `imap_instance` |
+| `je_mail_thunder/smtp/smtp_wrapper.py` | `SMTPWrapper(SMTP_SSL)` (default `smtp.gmail.com:465`) and the module instance `smtp_instance` (a `LazyInstance`) |
+| `je_mail_thunder/imap/imap_wrapper.py` | `IMAPWrapper(IMAP4_SSL)` (default `imap.gmail.com`) and the module instance `imap_instance` (a `LazyInstance`) |
 | `je_mail_thunder/utils/executor/action_executor.py` | `Executor.event_dict` (`MT_*` commands plus the `SAFE_BUILTINS` allowlist), `execute_action`, `execute_files`, `add_command_to_executor` |
 | `je_mail_thunder/utils/save_mail_user_content/` | Credential sources: `mail_thunder_content.json` in the working directory (`read_output_content` / `write_output_content`) and the env vars `mail_thunder_user` / `mail_thunder_user_password` (`set_/get_mail_thunder_os_environ`) |
 | `je_mail_thunder/utils/socket_server/mail_thunder_socket_server.py` | TCP server `start_autocontrol_socket_server` with payload validation (`_validate_payload`, `MAX_PAYLOAD_BYTES`, `MAX_ACTIONS`) |
@@ -60,7 +60,7 @@ executor exposes the same operations to action files, a CLI and a TCP socket ser
 
 ```
 action JSON / --execute_str → __main__ → execute_action → Executor._execute_event
-  → event_dict["MT_*"] → bound method on smtp_instance / imap_instance → smtplib / imaplib over SSL
+  → event_dict["MT_*"] → deferred call on smtp_instance / imap_instance (connects on first use) → smtplib / imaplib over SSL
   → record dict {"execute: <action>": return value | repr(error)} → mail_thunder_logger
 ```
 
@@ -74,10 +74,12 @@ MT_smtp_later_init / MT_imap_later_init → try_to_login_with_env_or_content →
 **Socket**: TCP client → `TCPServerHandler.handle` (8192-byte cap, `_validate_payload`) →
 `execute_action` → return values, then `Return_Data_Over_JE`.
 
-**Import-time behaviour**: `smtp_instance = SMTPWrapper()` and `imap_instance = IMAPWrapper()` open
-SSL connections when the module is imported. Login waits until `later_init`. On `OSError` an
-instance becomes `None`. `Executor.__init__` binds methods from both instances into `event_dict`,
-so the executor module needs both connections to succeed.
+**Import-time behaviour**: importing opens no connection. `smtp_instance` and `imap_instance` are
+`LazyInstance` proxies (`utils/lazy_instance/lazy_instance.py`) that build the real `SMTPWrapper` /
+`IMAPWrapper` — and so connect — the first time anything is read from them; a connection failure
+raises there, at use, and the next use retries. `Executor.__init__` registers `deferred(instance,
+"method")` callables, which look the method up only when the action runs, so building the executor
+does not connect either. Login still waits until `later_init`.
 
 ## 5. Extension points
 
