@@ -1,5 +1,4 @@
-# Rename to dev version
-# This is dev version
+# Stable channel: the je_mail_thunder package. dev.toml builds je_mail_thunder_dev.
 [build-system]
 requires = ["setuptools>=82.0.1"]
 build-backend = "setuptools.build_meta"
@@ -13,6 +12,8 @@ authors = [
 description = ""
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.9"
+# Standard library only (smtplib, imaplib, email, socketserver).
+dependencies = []
 license = { text = "MIT" }
 classifiers = [
     "Programming Language :: Python :: 3.9",

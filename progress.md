@@ -6,7 +6,6 @@ Cross-repo and workspace items live in `D:\Codes\progress.md` (relevant here: X-
 
 ## Open
 
-- **#2** `pyproject.toml` has no `dependencies` field, and its header comment says "dev version" although the package name is the stable one.
 - **#3** [DECIDE] Python floor is 3.9 while the other workspace libraries require 3.10.
 - **#4** The socket-server entry is still named `start_autocontrol_socket_server` (copied from AutoControl).
 - **#5** [DECIDE] OAuth2 support: Google and Microsoft are retiring basic authentication (workspace L-8).
