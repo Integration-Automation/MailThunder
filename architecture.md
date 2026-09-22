@@ -106,7 +106,7 @@ so the executor module needs both connections to succeed.
 - **PyBreeze (subprocess)**: `call_mail_thunder` (`PyBreeze/pybreeze/extend/process_executor/mail_thunder/mail_thunder_process.py`)
   → `build_process(..., "je_mail_thunder", ...)` → `python -m je_mail_thunder --execute_str/--execute_file`
   (`python_task_process_manager.py`). On Windows PyBreeze runs `json.dumps` on the string again. That
-  makes the legacy flags and the double decode an implicit contract.
+  makes the legacy flags and the double decode a contract, guarded by `test/unit_test/test_main.py`.
 - **PyBreeze (in-process)**: `pybreeze/extend/mail_thunder_extend/mail_thunder_setting.py` imports
   `SMTPWrapper`, `read_output_content` and `get_mail_thunder_os_environ` to email HTML reports. Keep
   those names, the `mail_thunder_content.json` file name and the env var names stable.
