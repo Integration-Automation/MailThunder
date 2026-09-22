@@ -292,12 +292,12 @@ Socket Server
 
 **Module:** ``je_mail_thunder.utils.socket_server.mail_thunder_socket_server``
 
-start_autocontrol_socket_server()
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+start_mail_thunder_socket_server()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
-   def start_autocontrol_socket_server(
+   def start_mail_thunder_socket_server(
        host: str = "localhost",
        port: int = 9944
    ) -> TCPServer
@@ -313,6 +313,9 @@ Start a TCP socket server that accepts JSON action commands.
 
 The server runs in a daemon background thread via ``threading.Thread(daemon=True)``.
 Can also read ``host``/``port`` from ``sys.argv[1]``/``sys.argv[2]``.
+
+``start_autocontrol_socket_server()`` is the old name of the same function. It still works but
+raises ``DeprecationWarning`` and will be removed after at least two further releases.
 
 ----
 

@@ -21,7 +21,7 @@ executor exposes the same operations to action files, a CLI and a TCP socket ser
 | `je_mail_thunder/imap/imap_wrapper.py` | `IMAPWrapper(IMAP4_SSL)` (default `imap.gmail.com`) and the module instance `imap_instance` (a `LazyInstance`) |
 | `je_mail_thunder/utils/executor/action_executor.py` | `Executor.event_dict` (`MT_*` commands plus the `SAFE_BUILTINS` allowlist), `execute_action`, `execute_files`, `add_command_to_executor` |
 | `je_mail_thunder/utils/save_mail_user_content/` | Credential sources: `mail_thunder_content.json` in the working directory (`read_output_content` / `write_output_content`) and the env vars `mail_thunder_user` / `mail_thunder_user_password` (`set_/get_mail_thunder_os_environ`) |
-| `je_mail_thunder/utils/socket_server/mail_thunder_socket_server.py` | TCP server `start_autocontrol_socket_server` with payload validation (`_validate_payload`, `MAX_PAYLOAD_BYTES`, `MAX_ACTIONS`) |
+| `je_mail_thunder/utils/socket_server/mail_thunder_socket_server.py` | TCP server `start_mail_thunder_socket_server` (old name `start_autocontrol_socket_server` kept as a deprecated alias) with payload validation (`_validate_payload`, `MAX_PAYLOAD_BYTES`, `MAX_ACTIONS`) |
 | `je_mail_thunder/utils/package_manager/` | `package_manager`: loads an installed package's members into the executor |
 | `je_mail_thunder/utils/project/` | `create_project_dir` scaffolding; `template/template_keyword.py` and `template_executor.py` hold the templates |
 | `je_mail_thunder/utils/{json,json_format,file_process,logging,exception}/` | Action JSON I/O, JSON reformat, directory listing, `mail_thunder_logger`, `MailThunderException` hierarchy |
@@ -47,7 +47,7 @@ executor exposes the same operations to action files, a CLI and a TCP socket ser
   - any error prints `repr(error)` to stderr and exits with code 1.
 
   No console script is declared.
-- **TCP socket server**: `je_mail_thunder.utils.socket_server.mail_thunder_socket_server.start_autocontrol_socket_server(host="localhost", port=9944)`.
+- **TCP socket server**: `je_mail_thunder.utils.socket_server.mail_thunder_socket_server.start_mail_thunder_socket_server(host="localhost", port=9944)` (the old name `start_autocontrol_socket_server` still works with a `DeprecationWarning`).
   - The facade does not re-export it.
   - If `sys.argv` carries one or two extra arguments, they override the host and port.
   - `quit_server` shuts it down.
@@ -114,8 +114,8 @@ does not connect either. Login still waits until `later_init`.
   those names, the `mail_thunder_content.json` file name and the env var names stable.
 - **TestPioneer** lists `je-mail-thunder` in its dependencies but does not import it.
 - **Names inherited from AutoControl**:
-  - the socket function is still called `start_autocontrol_socket_server`, and the action-dict key is
-    `auto_control`;
+  - the action-dict key is `auto_control` (the socket function is now `start_mail_thunder_socket_server`;
+    the old name is a deprecated alias);
   - FileAutomation uses the same function name and key;
   - the default port 9944 is also FileAutomation's default HTTP action-server port.
 - **Builtins policy**: the executor registers only the `SAFE_BUILTINS` allowlist (22 side-effect-free

@@ -2,8 +2,11 @@ import json
 import socket
 import time
 
+import pytest
+
 from je_mail_thunder.utils.socket_server.mail_thunder_socket_server import (
     start_autocontrol_socket_server,
+    start_mail_thunder_socket_server,
 )
 
 
@@ -21,7 +24,7 @@ def _send_and_recv(host, port, message):
 
 
 def test_socket_server_execute_command():
-    server = start_autocontrol_socket_server("127.0.0.1", 0)
+    server = start_mail_thunder_socket_server("127.0.0.1", 0)
     port = server.server_address[1]
     try:
         command = json.dumps([["print", ["socket_test"]]])
@@ -32,7 +35,7 @@ def test_socket_server_execute_command():
 
 
 def test_socket_server_quit():
-    server = start_autocontrol_socket_server("127.0.0.1", 0)
+    server = start_mail_thunder_socket_server("127.0.0.1", 0)
     port = server.server_address[1]
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -48,3 +51,12 @@ def test_socket_server_quit():
             server.shutdown()
         except OSError as shutdown_error:
             print(f"socket server shutdown failed: {shutdown_error!r}")
+
+
+def test_old_name_still_starts_the_server_with_a_deprecation_warning():
+    with pytest.warns(DeprecationWarning, match="start_mail_thunder_socket_server"):
+        server = start_autocontrol_socket_server("127.0.0.1", 0)
+    try:
+        assert server.server_address[1] > 0
+    finally:
+        server.shutdown()

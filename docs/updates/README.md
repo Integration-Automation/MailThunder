@@ -58,6 +58,7 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | ID | Date | Title | Tags | Batch |
 |---|---|---|---|---|
+| U-20260923-03 | 2026-09-23 | Socket server gets its own name; the AutoControl one is deprecated | #done #api | [2026-09](2026-09.md) |
 | U-20260923-02 | 2026-09-23 | pyproject.toml declares no dependencies and names its channel | #done #packaging | [2026-09](2026-09.md) |
 | U-20260923-01 | 2026-09-23 | Importing no longer connects to Gmail or fails offline | #done #bugfix | [2026-09](2026-09.md) |
 | U-20260922-05 | 2026-09-22 | Legacy CLI tests cover what PyBreeze and TestPioneer call | #done #tests | [2026-09](2026-09.md) |
@@ -70,4 +71,4 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | File | Period | Entries |
 |---|---|---:|
-| [2026-09.md](2026-09.md) | 2026-09 | 7 |
+| [2026-09.md](2026-09.md) | 2026-09 | 8 |

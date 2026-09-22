@@ -2,6 +2,7 @@ import json
 import socketserver
 import sys
 import threading
+import warnings
 
 from je_mail_thunder.utils.executor.action_executor import execute_action
 
@@ -80,7 +81,12 @@ class TCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
         self.close_flag: bool = False
 
 
-def start_autocontrol_socket_server(host: str = "localhost", port: int = 9944):
+def start_mail_thunder_socket_server(host: str = "localhost", port: int = 9944) -> TCPServer:
+    """Start the action server on a daemon thread and return it.
+
+    ``host`` and ``port`` can also come from the command line (``argv[1]``, ``argv[2]``), which
+    overrides the arguments.
+    """
     if len(sys.argv) == 2:
         host = sys.argv[1]
     elif len(sys.argv) == 3:
@@ -91,3 +97,15 @@ def start_autocontrol_socket_server(host: str = "localhost", port: int = 9944):
     server_thread.daemon = True
     server_thread.start()
     return server
+
+
+def start_autocontrol_socket_server(host: str = "localhost", port: int = 9944) -> TCPServer:
+    """Deprecated alias of :func:`start_mail_thunder_socket_server`.
+
+    The name was copied from AutoControl and says nothing about this package. It keeps working, with
+    a ``DeprecationWarning``, for at least two further releases.
+    """
+    warnings.warn(
+        "start_autocontrol_socket_server is deprecated; use start_mail_thunder_socket_server",
+        DeprecationWarning, stacklevel=2)
+    return start_mail_thunder_socket_server(host, port)

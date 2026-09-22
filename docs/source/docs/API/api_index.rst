@@ -77,7 +77,7 @@ Module Map
    * - ``je_mail_thunder.utils.package_manager.package_manager_class``
      - ``PackageManager`` class, ``package_manager``
    * - ``je_mail_thunder.utils.socket_server.mail_thunder_socket_server``
-     - ``TCPServer``, ``TCPServerHandler``, ``start_autocontrol_socket_server()``
+     - ``TCPServer``, ``TCPServerHandler``, ``start_mail_thunder_socket_server()`` (old name ``start_autocontrol_socket_server()`` is deprecated)
    * - ``je_mail_thunder.utils.logging.loggin_instance``
      - ``mail_thunder_logger``
    * - ``je_mail_thunder.utils.exception.exceptions``
