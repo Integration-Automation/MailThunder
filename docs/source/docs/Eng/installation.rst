@@ -6,7 +6,7 @@ This page covers all the ways to install MailThunder.
 Requirements
 ------------
 
-- **Python 3.9** or later
+- **Python 3.10** or later
 - No additional dependencies beyond the Python standard library
 - ``pip`` for package installation
 

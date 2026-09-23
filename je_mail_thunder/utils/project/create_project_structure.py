@@ -46,7 +46,7 @@ def _write_executor_template(executor_dir: Path, keyword_dir: Path) -> None:
     )
     for filename, template, replacement in substitutions:
         target = executor_dir / filename
-        with open(str(target), "w+") as file:
+        with open(str(target), "w", encoding="utf-8") as file:
             file.write(template.replace("{temp}", replacement))
 
 

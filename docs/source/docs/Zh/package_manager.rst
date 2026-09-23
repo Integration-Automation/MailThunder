@@ -42,7 +42,7 @@ MailThunder 的 ``PackageManager`` 允許您在執行期動態載入任何已安
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_add_package_to_executor", ["os"]],
        ["os_system", ["echo Hello from os.system"]],
        ["os_getcwd"]
@@ -52,7 +52,7 @@ MailThunder 的 ``PackageManager`` 允許您在執行期動態載入任何已安
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_add_package_to_executor", ["json"]],
        ["json_dumps", [{"key": "value"}]]
      ]
@@ -129,7 +129,7 @@ MailThunder 的 ``PackageManager`` 允許您在執行期動態載入任何已安
    .. code-block:: json
 
       {
-        "auto_control": [
+        "mail_thunder": [
           ["MT_add_package_to_executor", ["os.path"]],
           ["os.path_join", ["/home", "user", "file.txt"]]
         ]

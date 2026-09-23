@@ -292,14 +292,14 @@ Socket Server
 
 **Module:** ``je_mail_thunder.utils.socket_server.mail_thunder_socket_server``
 
-start_autocontrol_socket_server()
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+start_mail_thunder_socket_server()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
-   def start_autocontrol_socket_server(
+   def start_mail_thunder_socket_server(
        host: str = "localhost",
-       port: int = 9944
+       port: int = 9942
    ) -> TCPServer
 
 Start a TCP socket server that accepts JSON action commands.
@@ -307,12 +307,15 @@ Start a TCP socket server that accepts JSON action commands.
 **Parameters:**
 
 - ``host`` — Bind address (default: ``"localhost"``)
-- ``port`` — TCP port (default: ``9944``)
+- ``port`` — TCP port (default: ``9942``)
 
 **Returns:** ``TCPServer`` instance with ``close_flag`` attribute.
 
 The server runs in a daemon background thread via ``threading.Thread(daemon=True)``.
-Can also read ``host``/``port`` from ``sys.argv[1]``/``sys.argv[2]``.
+It binds exactly the ``host`` and ``port`` it is given.
+
+``start_autocontrol_socket_server()`` is the old name of the same function. It still works but
+raises ``DeprecationWarning`` and will be removed after at least two further releases.
 
 ----
 
@@ -399,6 +402,6 @@ Logging
 
 Pre-configured logger with:
 
-- **File handler:** ``Mail_Thunder.log`` (INFO level, ``w+`` mode)
+- **File handler:** ``~/.je_mail_thunder/logs/Mail_Thunder.log`` or ``$MAIL_THUNDER_LOG_FILE`` (INFO level, append, UTF-8, opened on the first record)
 - **Stream handler:** ``stderr`` (WARNING level)
-- **Format:** ``%(asctime)s | %(name)s | %(levelname)s | %(message)s``
+- **Format:** ``%(asctime)s | %(process)d | %(name)s | %(levelname)s | %(message)s``

@@ -248,7 +248,7 @@ Send emails without writing Python code by using a JSON action file:
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_smtp_later_init"],
        ["MT_smtp_create_message_and_send", {
          "message_content": "Hello from scripting engine!",
@@ -258,7 +258,7 @@ Send emails without writing Python code by using a JSON action file:
            "From": "sender@gmail.com"
          }
        }],
-       ["smtp_quit"]
+       ["MT_smtp_quit"]
      ]
    }
 
@@ -267,7 +267,7 @@ With attachment:
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_smtp_later_init"],
        ["MT_smtp_create_message_with_attach_and_send", {
          "message_content": "Report attached.",
@@ -279,7 +279,7 @@ With attachment:
          "attach_file": "/path/to/report.pdf",
          "use_html": false
        }],
-       ["smtp_quit"]
+       ["MT_smtp_quit"]
      ]
    }
 
@@ -298,7 +298,7 @@ Execute a JSON string directly from the terminal:
 
 .. code-block:: bash
 
-   python -m je_mail_thunder --execute_str '[["MT_smtp_later_init"], ["MT_smtp_create_message_and_send", {"message_content": "Hello!", "message_setting_dict": {"Subject": "CLI Email", "To": "receiver@gmail.com", "From": "sender@gmail.com"}}], ["smtp_quit"]]'
+   python -m je_mail_thunder --execute_str '[["MT_smtp_later_init"], ["MT_smtp_create_message_and_send", {"message_content": "Hello!", "message_setting_dict": {"Subject": "CLI Email", "To": "receiver@gmail.com", "From": "sender@gmail.com"}}], ["MT_smtp_quit"]]'
 
 ----
 

@@ -1,7 +1,7 @@
 # MailThunder Documentation
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](../LICENSE)
-[![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![PyPI](https://img.shields.io/pypi/v/je_mail_thunder)](https://pypi.org/project/je-mail-thunder/)
 [![Read the Docs](https://readthedocs.org/projects/mailthunder/badge/?version=latest)](https://mailthunder.readthedocs.io/)
 [![Main README](https://img.shields.io/badge/Main-README-green.svg)](../README.md)

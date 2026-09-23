@@ -1,9 +1,14 @@
+import inspect
 import json
 import socket
 import time
 
+import pytest
+
 from je_mail_thunder.utils.socket_server.mail_thunder_socket_server import (
+    DEFAULT_PORT,
     start_autocontrol_socket_server,
+    start_mail_thunder_socket_server,
 )
 
 
@@ -21,7 +26,7 @@ def _send_and_recv(host, port, message):
 
 
 def test_socket_server_execute_command():
-    server = start_autocontrol_socket_server("127.0.0.1", 0)
+    server = start_mail_thunder_socket_server("127.0.0.1", 0)
     port = server.server_address[1]
     try:
         command = json.dumps([["print", ["socket_test"]]])
@@ -32,7 +37,7 @@ def test_socket_server_execute_command():
 
 
 def test_socket_server_quit():
-    server = start_autocontrol_socket_server("127.0.0.1", 0)
+    server = start_mail_thunder_socket_server("127.0.0.1", 0)
     port = server.server_address[1]
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -48,3 +53,40 @@ def test_socket_server_quit():
             server.shutdown()
         except OSError as shutdown_error:
             print(f"socket server shutdown failed: {shutdown_error!r}")
+
+
+def test_old_name_still_starts_the_server_with_a_deprecation_warning():
+    with pytest.warns(DeprecationWarning, match="start_mail_thunder_socket_server"):
+        server = start_autocontrol_socket_server("127.0.0.1", 0)
+    try:
+        assert server.server_address[1] > 0
+    finally:
+        server.shutdown()
+
+
+@pytest.mark.parametrize("start", [start_mail_thunder_socket_server, start_autocontrol_socket_server])
+def test_default_port_is_9942(start):
+    # 9944, the old default, is FileAutomation's HTTP action-server default.
+    assert DEFAULT_PORT == 9942
+    assert inspect.signature(start).parameters["port"].default == DEFAULT_PORT
+
+
+def test_command_line_arguments_do_not_rebind_the_server(monkeypatch):
+    # A host program run as "prog.py some_arg" used to have "some_arg" taken as the bind host.
+    monkeypatch.setattr("sys.argv", ["prog.py", "not-a-host"])
+    server = start_mail_thunder_socket_server("127.0.0.1", 0)
+    try:
+        assert server.server_address[0] == "127.0.0.1"
+    finally:
+        server.shutdown()
+
+
+@pytest.mark.parametrize("key", ["mail_thunder", "auto_control"])
+def test_socket_server_accepts_both_action_keys(key):
+    server = start_mail_thunder_socket_server("127.0.0.1", 0)
+    try:
+        response = _send_and_recv("127.0.0.1", server.server_address[1], json.dumps({key: [["print", ["k"]]]}))
+        assert "Return_Data_Over_JE" in response
+        assert "must contain" not in response
+    finally:
+        server.shutdown()

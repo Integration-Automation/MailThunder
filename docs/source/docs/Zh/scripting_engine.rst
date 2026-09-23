@@ -21,7 +21,7 @@ MailThunder 內建強大的 JSON 腳本引擎，讓您無需撰寫 Python 程式
        ▼
    execute_action(action_list)
        │
-       ├── 若為 dict: 提取 action_list["auto_control"]
+       ├── 若為 dict: 提取 action_list["mail_thunder"]
        ├── 若為 list: 直接使用
        │
        ▼
@@ -41,7 +41,7 @@ MailThunder 內建強大的 JSON 腳本引擎，讓您無需撰寫 Python 程式
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["command_name"],
        ["command_name", {"key": "value"}],
        ["command_name", ["arg1", "arg2"]]
@@ -75,7 +75,7 @@ MailThunder 內建強大的 JSON 腳本引擎，讓您無需撰寫 Python 程式
 
    execute_action([
        ["MT_smtp_later_init"],
-       ["smtp_quit"]
+       ["MT_smtp_quit"]
    ])
 
 ----
@@ -97,8 +97,8 @@ MailThunder 內建強大的 JSON 腳本引擎，讓您無需撰寫 Python 程式
      - 建立並寄送純文字郵件
    * - ``MT_smtp_create_message_with_attach_and_send``
      - 建立並寄送附件郵件
-   * - ``smtp_quit``
-     - 斷開 SMTP 連線
+   * - ``MT_smtp_quit``
+     - 斷開 SMTP 連線（舊名 ``smtp_quit`` 仍可用）
 
 **IMAP 命令：**
 
@@ -147,8 +147,16 @@ MailThunder 內建強大的 JSON 腳本引擎，讓您無需撰寫 Python 程式
 
 **Python 內建函式：**
 
-所有 Python 內建函式（``print``、``len``、``range``、``type``、``str``、
-``int``、``list``、``dict`` 等）自動註冊，可作為命令使用。
+只有一份固定的、沒有副作用的內建函式清單會註冊成命令
+（``je_mail_thunder/utils/executor/action_executor.py`` 的 ``SAFE_BUILTINS``）：
+``abs``、``all``、``any``、``ascii``、``bin``、``callable``、``chr``、``divmod``、
+``format``、``hash``、``hex``、``len``、``max``、``min``、``oct``、``ord``、``pow``、
+``print``、``repr``、``round``、``sorted``、``sum``。
+
+能執行程式碼、存取屬性或命名空間、讀寫檔案或標準輸入的內建函式
+（``eval``、``exec``、``compile``、``__import__``、``open``、``input``、``getattr``、
+``globals`` 等）一律不開放，因為動作清單也可能經由 socket 伺服器送進來。
+未知的命令會記成 ``ExecuteActionException``，其餘動作照常執行。
 
 ----
 
@@ -160,7 +168,7 @@ MailThunder 內建強大的 JSON 腳本引擎，讓您無需撰寫 Python 程式
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_smtp_later_init"],
        ["MT_smtp_create_message_and_send", {
          "message_content": "Hello from the scripting engine!",
@@ -170,7 +178,7 @@ MailThunder 內建強大的 JSON 腳本引擎，讓您無需撰寫 Python 程式
            "From": "sender@gmail.com"
          }
        }],
-       ["smtp_quit"]
+       ["MT_smtp_quit"]
      ]
    }
 
@@ -179,7 +187,7 @@ MailThunder 內建強大的 JSON 腳本引擎，讓您無需撰寫 Python 程式
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_imap_later_init"],
        ["MT_imap_select_mailbox"],
        ["MT_imap_output_all_mail_as_file"],
@@ -192,7 +200,7 @@ MailThunder 內建強大的 JSON 腳本引擎，讓您無需撰寫 Python 程式
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_imap_later_init"],
        ["MT_imap_select_mailbox", {"mailbox": "INBOX", "readonly": true}],
        ["MT_imap_mail_content_list", {"search_str": "UNSEEN"}],
@@ -205,7 +213,7 @@ MailThunder 內建強大的 JSON 腳本引擎，讓您無需撰寫 Python 程式
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_set_mail_thunder_os_environ", {
          "mail_thunder_user": "sender@gmail.com",
          "mail_thunder_user_password": "your_app_password"
@@ -219,7 +227,7 @@ MailThunder 內建強大的 JSON 腳本引擎，讓您無需撰寫 Python 程式
            "From": "sender@gmail.com"
          }
        }],
-       ["smtp_quit"]
+       ["MT_smtp_quit"]
      ]
    }
 
@@ -307,7 +315,7 @@ MailThunder 內建強大的 JSON 腳本引擎，讓您無需撰寫 Python 程式
    None
    execute: ['MT_smtp_create_message_and_send', {...}]
    None
-   execute: ['smtp_quit']
+   execute: ['MT_smtp_quit']
    None
 
 若動作失敗，例外會被捕獲、記錄並存入結果字典。

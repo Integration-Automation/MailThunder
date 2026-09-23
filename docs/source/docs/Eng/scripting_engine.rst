@@ -22,7 +22,7 @@ How It Works
        ▼
    execute_action(action_list)
        │
-       ├── If dict: extract action_list["auto_control"]
+       ├── If dict: extract action_list["mail_thunder"]
        ├── If list: use directly
        │
        ▼
@@ -42,7 +42,7 @@ Action files use the ``auto_control`` key containing a list of commands:
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["command_name"],
        ["command_name", {"key": "value"}],
        ["command_name", ["arg1", "arg2"]]
@@ -77,7 +77,7 @@ You can also pass a plain list (without the ``auto_control`` wrapper) directly t
 
    execute_action([
        ["MT_smtp_later_init"],
-       ["smtp_quit"]
+       ["MT_smtp_quit"]
    ])
 
 ----
@@ -99,8 +99,8 @@ Built-in Commands
      - Create and send a plain text email
    * - ``MT_smtp_create_message_with_attach_and_send``
      - Create and send an email with attachment
-   * - ``smtp_quit``
-     - Disconnect from SMTP server
+   * - ``MT_smtp_quit``
+     - Disconnect from SMTP server (the old name ``smtp_quit`` is still accepted)
 
 **IMAP commands:**
 
@@ -149,9 +149,17 @@ Built-in Commands
 
 **Python builtins:**
 
-All Python built-in functions (``print``, ``len``, ``range``, ``type``, ``str``,
-``int``, ``list``, ``dict``, etc.) are automatically registered and available as
-commands.
+A fixed allowlist of side-effect-free built-in functions is registered as commands
+(``SAFE_BUILTINS`` in ``je_mail_thunder/utils/executor/action_executor.py``):
+``abs``, ``all``, ``any``, ``ascii``, ``bin``, ``callable``, ``chr``, ``divmod``,
+``format``, ``hash``, ``hex``, ``len``, ``max``, ``min``, ``oct``, ``ord``, ``pow``,
+``print``, ``repr``, ``round``, ``sorted`` and ``sum``.
+
+Builtins that can run code, reach attributes or namespaces, or touch files and stdin
+(``eval``, ``exec``, ``compile``, ``__import__``, ``open``, ``input``, ``getattr``,
+``globals`` and the like) are not available, because action lists can also arrive
+through the socket server. An unknown command is recorded as an
+``ExecuteActionException`` and the remaining actions still run.
 
 ----
 
@@ -163,7 +171,7 @@ Examples
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_smtp_later_init"],
        ["MT_smtp_create_message_and_send", {
          "message_content": "Hello from the scripting engine!",
@@ -173,7 +181,7 @@ Examples
            "From": "sender@gmail.com"
          }
        }],
-       ["smtp_quit"]
+       ["MT_smtp_quit"]
      ]
    }
 
@@ -182,7 +190,7 @@ Examples
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_smtp_later_init"],
        ["MT_smtp_create_message_with_attach_and_send", {
          "message_content": "Please review the attached report.",
@@ -194,7 +202,7 @@ Examples
          "attach_file": "/path/to/report.pdf",
          "use_html": false
        }],
-       ["smtp_quit"]
+       ["MT_smtp_quit"]
      ]
    }
 
@@ -203,7 +211,7 @@ Examples
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_imap_later_init"],
        ["MT_imap_select_mailbox"],
        ["MT_imap_output_all_mail_as_file"],
@@ -216,7 +224,7 @@ Examples
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_imap_later_init"],
        ["MT_imap_select_mailbox", {"mailbox": "INBOX", "readonly": true}],
        ["MT_imap_mail_content_list", {"search_str": "UNSEEN"}],
@@ -229,7 +237,7 @@ Examples
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_set_mail_thunder_os_environ", {
          "mail_thunder_user": "sender@gmail.com",
          "mail_thunder_user_password": "your_app_password"
@@ -243,7 +251,7 @@ Examples
            "From": "sender@gmail.com"
          }
        }],
-       ["smtp_quit"]
+       ["MT_smtp_quit"]
      ]
    }
 
@@ -252,7 +260,7 @@ Examples
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["print", ["Hello from the executor!"]],
        ["print", ["The answer is: 42"]]
      ]
@@ -352,7 +360,7 @@ When actions are executed, each command and its return value are printed to stdo
    None
    execute: ['MT_smtp_create_message_and_send', {...}]
    None
-   execute: ['smtp_quit']
+   execute: ['MT_smtp_quit']
    None
 
 If an action fails, the exception is caught, logged, and stored in the result dict:

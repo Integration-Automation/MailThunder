@@ -1,0 +1,2 @@
+# What the test jobs install; test.txt is generated from this file (the command is in the workflows).
+pytest

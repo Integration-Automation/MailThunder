@@ -9,6 +9,7 @@ from mimetypes import guess_type
 from os import path
 from smtplib import SMTP_SSL
 
+from je_mail_thunder.utils.lazy_instance.lazy_instance import LazyInstance
 from je_mail_thunder.utils.logging.loggin_instance import mail_thunder_logger
 from je_mail_thunder.utils.save_mail_user_content.mail_thunder_content_save import read_output_content
 from je_mail_thunder.utils.save_mail_user_content.save_on_env import get_mail_thunder_os_environ
@@ -87,7 +88,7 @@ class SMTPWrapper(SMTP_SSL):
                 content_type = "application/octet-stream"
             main_type, sub_type = content_type.split("/", 1)
             if main_type == "text":
-                with open(attach_file, "r+") as file_read:
+                with open(attach_file, "r", encoding="utf-8") as file_read:
                     mime_part = MIMEText(file_read.read(), _subtype=sub_type)
             elif main_type == "image":
                 with open(attach_file, "rb") as file_read:
@@ -198,8 +199,5 @@ class SMTPWrapper(SMTP_SSL):
                 f"message_setting_dict: {message_setting_dict}, params:{kwargs}, failed: {repr(error)}")
 
 
-try:
-    smtp_instance = SMTPWrapper()
-except OSError as _smtp_init_error:
-    mail_thunder_logger.error(f"smtp_instance init failed: {repr(_smtp_init_error)}")
-    smtp_instance = None
+# Connects to the SMTP server on first use, not at import (see utils/lazy_instance).
+smtp_instance = LazyInstance(SMTPWrapper, "smtp_instance")

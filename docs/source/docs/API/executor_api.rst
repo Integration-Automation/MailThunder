@@ -41,8 +41,8 @@ Executor Class
      - ``smtp_instance.create_message_with_attach_and_send``
    * - ``MT_smtp_create_message_and_send``
      - ``smtp_instance.create_message_and_send``
-   * - ``smtp_quit``
-     - ``smtp_instance.quit``
+   * - ``MT_smtp_quit``
+     - ``smtp_instance.quit`` (the old name ``smtp_quit`` is still accepted)
    * - ``MT_imap_later_init``
      - ``imap_instance.later_init``
    * - ``MT_imap_select_mailbox``
@@ -61,8 +61,10 @@ Executor Class
      - ``get_mail_thunder_os_environ``
    * - ``MT_add_package_to_executor``
      - ``package_manager.add_package_to_executor``
-   * - *(all Python builtins)*
-     - ``print``, ``len``, ``range``, ``type``, ``str``, ``int``, etc.
+   * - *(allowlisted Python builtins)*
+     - ``abs``, ``all``, ``any``, ``ascii``, ``bin``, ``callable``, ``chr``, ``divmod``,
+       ``format``, ``hash``, ``hex``, ``len``, ``max``, ``min``, ``oct``, ``ord``, ``pow``,
+       ``print``, ``repr``, ``round``, ``sorted``, ``sum`` (``SAFE_BUILTINS``)
 
 ----
 
@@ -83,7 +85,7 @@ Execute a list of action commands.
 - ``action_list`` — Either:
 
   - A ``list`` of actions: ``[["cmd1"], ["cmd2", args], ...]``
-  - A ``dict`` with an ``"auto_control"`` key: ``{"auto_control": [["cmd1"], ...]}``
+  - A ``dict`` with an ``"mail_thunder"`` key: ``{"mail_thunder": [["cmd1"], ...]}``
 
 **Returns:** A ``dict`` mapping ``"execute: [action]"`` to the return value of each
 command. If a command fails, the value is the exception's ``repr()``.
@@ -118,12 +120,12 @@ per-action, logs them, and continues executing remaining actions.
    result = execute_action([
        ["print", ["Hello!"]],
        ["MT_smtp_later_init"],
-       ["smtp_quit"]
+       ["MT_smtp_quit"]
    ])
    # result = {
    #     "execute: ['print', ['Hello!']]": None,
    #     "execute: ['MT_smtp_later_init']": None,
-   #     "execute: ['smtp_quit']": None,
+   #     "execute: ['MT_smtp_quit']": None,
    # }
 
 ----
@@ -207,7 +209,7 @@ Exceptions
    * - Exception
      - Condition
    * - ``ExecuteActionException``
-     - Action list is empty, wrong type, ``auto_control`` key missing,
+     - Action list is empty, wrong type, ``mail_thunder`` key (or the deprecated ``auto_control``) missing,
        or action has more than 2 elements
    * - ``AddCommandException``
      - ``add_command_to_executor()`` receives a non-callable value

@@ -7,7 +7,7 @@ template_keyword_1: list = [
             "From": "example@gmail.com"
         }}
      ],
-    ["smtp_quit"]
+    ["MT_smtp_quit"]
 ]
 
 template_keyword_2: list = [

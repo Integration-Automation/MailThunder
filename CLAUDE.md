@@ -4,7 +4,7 @@
 
 MailThunder (`je_mail_thunder`) is a Python email automation library wrapping SMTP and IMAP4 protocols. It provides JSON-based scripting, project templates, and a socket server for remote execution.
 
-- **Language**: Python 3.9+
+- **Language**: Python 3.10+
 - **Package**: `je_mail_thunder` (PyPI: `je-mail-thunder`)
 - **License**: MIT
 - **Entry point**: `je_mail_thunder/__main__.py`
@@ -93,6 +93,18 @@ je_mail_thunder/
 ### Dependency Security
 - Keep dependencies minimal (`requirements.txt` is intentionally small).
 - Audit new dependencies before adding. Prefer stdlib solutions.
+
+## Stage commits, `progress.md`, `docs/updates/` and `architecture.md`
+
+Workspace rule shared by every repository under `D:\Codes` (full text: `D:\Codes\CLAUDE.md`).
+
+- **Commit at every stage.** A stage is the smallest piece of work that leaves the repository consistent and passes this project's checks (definition of done, tests, lint): one finished `progress.md` item, or one self-contained step of a larger one. Commit it before starting the next stage, before switching to another repository, and before the session ends. Do not leave work uncommitted across sessions; if a stage cannot be finished, commit the consistent part and record the rest in `progress.md`.
+  - Stage only the files that stage touched (`git add <path>`, never `git add -A`), follow this file's commit-message rules, and never add AI attribution.
+  - Committing is not pushing: push or open a PR only as this project's branch flow says or when asked.
+- **`progress.md`** (repository root, tracked) holds outstanding work only: no finished items, no history, no rules.
+- **`docs/updates/`** records finished work: one batch file per month (`YYYY-MM.md`), one entry per piece of work headed `## U-YYYYMMDD-NN · date · title · #tags`, and an index with query commands in `docs/updates/README.md`. When a `progress.md` item is done, delete it and add a `#done` entry plus its index row in the same commit.
+- **`architecture.md`** (repository root) is the short architecture overview: layers, entry points, main flows, extension points, cross-project boundaries. Update it in the same commit whenever a change alters any of those.
+- **Cross-project contracts** are listed in `architecture.md` §6: what other repositories rely on here (CLI flags, import paths, constructor arguments, file layouts) and what this repository relies on elsewhere. No test here protects them, so never rename or remove one without changing its consumers in the same round, and update §6 whenever a contract is added or changes.
 
 ## Commit Convention
 

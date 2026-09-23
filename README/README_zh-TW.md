@@ -1,7 +1,7 @@
 # MailThunder
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](../LICENSE)
-[![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![PyPI](https://img.shields.io/pypi/v/je_mail_thunder)](https://pypi.org/project/je-mail-thunder/)
 
 **MailThunder** 是一款輕量且靈活的 Python 電子郵件自動化工具。它封裝了 SMTP 和 IMAP4 協定，提供 JSON 腳本引擎與專案模板功能，讓寄信、收信與管理郵件內容變得輕鬆簡單。
@@ -61,7 +61,7 @@
 
 ## 系統需求
 
-- Python 3.9 或更新版本
+- Python 3.10 或更新版本
 
 ---
 
@@ -207,7 +207,7 @@ MailThunder 內建 JSON 腳本引擎，讓你無需撰寫 Python 程式碼即可
 
 ```json
 {
-  "auto_control": [
+  "mail_thunder": [
     ["指令名稱"],
     ["指令名稱", {"key": "value"}],
     ["指令名稱", ["arg1", "arg2"]]
@@ -226,7 +226,7 @@ MailThunder 內建 JSON 腳本引擎，讓你無需撰寫 Python 程式碼即可
 | `MT_smtp_later_init` | 初始化並登入 SMTP | 無 |
 | `MT_smtp_create_message_and_send` | 建立並寄送郵件 | `{"message_content": str, "message_setting_dict": dict}` |
 | `MT_smtp_create_message_with_attach_and_send` | 建立並寄送帶附件的郵件 | `{"message_content": str, "message_setting_dict": dict, "attach_file": str, "use_html": bool}` |
-| `smtp_quit` | 中斷 SMTP 連線 | 無 |
+| `MT_smtp_quit` | 中斷 SMTP 連線（舊名 `smtp_quit` 仍可用） | 無 |
 | `MT_imap_later_init` | 初始化並登入 IMAP | 無 |
 | `MT_imap_select_mailbox` | 選擇信箱 | `{"mailbox": str, "readonly": bool}`（預設：INBOX）|
 | `MT_imap_search_mailbox` | 搜尋並取得郵件詳細資訊 | `{"search_str": str, "charset": str}` |
@@ -241,7 +241,7 @@ MailThunder 內建 JSON 腳本引擎，讓你無需撰寫 Python 程式碼即可
 
 ```json
 {
-  "auto_control": [
+  "mail_thunder": [
     ["MT_smtp_later_init"],
     ["MT_smtp_create_message_and_send", {
       "message_content": "Hello World!",
@@ -251,7 +251,7 @@ MailThunder 內建 JSON 腳本引擎，讓你無需撰寫 Python 程式碼即可
         "From": "sender@gmail.com"
       }
     }],
-    ["smtp_quit"]
+    ["MT_smtp_quit"]
   ]
 }
 ```
@@ -260,7 +260,7 @@ MailThunder 內建 JSON 腳本引擎，讓你無需撰寫 Python 程式碼即可
 
 ```json
 {
-  "auto_control": [
+  "mail_thunder": [
     ["MT_imap_later_init"],
     ["MT_imap_select_mailbox"],
     ["MT_imap_output_all_mail_as_file"]
@@ -289,7 +289,7 @@ add_command_to_executor({"my_command": my_custom_function})
 
 ```json
 {
-  "auto_control": [
+  "mail_thunder": [
     ["MT_add_package_to_executor", ["os"]],
     ["os_system", ["echo Hello from os.system"]]
   ]
@@ -342,7 +342,7 @@ python -m je_mail_thunder -e /path/to/action.json
 python -m je_mail_thunder -d /path/to/actions/
 
 # 直接執行 JSON 字串
-python -m je_mail_thunder --execute_str '[["MT_smtp_later_init"], ["smtp_quit"]]'
+python -m je_mail_thunder --execute_str '[["MT_smtp_later_init"], ["MT_smtp_quit"]]'
 
 # 建立包含模板的新專案
 python -m je_mail_thunder -c /path/to/project
@@ -362,9 +362,9 @@ python -m je_mail_thunder -c /path/to/project
 MailThunder 內建 TCP Socket 伺服器，可接收遠端 JSON 指令：
 
 ```python
-from je_mail_thunder.utils.socket_server.mail_thunder_socket_server import start_autocontrol_socket_server
+from je_mail_thunder.utils.socket_server.mail_thunder_socket_server import start_mail_thunder_socket_server
 
-server = start_autocontrol_socket_server(host="localhost", port=9944)
+server = start_mail_thunder_socket_server(host="localhost", port=9942)
 # 伺服器現在在背景執行緒中運行
 ```
 
@@ -375,10 +375,10 @@ import socket
 import json
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.connect(("localhost", 9944))
+client.connect(("localhost", 9942))
 
 # 傳送動作指令
-command = json.dumps([["MT_smtp_later_init"], ["smtp_quit"]])
+command = json.dumps([["MT_smtp_later_init"], ["MT_smtp_quit"]])
 client.send(command.encode("utf-8"))
 
 # 接收回應

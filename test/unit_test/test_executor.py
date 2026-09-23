@@ -2,6 +2,7 @@ import pytest
 
 from je_mail_thunder.utils.exception.exceptions import AddCommandException, ExecuteActionException
 from je_mail_thunder.utils.executor.action_executor import (
+    SAFE_BUILTINS,
     executor,
     execute_action,
     execute_files,
@@ -21,6 +22,28 @@ def test_execute_builtin_len():
     assert any(v == 3 for v in result.values())
 
 
+@pytest.mark.parametrize("name", [
+    "eval", "exec", "compile", "__import__", "open", "input", "breakpoint",
+    "getattr", "setattr", "delattr", "globals", "locals", "vars", "dir",
+])
+def test_unsafe_builtin_is_not_registered(name):
+    assert name not in executor.event_dict
+
+
+def test_every_safe_builtin_is_registered():
+    for name in SAFE_BUILTINS:
+        assert callable(executor.event_dict[name])
+
+
+def test_eval_action_is_rejected(tmp_path):
+    marker = tmp_path / "pwned.txt"
+    code = f"open({str(marker)!r}, 'w').write('x')"
+    result = execute_action([["eval", [code]], ["exec", [code]]])
+    assert not marker.exists()
+    for value in result.values():
+        assert "ExecuteActionException" in value
+
+
 def test_execute_action_empty_list_logs_error():
     result = execute_action([])
     assert result == {}
@@ -30,7 +53,7 @@ def test_execute_action_invalid_action():
     result = execute_action([["nonexistent_action_xyz"]])
     assert len(result) == 1
     error_value = list(result.values())[0]
-    assert "Error" in error_value or "error" in error_value or "None" in str(type(error_value))
+    assert "ExecuteActionException" in error_value
 
 
 def test_add_command_to_executor():
@@ -53,11 +76,11 @@ def test_execute_action_with_dict_input():
         return "ok"
 
     add_command_to_executor({"test_noop": noop})
-    result = execute_action({"auto_control": [["test_noop"]]})
+    result = execute_action({"mail_thunder": [["test_noop"]]})
     assert any(v == "ok" for v in result.values())
 
 
-def test_execute_action_dict_without_auto_control():
+def test_execute_action_dict_without_the_action_key():
     with pytest.raises(ExecuteActionException):
         execute_action({"wrong_key": []})
 
@@ -77,3 +100,30 @@ def test_execute_files(tmp_path):
     assert len(results) == 2
     assert any("hello Alice" in str(v) for r in results for v in r.values())
     assert any("hello Bob" in str(v) for r in results for v in r.values())
+
+
+def test_smtp_quit_is_registered_under_both_names():
+    """``MT_smtp_quit`` is the prefixed name; ``smtp_quit`` stays for stored action files."""
+    assert executor.event_dict["MT_smtp_quit"].__name__ == "quit"
+    assert executor.event_dict["smtp_quit"].__name__ == "quit"
+
+
+def _register_noop():
+    add_command_to_executor({"test_noop": lambda: "ok"})
+
+
+def test_auto_control_key_still_works_with_a_deprecation_warning():
+    _register_noop()
+    with pytest.warns(DeprecationWarning, match="mail_thunder"):
+        result = execute_action({"auto_control": [["test_noop"]]})
+    assert list(result.values()) == ["ok"]
+
+
+def test_mail_thunder_key_raises_no_warning():
+    import warnings
+
+    _register_noop()
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        result = execute_action({"mail_thunder": [["test_noop"]]})
+    assert list(result.values()) == ["ok"]

@@ -1,7 +1,6 @@
+# Stable channel: the je_mail_thunder package. dev.toml builds je_mail_thunder_dev.
 [build-system]
-requires = [
-    "setuptools>=82.0.1",
-]
+requires = ["setuptools>=82.0.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -11,39 +10,30 @@ authors = [
     { name = "JE-Chen", email = "jechenmailman@gmail.com" },
 ]
 description = ""
-requires-python = ">=3.9"
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.10"
+# Standard library only (smtplib, imaplib, email, socketserver).
+dependencies = []
+license = { text = "MIT" }
 classifiers = [
-    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
     "Development Status :: 2 - Pre-Alpha",
     "Environment :: Win32 (MS Windows)",
     "Environment :: MacOS X",
     "Environment :: X11 Applications",
     "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
+    "Operating System :: OS Independent"
 ]
-
-[project.readme]
-file = "README.md"
-content-type = "text/markdown"
-
-[project.license]
-text = "MIT"
 
 [project.urls]
-Homepage = "https://github.com/Intergration-Automation-Testing/MailThunder"
+"Homepage" = "https://github.com/Integration-Automation/MailThunder"
 
-[tool.setuptools.packages.find]
-namespaces = false
+[tool.setuptools.packages]
+find = { namespaces = false }
 
 [tool.pytest.ini_options]
-testpaths = [
-    "test",
-]
+testpaths = ["test"]
 
 [tool.bandit]
-exclude_dirs = [
-    "test",
-]
-skips = [
-    "B101",
-]
+exclude_dirs = ["test"]
+skips = ["B101"]

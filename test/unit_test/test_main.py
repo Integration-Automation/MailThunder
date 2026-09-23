@@ -1,3 +1,11 @@
+"""Legacy CLI flags of ``python -m je_mail_thunder``.
+
+Other repositories call these: PyBreeze runs ``--execute_str <json>`` (JSON-encoded a
+second time on Windows) and ``--execute_file <path>``
+(``pybreeze/extend/process_executor/python_task_process_manager.py``), and calls
+``je_mail_thunder.create_project_dir()`` in process. Keep the flags, the Windows double
+decode and that export working (workspace item X-7).
+"""
 import json
 import os
 import subprocess  # nosec B404 - required to test the CLI entry point
@@ -15,6 +23,22 @@ def test_main_execute_file(tmp_path):
         text=True,
     )
     assert "main_test_output" in result.stdout
+
+
+def test_main_execute_file_long_flag(tmp_path):
+    action_file = str(tmp_path / "action.json")
+    write_action_json(action_file, [["print", ["long_flag_output"]]])
+    result = subprocess.run(  # nosec B603 - args are test-controlled constants
+        [sys.executable, "-m", "je_mail_thunder", "--execute_file", action_file],
+        capture_output=True,
+        text=True,
+    )
+    assert "long_flag_output" in result.stdout
+
+
+def test_create_project_dir_is_exported():
+    import je_mail_thunder
+    assert callable(je_mail_thunder.create_project_dir)
 
 
 def test_main_execute_dir(tmp_path):

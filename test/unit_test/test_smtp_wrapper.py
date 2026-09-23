@@ -74,3 +74,12 @@ def test_create_message_with_attach_binary_file():
         assert isinstance(msg, MIMEMultipart)
     finally:
         os.unlink(tmp_path)
+
+
+def test_text_attachment_is_read_as_utf8(tmp_path):
+    attachment = tmp_path / "notes.txt"
+    attachment.write_text("報表 😀", encoding="utf-8")
+    msg = SMTPWrapper.create_message_with_attach(
+        "body", {"Subject": "s", "From": "a@b.com", "To": "c@d.com"}, str(attachment))
+    attached = msg.get_payload()[-1]
+    assert attached.get_payload(decode=True).decode(attached.get_content_charset()) == "報表 😀"

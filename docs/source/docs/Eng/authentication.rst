@@ -172,7 +172,7 @@ Set authentication credentials in a JSON action file:
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_set_mail_thunder_os_environ", {
          "mail_thunder_user": "your_email@gmail.com",
          "mail_thunder_user_password": "your_app_password"
@@ -186,6 +186,6 @@ Set authentication credentials in a JSON action file:
            "To": "receiver@gmail.com"
          }
        }],
-       ["smtp_quit"]
+       ["MT_smtp_quit"]
      ]
    }
