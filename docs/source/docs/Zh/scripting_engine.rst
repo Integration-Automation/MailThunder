@@ -21,7 +21,7 @@ MailThunder 內建強大的 JSON 腳本引擎，讓您無需撰寫 Python 程式
        ▼
    execute_action(action_list)
        │
-       ├── 若為 dict: 提取 action_list["auto_control"]
+       ├── 若為 dict: 提取 action_list["mail_thunder"]
        ├── 若為 list: 直接使用
        │
        ▼
@@ -41,7 +41,7 @@ MailThunder 內建強大的 JSON 腳本引擎，讓您無需撰寫 Python 程式
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["command_name"],
        ["command_name", {"key": "value"}],
        ["command_name", ["arg1", "arg2"]]
@@ -168,7 +168,7 @@ MailThunder 內建強大的 JSON 腳本引擎，讓您無需撰寫 Python 程式
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_smtp_later_init"],
        ["MT_smtp_create_message_and_send", {
          "message_content": "Hello from the scripting engine!",
@@ -187,7 +187,7 @@ MailThunder 內建強大的 JSON 腳本引擎，讓您無需撰寫 Python 程式
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_imap_later_init"],
        ["MT_imap_select_mailbox"],
        ["MT_imap_output_all_mail_as_file"],
@@ -200,7 +200,7 @@ MailThunder 內建強大的 JSON 腳本引擎，讓您無需撰寫 Python 程式
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_imap_later_init"],
        ["MT_imap_select_mailbox", {"mailbox": "INBOX", "readonly": true}],
        ["MT_imap_mail_content_list", {"search_str": "UNSEEN"}],
@@ -213,7 +213,7 @@ MailThunder 內建強大的 JSON 腳本引擎，讓您無需撰寫 Python 程式
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_set_mail_thunder_os_environ", {
          "mail_thunder_user": "sender@gmail.com",
          "mail_thunder_user_password": "your_app_password"

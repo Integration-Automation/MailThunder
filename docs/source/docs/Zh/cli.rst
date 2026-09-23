@@ -117,7 +117,7 @@ MailThunder 透過 ``python -m je_mail_thunder`` 提供命令列介面 (CLI)，
    # 建立 JSON 動作檔
    cat > send.json << 'EOF'
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_smtp_later_init"],
        ["MT_smtp_create_message_and_send", {
          "message_content": "Hello from CLI!",

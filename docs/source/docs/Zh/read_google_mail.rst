@@ -295,7 +295,7 @@ MailThunder 的 ``IMAPWrapper`` 繼承自 ``imaplib.IMAP4_SSL``，提供讀取�
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_imap_later_init"],
        ["MT_imap_select_mailbox", {"mailbox": "INBOX", "readonly": true}],
        ["MT_imap_mail_content_list", {"search_str": "UNSEEN"}],
@@ -308,7 +308,7 @@ MailThunder 的 ``IMAPWrapper`` 繼承自 ``imaplib.IMAP4_SSL``，提供讀取�
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_imap_later_init"],
        ["MT_imap_select_mailbox"],
        ["MT_imap_output_all_mail_as_file"],

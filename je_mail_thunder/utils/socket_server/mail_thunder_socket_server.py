@@ -4,7 +4,11 @@ import sys
 import threading
 import warnings
 
-from je_mail_thunder.utils.executor.action_executor import execute_action
+from je_mail_thunder.utils.executor.action_executor import (
+    ACTION_LIST_KEY,
+    action_list_from_mapping,
+    execute_action,
+)
 
 MAX_PAYLOAD_BYTES = 8192
 MAX_ACTIONS = 256
@@ -13,14 +17,14 @@ MAX_ACTIONS = 256
 def _validate_payload(payload):
     """
     Validate the decoded JSON payload structure before execution.
-    Accepts either a list of action entries or a dict with an
-    "auto_control" key mapping to such a list. Each action entry must
+    Accepts either a list of action entries or a dict with a
+    "mail_thunder" key (or the deprecated "auto_control") mapping to such a list. Each action entry must
     be a non-empty list whose first element is a string command name.
     """
     if isinstance(payload, dict):
-        actions = payload.get("auto_control")
+        actions = action_list_from_mapping(payload)
         if not isinstance(actions, list):
-            raise ValueError("payload dict must contain 'auto_control' list")
+            raise ValueError(f"payload dict must contain a '{ACTION_LIST_KEY}' list")
     elif isinstance(payload, list):
         actions = payload
     else:

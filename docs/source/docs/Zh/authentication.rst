@@ -171,7 +171,7 @@ Gmail 特殊設定
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_set_mail_thunder_os_environ", {
          "mail_thunder_user": "your_email@gmail.com",
          "mail_thunder_user_password": "your_app_password"

@@ -299,7 +299,7 @@ Reading via JSON Scripting Engine
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_imap_later_init"],
        ["MT_imap_select_mailbox", {"mailbox": "INBOX", "readonly": true}],
        ["MT_imap_mail_content_list", {"search_str": "UNSEEN"}],
@@ -312,7 +312,7 @@ Reading via JSON Scripting Engine
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_imap_later_init"],
        ["MT_imap_select_mailbox"],
        ["MT_imap_output_all_mail_as_file"],

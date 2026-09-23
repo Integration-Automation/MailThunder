@@ -207,7 +207,7 @@ Action files use a list of commands. Each command is an array where the first el
 
 ```json
 {
-  "auto_control": [
+  "mail_thunder": [
     ["command_name"],
     ["command_name", {"key": "value"}],
     ["command_name", ["arg1", "arg2"]]
@@ -241,7 +241,7 @@ Action files use a list of commands. Each command is an array where the first el
 
 ```json
 {
-  "auto_control": [
+  "mail_thunder": [
     ["MT_smtp_later_init"],
     ["MT_smtp_create_message_and_send", {
       "message_content": "Hello World!",
@@ -260,7 +260,7 @@ Action files use a list of commands. Each command is an array where the first el
 
 ```json
 {
-  "auto_control": [
+  "mail_thunder": [
     ["MT_imap_later_init"],
     ["MT_imap_select_mailbox"],
     ["MT_imap_output_all_mail_as_file"]
@@ -289,7 +289,7 @@ Load any installed Python package into the executor at runtime:
 
 ```json
 {
-  "auto_control": [
+  "mail_thunder": [
     ["MT_add_package_to_executor", ["os"]],
     ["os_system", ["echo Hello from os.system"]]
   ]

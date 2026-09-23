@@ -248,7 +248,7 @@ Send emails without writing Python code by using a JSON action file:
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_smtp_later_init"],
        ["MT_smtp_create_message_and_send", {
          "message_content": "Hello from scripting engine!",
@@ -267,7 +267,7 @@ With attachment:
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_smtp_later_init"],
        ["MT_smtp_create_message_with_attach_and_send", {
          "message_content": "Report attached.",

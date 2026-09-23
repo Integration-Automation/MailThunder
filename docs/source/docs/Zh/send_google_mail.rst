@@ -244,7 +244,7 @@ MailThunder 使用 ``mimetypes.guess_type()`` 自動偵測附件的 MIME 類型�
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_smtp_later_init"],
        ["MT_smtp_create_message_and_send", {
          "message_content": "Hello from scripting engine!",
@@ -263,7 +263,7 @@ MailThunder 使用 ``mimetypes.guess_type()`` 自動偵測附件的 MIME 類型�
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_smtp_later_init"],
        ["MT_smtp_create_message_with_attach_and_send", {
          "message_content": "請查看附件報告。",

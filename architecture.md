@@ -37,7 +37,8 @@ executor exposes the same operations to action files, a CLI and a TCP socket ser
   - credentials: `read_output_content`, `write_output_content`, `set_mail_thunder_os_environ`,
     `get_mail_thunder_os_environ`, `mail_thunder_content_data_dict`, `is_need_to_save_content`.
 - **Action format**: an action is `[name]`, `[name, {kwargs}]` or `[name, [args]]`. A file holds a
-  list of actions or `{"auto_control": [...]}`; the key came from AutoControl.
+  list of actions or `{"mail_thunder": [...]}`. The old key `auto_control`, copied from AutoControl, is
+  still read with a `DeprecationWarning` (`action_list_from_mapping` in `utils/executor/action_executor.py`).
 - **Commands**: examples are `MT_smtp_later_init`, `MT_smtp_create_message_and_send`,
   `MT_imap_select_mailbox`, `MT_imap_output_all_mail_as_file` and `MT_add_package_to_executor`.
   `MT_smtp_quit` closes the SMTP connection; its pre-prefix name `smtp_quit` is still registered.
@@ -114,9 +115,9 @@ does not connect either. Login still waits until `later_init`.
   those names, the `mail_thunder_content.json` file name and the env var names stable.
 - **TestPioneer** lists `je-mail-thunder` in its dependencies but does not import it.
 - **Names inherited from AutoControl**:
-  - the action-dict key is `auto_control` (the socket function is now `start_mail_thunder_socket_server`;
-    the old name is a deprecated alias);
-  - FileAutomation uses the same function name and key;
+  - the action-dict key was `auto_control` and is now `mail_thunder`, and the socket function is now
+    `start_mail_thunder_socket_server`; both old names are deprecated aliases;
+  - FileAutomation still uses both old names;
   - the default port is 9942, the free slot next to the sibling servers (AutoControl 9938, APITestka 9939,
     LoadDensity 9940, WebRunner 9941, FileAutomation 9943–9945); it was 9944, FileAutomation's HTTP
     action-server default.
@@ -156,7 +157,7 @@ does not connect either. Login still waits until `later_init`.
 - A subpackage under `je_mail_thunder/` or a facade export is added, removed or renamed.
 - `__main__.py` flags, the Windows double decode, or the socket protocol (port, terminator,
   `quit_server`, payload limits) changes.
-- The action format (`auto_control` key, `MT_` prefix), the builtins policy, or the import-time
+- The action format (`mail_thunder` key and its `auto_control` alias, `MT_` prefix), the builtins policy, or the import-time
   instance creation changes.
 - The credential sources (file name, env var names, lookup order) change.
 - A §6 contract changes, for example PyBreeze's imports or its subprocess invocation.

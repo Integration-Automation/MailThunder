@@ -76,11 +76,11 @@ def test_execute_action_with_dict_input():
         return "ok"
 
     add_command_to_executor({"test_noop": noop})
-    result = execute_action({"auto_control": [["test_noop"]]})
+    result = execute_action({"mail_thunder": [["test_noop"]]})
     assert any(v == "ok" for v in result.values())
 
 
-def test_execute_action_dict_without_auto_control():
+def test_execute_action_dict_without_the_action_key():
     with pytest.raises(ExecuteActionException):
         execute_action({"wrong_key": []})
 
@@ -106,3 +106,24 @@ def test_smtp_quit_is_registered_under_both_names():
     """``MT_smtp_quit`` is the prefixed name; ``smtp_quit`` stays for stored action files."""
     assert executor.event_dict["MT_smtp_quit"].__name__ == "quit"
     assert executor.event_dict["smtp_quit"].__name__ == "quit"
+
+
+def _register_noop():
+    add_command_to_executor({"test_noop": lambda: "ok"})
+
+
+def test_auto_control_key_still_works_with_a_deprecation_warning():
+    _register_noop()
+    with pytest.warns(DeprecationWarning, match="mail_thunder"):
+        result = execute_action({"auto_control": [["test_noop"]]})
+    assert list(result.values()) == ["ok"]
+
+
+def test_mail_thunder_key_raises_no_warning():
+    import warnings
+
+    _register_noop()
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        result = execute_action({"mail_thunder": [["test_noop"]]})
+    assert list(result.values()) == ["ok"]

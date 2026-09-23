@@ -135,7 +135,7 @@ Examples
    # Create a JSON action file
    cat > send.json << 'EOF'
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_smtp_later_init"],
        ["MT_smtp_create_message_and_send", {
          "message_content": "Hello from CLI!",

@@ -79,3 +79,14 @@ def test_command_line_arguments_do_not_rebind_the_server(monkeypatch):
         assert server.server_address[0] == "127.0.0.1"
     finally:
         server.shutdown()
+
+
+@pytest.mark.parametrize("key", ["mail_thunder", "auto_control"])
+def test_socket_server_accepts_both_action_keys(key):
+    server = start_mail_thunder_socket_server("127.0.0.1", 0)
+    try:
+        response = _send_and_recv("127.0.0.1", server.server_address[1], json.dumps({key: [["print", ["k"]]]}))
+        assert "Return_Data_Over_JE" in response
+        assert "must contain" not in response
+    finally:
+        server.shutdown()

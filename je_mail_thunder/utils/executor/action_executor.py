@@ -1,6 +1,7 @@
 import builtins
 import types
-from typing import Union
+import warnings
+from typing import Optional, Union
 
 from je_mail_thunder.imap.imap_wrapper import imap_instance
 from je_mail_thunder.smtp.smtp_wrapper import smtp_instance
@@ -10,6 +11,27 @@ from je_mail_thunder.utils.exception.exception_tags import cant_execute_action_e
 from je_mail_thunder.utils.exception.exceptions import ExecuteActionException, AddCommandException
 from je_mail_thunder.utils.json.json_file import read_action_json
 from je_mail_thunder.utils.logging.loggin_instance import mail_thunder_logger
+
+# The key under which an action document holds its action list.
+ACTION_LIST_KEY = "mail_thunder"
+# The key copied from AutoControl; still read, with a DeprecationWarning, for existing files.
+LEGACY_ACTION_LIST_KEY = "auto_control"
+
+
+def action_list_from_mapping(document: dict) -> Optional[object]:
+    """Return the action list of an action document, or ``None`` if it has neither key.
+
+    ``{"mail_thunder": [...]}`` is the current form. ``{"auto_control": [...]}`` still works for
+    at least two further releases and raises a ``DeprecationWarning``.
+    """
+    if ACTION_LIST_KEY in document:
+        return document[ACTION_LIST_KEY]
+    if LEGACY_ACTION_LIST_KEY in document:
+        warnings.warn(
+            f'the "{LEGACY_ACTION_LIST_KEY}" key is deprecated; use "{ACTION_LIST_KEY}"',
+            DeprecationWarning, stacklevel=3)
+        return document[LEGACY_ACTION_LIST_KEY]
+    return None
 from je_mail_thunder.utils.package_manager.package_manager_class import package_manager
 from je_mail_thunder.utils.save_mail_user_content.save_on_env import set_mail_thunder_os_environ, \
     get_mail_thunder_os_environ
@@ -74,7 +96,7 @@ class Executor:
         for loop the list and execute action
         """
         if isinstance(action_list, dict):
-            actions = action_list.get("auto_control")
+            actions = action_list_from_mapping(action_list)
             if actions is None:
                 raise ExecuteActionException(executor_list_error)
         else:

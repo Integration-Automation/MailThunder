@@ -175,7 +175,7 @@ Create ``keyword/weekly_report.json``:
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_smtp_later_init"],
        ["MT_smtp_create_message_with_attach_and_send", {
          "message_content": "Please find the weekly report attached.",

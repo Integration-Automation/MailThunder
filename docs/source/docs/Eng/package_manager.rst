@@ -44,7 +44,7 @@ Usage in JSON Scripts
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_add_package_to_executor", ["os"]],
        ["os_system", ["echo Hello from os.system"]],
        ["os_getcwd"]
@@ -54,7 +54,7 @@ Usage in JSON Scripts
 .. code-block:: json
 
    {
-     "auto_control": [
+     "mail_thunder": [
        ["MT_add_package_to_executor", ["json"]],
        ["json_dumps", [{"key": "value"}]]
      ]
@@ -133,7 +133,7 @@ Three categories of members are extracted from each package:
    .. code-block:: json
 
       {
-        "auto_control": [
+        "mail_thunder": [
           ["MT_add_package_to_executor", ["os.path"]],
           ["os.path_join", ["/home", "user", "file.txt"]]
         ]

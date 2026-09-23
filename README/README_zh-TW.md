@@ -207,7 +207,7 @@ MailThunder 內建 JSON 腳本引擎，讓你無需撰寫 Python 程式碼即可
 
 ```json
 {
-  "auto_control": [
+  "mail_thunder": [
     ["指令名稱"],
     ["指令名稱", {"key": "value"}],
     ["指令名稱", ["arg1", "arg2"]]
@@ -241,7 +241,7 @@ MailThunder 內建 JSON 腳本引擎，讓你無需撰寫 Python 程式碼即可
 
 ```json
 {
-  "auto_control": [
+  "mail_thunder": [
     ["MT_smtp_later_init"],
     ["MT_smtp_create_message_and_send", {
       "message_content": "Hello World!",
@@ -260,7 +260,7 @@ MailThunder 內建 JSON 腳本引擎，讓你無需撰寫 Python 程式碼即可
 
 ```json
 {
-  "auto_control": [
+  "mail_thunder": [
     ["MT_imap_later_init"],
     ["MT_imap_select_mailbox"],
     ["MT_imap_output_all_mail_as_file"]
@@ -289,7 +289,7 @@ add_command_to_executor({"my_command": my_custom_function})
 
 ```json
 {
-  "auto_control": [
+  "mail_thunder": [
     ["MT_add_package_to_executor", ["os"]],
     ["os_system", ["echo Hello from os.system"]]
   ]

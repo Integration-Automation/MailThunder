@@ -85,7 +85,7 @@ Execute a list of action commands.
 - ``action_list`` — Either:
 
   - A ``list`` of actions: ``[["cmd1"], ["cmd2", args], ...]``
-  - A ``dict`` with an ``"auto_control"`` key: ``{"auto_control": [["cmd1"], ...]}``
+  - A ``dict`` with an ``"mail_thunder"`` key: ``{"mail_thunder": [["cmd1"], ...]}``
 
 **Returns:** A ``dict`` mapping ``"execute: [action]"`` to the return value of each
 command. If a command fails, the value is the exception's ``repr()``.
@@ -209,7 +209,7 @@ Exceptions
    * - Exception
      - Condition
    * - ``ExecuteActionException``
-     - Action list is empty, wrong type, ``auto_control`` key missing,
+     - Action list is empty, wrong type, ``mail_thunder`` key (or the deprecated ``auto_control``) missing,
        or action has more than 2 elements
    * - ``AddCommandException``
      - ``add_command_to_executor()`` receives a non-callable value
