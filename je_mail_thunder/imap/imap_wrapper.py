@@ -174,7 +174,7 @@ class IMAPWrapper(IMAP4_SSL):
                     mail_thunder_logger.error(
                         f"imap_output_all_mail_as_file, rejected path traversal: {target_path}")
                     continue
-                with open(target_path, "w+") as file:
+                with open(target_path, "w", encoding="utf-8") as file:
                     if isinstance(mail.get("BODY"), bytes):
                         file.write(mail.get("BODY").decode("utf-8"))
                     else:

@@ -88,7 +88,7 @@ class SMTPWrapper(SMTP_SSL):
                 content_type = "application/octet-stream"
             main_type, sub_type = content_type.split("/", 1)
             if main_type == "text":
-                with open(attach_file, "r+") as file_read:
+                with open(attach_file, "r", encoding="utf-8") as file_read:
                     mime_part = MIMEText(file_read.read(), _subtype=sub_type)
             elif main_type == "image":
                 with open(attach_file, "rb") as file_read:
