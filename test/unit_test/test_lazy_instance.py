@@ -53,7 +53,7 @@ def _reset_counter():
 def test_importing_offline_neither_connects_nor_fails(tmp_path):
     env = dict(os.environ)
     env["PYTHONPATH"] = os.pathsep.join(filter(None, [str(REPO_ROOT), env.get("PYTHONPATH")]))
-    result = subprocess.run(  # nosec B603 - fixed interpreter, test-controlled code
+    result = subprocess.run(  # nosec B603  # nosemgrep - fixed interpreter, test-controlled code
         [sys.executable, "-c", _OFFLINE_IMPORT],
         cwd=tmp_path, env=env, capture_output=True, text=True, timeout=120, check=False,
     )
