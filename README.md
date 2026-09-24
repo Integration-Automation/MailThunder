@@ -455,7 +455,7 @@ Extends `imaplib.IMAP4_SSL`. Default host: `imap.gmail.com`.
 | Function | Description |
 |----------|-------------|
 | `create_project_dir(project_path, parent_name)` | Create a project with templates |
-| `set_mail_thunder_os_environ(user, password)` | Set authentication environment variables |
+| `set_mail_thunder_os_environ(mail_thunder_user, mail_thunder_user_password)` | Set authentication environment variables |
 | `get_mail_thunder_os_environ()` | Get authentication environment variables |
 | `read_output_content()` | Read `mail_thunder_content.json` from cwd |
 | `write_output_content()` | Write content data to `mail_thunder_content.json` |
@@ -480,6 +480,7 @@ MailThunder/
       file_process/          # File utility functions
       json/                  # JSON file read/write
       json_format/           # JSON formatting
+      lazy_instance/         # Lazy clients that connect on first use
       logging/               # Logger instance
       package_manager/       # Dynamic package loader
       project/               # Project template scaffolding
