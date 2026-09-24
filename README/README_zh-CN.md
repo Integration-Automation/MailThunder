@@ -455,7 +455,7 @@ smtp = SMTPWrapper(host="smtp.office365.com", port=587)
 | 函数 | 说明 |
 |------|------|
 | `create_project_dir(project_path, parent_name)` | 创建包含模板的项目 |
-| `set_mail_thunder_os_environ(user, password)` | 设置验证环境变量 |
+| `set_mail_thunder_os_environ(mail_thunder_user, mail_thunder_user_password)` | 设置验证环境变量 |
 | `get_mail_thunder_os_environ()` | 获取验证环境变量 |
 | `read_output_content()` | 从当前工作目录读取 `mail_thunder_content.json` |
 | `write_output_content()` | 将内容数据写入 `mail_thunder_content.json` |
@@ -480,6 +480,7 @@ MailThunder/
       file_process/          # 文件工具函数
       json/                  # JSON 文件读写
       json_format/           # JSON 格式化
+      lazy_instance/         # 首次使用时才连接的惰性客户端
       logging/               # 日志实例
       package_manager/       # 动态包加载器
       project/               # 项目模板创建
