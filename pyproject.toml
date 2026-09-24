@@ -1,6 +1,6 @@
 # Stable channel: the je_mail_thunder package. dev.toml builds je_mail_thunder_dev.
 [build-system]
-requires = ["setuptools>=82.0.1"]
+requires = ["setuptools>=84.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
