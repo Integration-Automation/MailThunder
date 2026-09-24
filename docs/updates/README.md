@@ -58,6 +58,7 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | ID | Date | Title | Tags | Batch |
 |---|---|---|---|---|
+| U-20260924-01 | 2026-09-24 | Move CI to Node 24 actions pinned by commit | #ci #security #deps | [2026-09](2026-09.md) |
 | U-20260923-11 | 2026-09-23 | main merged into dev; CI hash-locked; dev merged into main | #done #ci #release | [2026-09](2026-09.md) |
 | U-20260923-10 | 2026-09-23 | Action documents use a mail_thunder key; auto_control is deprecated | #done #api | [2026-09](2026-09.md) |
 | U-20260923-09 | 2026-09-23 | Every text file is read and written as UTF-8 | #bugfix #encoding | [2026-09](2026-09.md) |
@@ -79,4 +80,4 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | File | Period | Entries |
 |---|---|---:|
-| [2026-09.md](2026-09.md) | 2026-09 | 16 |
+| [2026-09.md](2026-09.md) | 2026-09 | 17 |
