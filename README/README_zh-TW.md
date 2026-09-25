@@ -495,5 +495,3 @@ MailThunder/
 ## 授權條款
 
 本專案採用 [MIT 授權條款](../LICENSE)。
-
-Copyright (c) 2021 JE-Chen
