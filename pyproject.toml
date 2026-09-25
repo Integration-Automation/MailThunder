@@ -12,6 +12,8 @@ authors = [
 ]
 description = ""
 requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
 dependencies = []
 classifiers = [
     "Programming Language :: Python :: 3.10",
@@ -19,16 +21,12 @@ classifiers = [
     "Environment :: Win32 (MS Windows)",
     "Environment :: MacOS X",
     "Environment :: X11 Applications",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
 
 [project.readme]
 file = "README.md"
 content-type = "text/markdown"
-
-[project.license]
-text = "MIT"
 
 [project.urls]
 Homepage = "https://github.com/Integration-Automation/MailThunder"

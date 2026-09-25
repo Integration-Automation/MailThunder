@@ -15,14 +15,14 @@ readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.10"
 # Standard library only (smtplib, imaplib, email, socketserver).
 dependencies = []
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 classifiers = [
     "Programming Language :: Python :: 3.10",
     "Development Status :: 2 - Pre-Alpha",
     "Environment :: Win32 (MS Windows)",
     "Environment :: MacOS X",
     "Environment :: X11 Applications",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent"
 ]
 
