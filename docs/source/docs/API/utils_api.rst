@@ -379,6 +379,12 @@ Package Manager
      - Extract members matching a predicate and register in target's ``event_dict``.
    * - ``add_package_to_target(package, target)``
      - Run ``get_member()`` for isfunction, isbuiltin, and isclass predicates.
+   * - ``allow_packages(*packages: str)``
+     - Add packages, and their submodules, to the package gate's allowlist.
+   * - ``set_allow_arbitrary_packages(enabled: bool)``
+     - Allow (``True``) or refuse (``False``) packages outside the allowlist. Until either switch is
+       called, any package loads with a ``DeprecationWarning``. ``Executor`` has the same two static
+       methods; neither is an action command.
 
 **Singleton:**
 

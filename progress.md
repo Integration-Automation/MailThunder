@@ -7,7 +7,11 @@ Cross-repo and workspace items live in `D:\Codes\progress.md` (relevant here: X-
 ## Open
 
 - **#5** [DECIDE] OAuth2 support: Google and Microsoft are retiring basic authentication (workspace L-8).
-- **#8** [DECIDE] `MT_add_package_to_executor` lets any action list, including one sent to the socket server, load an importable package such as `os` or `subprocess` and call its functions (`je_mail_thunder/utils/package_manager/package_manager_class.py`), which bypasses the builtins allowlist. je_action_core's package gate is one setting away: set `gate=PackageGate.ON` there, add `executor.allow_packages` / `set_allow_arbitrary_packages` and the README and docs text, as APITestka did (its U-20261001-16). Or document the command as trusted-input only (workspace X-12).
 - **#9** [BLOCKED: je_action_core on PyPI, ActionCore `progress.md` #1] Install `je_action_core` from PyPI instead of the GitHub pin.
   - Add it to `.github/requirements/test.in` and `publish.in`, regenerate the `.txt` files, and drop the "Install je_action_core" step from `test_dev.yml`, `test_stable.yml` and `publish_stable.yml`.
   - Until then, do not release `main`: the published metadata requires `je_action_core`, which PyPI does not have yet.
+- **#10** [BLOCKED: two releases must ship the warning first] Flip the package gate's default to refuse packages outside the allowlist.
+  - Where: set `self.allow_arbitrary_packages = False` in `PackageManager.__init__` (`je_mail_thunder/utils/package_manager/package_manager_class.py`); the warning branch is je_action_core's `_check_allowed` and stays for the other projects.
+  - Docs: the "Package gate" paragraph in the three READMEs and the "Package Gate" section of `docs/source/docs/{Eng,Zh}/package_manager.rst`.
+  - Timing: the warning is first released in the version after 0.0.29 (`origin/main` `pyproject.toml`); flip once two releases after that one have shipped it, and not before `#9` (the core must be on PyPI before any release).
+  - Decide first: how a user who only runs action files (`python -m je_mail_thunder -e`, the socket server) allows a package without a Python host to call `executor.allow_packages(...)`.

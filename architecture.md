@@ -22,7 +22,7 @@ executor exposes the same operations to action files, a CLI and a TCP socket ser
 | `je_mail_thunder/utils/executor/action_executor.py` | `Executor` (je_action_core's `ActionExecutor` with MailThunder's settings): `event_dict` (`MT_*` commands plus je_action_core's `SAFE_BUILTINS` allowlist), `execute_action`, `execute_files`, `add_command_to_executor`, `action_list_from_mapping` |
 | `je_mail_thunder/utils/save_mail_user_content/` | Credential sources: `mail_thunder_content.json` in the working directory (`read_output_content` / `write_output_content`) and the env vars `mail_thunder_user` / `mail_thunder_user_password` (`set_/get_mail_thunder_os_environ`) |
 | `je_mail_thunder/utils/socket_server/mail_thunder_socket_server.py` | `start_mail_thunder_socket_server`: je_action_core's TCP action server (old name `start_autocontrol_socket_server` kept as a deprecated alias) with payload validation first (`_validate_payload`, `MAX_ACTIONS`) and oversized payloads dropped |
-| `je_mail_thunder/utils/package_manager/` | `package_manager` (je_action_core's, gate off): loads an installed package's members into the executor |
+| `je_mail_thunder/utils/package_manager/` | `package_manager` (je_action_core's, gate on): loads an installed package's members into the executor; `executor.allow_packages` / `set_allow_arbitrary_packages` are its Python-only switches |
 | `je_mail_thunder/utils/project/` | `create_project_dir` scaffolding; `template/template_keyword.py` and `template_executor.py` hold the templates |
 | `je_mail_thunder/utils/{json,json_format,file_process,logging,exception}/` | Action JSON I/O (je_action_core's `ActionJsonFile`), JSON reformat, directory listing (je_action_core's), `mail_thunder_logger` (file at `$MAIL_THUNDER_LOG_FILE` or `~/.je_mail_thunder/logs/Mail_Thunder.log`, opened on first use), `MailThunderException` hierarchy |
 | `test/unit_test/` | pytest suite (`testpaths = ["test"]`). `manual_test/` holds scripts that need real mailboxes; its `conftest.py` excludes them from collection |
@@ -134,7 +134,7 @@ does not connect either. Login still waits until `later_init`.
     `cant_execute_action_error`; plain record keys; `LoggingReporter(mail_thunder_logger)`;
   - **registry**: functions only;
   - **package manager**: `<package>_<member>` names, dotted identifiers only, import and attribute errors
-    logged, gate off;
+    logged, gate on (refusals raise `ExecuteActionException`);
   - **socket server**: `_validate_payload` runs first; `ValueError`, `OSError` and `TypeError` are answered;
     oversized payloads are dropped; messages go to the console.
 

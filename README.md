@@ -299,6 +299,20 @@ Load any installed Python package into the executor at runtime:
 
 This loads all functions, builtins, and classes from the specified package, prefixed with `packagename_`.
 
+**Package gate.** Because `MT_add_package_to_executor` can load `os` or `subprocess`, an action file or socket
+client that names them could run anything. The host program decides what may load:
+
+```python
+from je_mail_thunder.utils.executor.action_executor import executor
+
+executor.allow_packages("json")                # these, and their submodules
+executor.set_allow_arbitrary_packages(False)   # refuse everything else before importing it
+```
+
+Neither switch is an action command, so an action file cannot open its own gate. A refused package is recorded
+as an `ExecuteActionException` in that action's result. Until the host calls either switch, any package still
+loads but raises a `DeprecationWarning`: a future release will refuse unlisted packages by default.
+
 > **Warning:** Loading packages like `os` into the executor can be a security risk. Only load trusted packages and validate all inputs.
 
 ---

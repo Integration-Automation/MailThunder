@@ -137,6 +137,35 @@ MailThunder 的 ``PackageManager`` 允許您在執行期動態載入任何已安
 
 ----
 
+套件閘門
+--------
+
+哪些套件可以由 ``MT_add_package_to_executor`` 載入，由宿主程式決定：
+
+.. code-block:: python
+
+   from je_mail_thunder.utils.executor.action_executor import executor
+
+   executor.allow_packages("json")                # 這些套件與其子模組
+   executor.set_allow_arbitrary_packages(False)   # 其他套件在匯入前就拒絕
+
+這兩個開關都不是 action 命令，所以 action 檔（或 socket 用戶端）不能自己打開閘門。被拒絕的套件
+不會被匯入，該動作的結果是 ``ExecuteActionException``。``set_allow_arbitrary_packages(True)``
+則載入任何套件、不發警告。宿主程式呼叫任一個開關之前，任何套件仍會載入，但會發出
+``DeprecationWarning``；之後的版本會預設拒絕允許清單以外的套件。
+
+----
+
+錯誤處理
+--------
+
+- 套件沒有安裝時，``ModuleNotFoundError`` 訊息會記錄到 ``mail_thunder_logger``\ （不會丟出例外）
+- 執行器不存在（\ ``None``\ ）時，記錄一則錯誤訊息
+- 載入成員時發生的 ``AttributeError`` 與 ``ImportError`` 會被攔下並記錄
+- 被閘門拒絕的套件會丟出 ``ExecuteActionException``
+
+----
+
 安全性警告
 ----------
 

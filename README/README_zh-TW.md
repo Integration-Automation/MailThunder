@@ -299,6 +299,20 @@ add_command_to_executor({"my_command": my_custom_function})
 
 這會載入指定套件的所有函式、內建功能和類別，並以 `套件名稱_` 為前綴。
 
+**套件閘門。** `MT_add_package_to_executor` 能載入 `os` 或 `subprocess`，所以只要 action 檔或 socket 用戶端寫得出
+這些名字，就能執行任何東西。哪些套件可以載入，由宿主程式決定：
+
+```python
+from je_mail_thunder.utils.executor.action_executor import executor
+
+executor.allow_packages("json")                # 這些套件與其子模組
+executor.set_allow_arbitrary_packages(False)   # 其他套件在匯入前就拒絕
+```
+
+這兩個開關都不是 action 命令，所以 action 檔不能自己打開閘門。被拒絕的套件會以 `ExecuteActionException`
+記錄在該動作的結果裡。宿主程式呼叫任一個開關之前，任何套件仍會載入，但會發出 `DeprecationWarning`：之後的版本會
+預設拒絕清單以外的套件。
+
 > **警告：** 將 `os` 等套件載入執行器可能存在安全風險。請僅載入可信任的套件並驗證所有輸入。
 
 ---

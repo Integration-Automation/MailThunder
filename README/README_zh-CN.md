@@ -299,6 +299,20 @@ add_command_to_executor({"my_command": my_custom_function})
 
 这会加载指定包的所有函数、内置功能和类，并以 `包名称_` 为前缀。
 
+**包闸门。** `MT_add_package_to_executor` 能加载 `os` 或 `subprocess`，所以只要 action 文件或 socket 客户端写得出
+这些名字，就能执行任何东西。哪些包可以加载，由宿主程序决定：
+
+```python
+from je_mail_thunder.utils.executor.action_executor import executor
+
+executor.allow_packages("json")                # 这些包与其子模块
+executor.set_allow_arbitrary_packages(False)   # 其他包在导入前就拒绝
+```
+
+这两个开关都不是 action 命令，所以 action 文件不能自己打开闸门。被拒绝的包会以 `ExecuteActionException`
+记录在该动作的结果里。宿主程序调用任一个开关之前，任何包仍会加载，但会发出 `DeprecationWarning`：之后的版本会
+默认拒绝清单以外的包。
+
 > **警告：** 将 `os` 等包加载至执行器可能存在安全风险。请仅加载可信任的包并验证所有输入。
 
 ---
