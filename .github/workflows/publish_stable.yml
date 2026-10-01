@@ -17,6 +17,7 @@ jobs:
     permissions:
       contents: read
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30  # about 3x the slowest recent run, at least 15
     strategy:
       fail-fast: true
       matrix:
@@ -48,6 +49,7 @@ jobs:
   publish:
     needs: test
     runs-on: ubuntu-latest
+    timeout-minutes: 15  # about 3x the slowest recent run, at least 15
     permissions:
       contents: write
     steps:
