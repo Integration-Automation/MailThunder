@@ -13,6 +13,7 @@ import pytest
 
 from je_mail_thunder.imap.imap_wrapper import IMAPWrapper
 from je_mail_thunder.smtp.smtp_wrapper import SMTPWrapper
+from je_mail_thunder.utils.save_mail_user_content.mail_thunder_content_save import read_output_content
 
 _ENV_USER = "mail_thunder_user"
 _ENV_PASSWORD = "mail_thunder_user_password"
@@ -50,12 +51,13 @@ def test_an_incomplete_or_missing_file_falls_back_to_the_environment(wrapper, co
 
 
 @pytest.mark.parametrize("wrapper", [SMTPWrapper, IMAPWrapper])
-def test_a_content_file_that_is_not_an_object_raises(wrapper, clean_place, monkeypatch):
+def test_a_content_file_that_is_not_an_object_is_ignored(wrapper, clean_place, monkeypatch):
+    """It used to raise ValueError inside read_output_content (dict.update of a list)."""
     _write_content(clean_place, ["not", "an object"])
     monkeypatch.setenv(_ENV_USER, "env@example.com")
     monkeypatch.setenv(_ENV_PASSWORD, "env-secret")
-    with pytest.raises(ValueError):
-        wrapper._resolve_credentials()
+    assert read_output_content() is None
+    assert wrapper._resolve_credentials() == ("env@example.com", "env-secret")
 
 
 @pytest.mark.parametrize("wrapper", [SMTPWrapper, IMAPWrapper])
