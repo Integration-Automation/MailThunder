@@ -58,6 +58,7 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | ID | Date | Title | Tags | Batch |
 |---|---|---|---|---|
+| U-20261001-08 | 2026-10-01 | Dependabot watches the hash-locked requirements; a guard keeps the publish jobs on them | #ci #security #X-13 | [2026-10](2026-10.md) |
 | U-20261001-07 | 2026-10-01 | CI publishes je_mail_thunder_dev from the dev branch | #release #ci #X-13 | [2026-10](2026-10.md) |
 | U-20261001-06 | 2026-10-01 | OAuth2 (XOAUTH2) login for Google and Microsoft, and SMTP over STARTTLS | #done #security #oauth2 #L-8 | [2026-10](2026-10.md) |
 | U-20261001-05 | 2026-10-01 | je_action_core comes from PyPI | #done #build #L-6 | [2026-10](2026-10.md) |
@@ -91,5 +92,5 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | File | Period | Entries |
 |---|---|---:|
-| [2026-10.md](2026-10.md) | 2026-10 | 7 |
+| [2026-10.md](2026-10.md) | 2026-10 | 8 |
 | [2026-09.md](2026-09.md) | 2026-09 | 21 |
