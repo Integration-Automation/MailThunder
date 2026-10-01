@@ -68,7 +68,7 @@ jobs:
           python-version: "3.12"
 
       # Hash-locked, wheels-only; the same file the stable publish job installs
-      # (regenerate command: publish_stable.yml).
+      # (regenerate command: the top of .github/requirements/publish.in).
       - name: Install build tooling
         run: |
           pip install --require-hashes --only-binary :all: -r .github/requirements/publish.txt
@@ -76,8 +76,9 @@ jobs:
       - name: Write pyproject.toml from dev.toml with the next version
         run: python scripts/dev_release.py prepare
 
+      # --no-isolation: the backend is the setuptools locked in publish.txt, not a fresh download.
       - name: Build distributions
-        run: python -m build
+        run: python -m build --no-isolation
 
       - name: Verify distribution metadata
         run: python -m twine check dist/*

@@ -64,6 +64,8 @@ executor exposes the same operations to action files, a CLI and a TCP socket ser
     published one. `scripts/dev_release.py` takes the version from PyPI (newest release plus one patch), so
     nothing is committed back and the version in `dev.toml` is only a floor. The job reads no secret but
     `PYPI_API_TOKEN`.
+  - Both jobs install only the hash-locked `.github/requirements/publish.txt` and build with
+    `python -m build --no-isolation`, so the build backend is the locked `setuptools` too.
   - `test/unit_test/test_dev_toml_parity.py` keeps the dependencies, Python floor, entry points and
     `[tool.setuptools]` of `dev.toml` equal to `pyproject.toml`.
 - There is no MCP server, LSP, pytest plugin or GUI.
