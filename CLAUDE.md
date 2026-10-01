@@ -21,12 +21,13 @@ pytest                            # Run tests (testpaths = test/)
 
 ```
 je_mail_thunder/
-  smtp/smtp_wrapper.py      # SMTPWrapper (extends SMTP_SSL)
+  smtp/smtp_wrapper.py      # SMTPClientMixin; SMTPWrapper (SMTP_SSL), SMTPStartTLSWrapper (SMTP + STARTTLS)
   imap/imap_wrapper.py      # IMAPWrapper (extends IMAP4_SSL)
   utils/
     executor/                # Command pattern — JSON action executor
     socket_server/           # TCP socket server for remote command execution
-    save_mail_user_content/  # Credential storage (JSON file / env vars)
+    save_mail_user_content/  # Credential storage (JSON file / env vars) and the password / OAuth2 lookup
+    oauth2/                  # OAuth2 settings, token refresh and cache, XOAUTH2 (stdlib only)
     project/template/        # Template method pattern for project scaffolding
     package_manager/         # Dynamic package loading
     json/                    # JSON file I/O
@@ -81,12 +82,13 @@ je_mail_thunder/
 - **Limit socket recv buffer** and validate JSON payloads before execution to prevent injection or denial-of-service.
 
 ### Command Execution Safety
-- The `Executor` registers all Python builtins into `event_dict`. Be aware that this allows arbitrary builtin calls via JSON commands. Any new command registration via `add_command_to_executor` must validate that only `types.MethodType` or `types.FunctionType` are accepted (already enforced).
+- The `Executor` registers only the `SAFE_BUILTINS` allowlist (je_action_core) into `event_dict`; do not register other builtins. Any new command registration via `add_command_to_executor` must validate that only `types.MethodType` or `types.FunctionType` are accepted (already enforced).
 - **Never use `eval()` or `exec()`** on untrusted input.
 - **Never use `subprocess.shell=True`** with user-provided strings.
 
 ### Network Security
-- SMTP uses `SMTP_SSL` (port 465) — always use SSL/TLS. Do not downgrade to plain SMTP.
+- SMTP uses `SMTP_SSL` (port 465), or `SMTPStartTLSWrapper` (port 587), which upgrades with `STARTTLS` and a verifying `ssl.create_default_context()` before anything else is sent and refuses a server that does not offer it — always use SSL/TLS. Do not downgrade to plain SMTP or send credentials before TLS.
+- OAuth2 token endpoints must be `https`; client secrets, refresh tokens and access tokens never go into logs, exception messages or a `repr`.
 - IMAP uses `IMAP4_SSL` — always use SSL/TLS. Do not downgrade to plain IMAP.
 - Socket server binds to `localhost` by default. Do not change the default bind address to `0.0.0.0` without explicit user configuration.
 

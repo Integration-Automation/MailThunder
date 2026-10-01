@@ -1,4 +1,5 @@
 import smtplib
+import ssl
 from email.message import EmailMessage
 from email.mime.audio import MIMEAudio
 from email.mime.base import MIMEBase
@@ -7,11 +8,18 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from mimetypes import guess_type
 from os import path
-from smtplib import SMTP_SSL
+from smtplib import SMTP, SMTP_SSL
+from typing import Optional
 
+from je_mail_thunder.utils.exception.exceptions import MailThunderOAuth2Exception
 from je_mail_thunder.utils.lazy_instance.lazy_instance import LazyInstance
 from je_mail_thunder.utils.logging.loggin_instance import mail_thunder_logger
-from je_mail_thunder.utils.save_mail_user_content.credentials import resolve_login_credentials
+from je_mail_thunder.utils.oauth2.oauth2 import oauth2_token_cache, xoauth2_string
+from je_mail_thunder.utils.save_mail_user_content.credentials import (
+    configured_oauth2_provider,
+    resolve_login_credentials,
+    resolve_oauth2_settings,
+)
 
 
 class SMTPClientMixin:
@@ -112,21 +120,41 @@ class SMTPClientMixin:
 
     _resolve_credentials = staticmethod(resolve_login_credentials)
 
+    def oauth2_login(self, user: str, access_token: str) -> None:
+        """
+        Log in with SASL ``XOAUTH2`` (OAuth2) instead of a password.
+
+        :raises smtplib.SMTPAuthenticationError: the server refused the token.
+        """
+        mail_thunder_logger.info("smtp_oauth2_login")
+
+        def respond(challenge: Optional[bytes] = None) -> str:
+            # A challenge after the initial response carries the server's error; an empty reply ends the exchange.
+            return xoauth2_string(user, access_token) if challenge is None else ""
+
+        self.ehlo_or_helo_if_needed()
+        self.auth("XOAUTH2", respond, initial_response_ok=True)
+
     def try_to_login_with_env_or_content(self):
         """
-        Try to find user and password on cwd /mail_thunder_content.json or env var
-        :return: None
+        Log in with the OAuth2 settings when there are any, else with the user and password
+        (``mail_thunder_content.json`` in the current directory first, then the environment).
+        :return: True when logged in, False otherwise (the failure is logged)
         """
         mail_thunder_logger.info("smtp_try_to_login_with_env_or_content")
         self.login_state = False
         try:
-            credentials = self._resolve_credentials()
-            if credentials is None:
-                return self.login_state
-            self.login(*credentials)
+            oauth2 = resolve_oauth2_settings()
+            if oauth2 is not None:
+                self.oauth2_login(oauth2.user, oauth2_token_cache.access_token(oauth2))
+            else:
+                credentials = self._resolve_credentials()
+                if credentials is None:
+                    return self.login_state
+                self.login(*credentials)
             self.login_state = True
             return self.login_state
-        except smtplib.SMTPAuthenticationError as error:
+        except (smtplib.SMTPAuthenticationError, MailThunderOAuth2Exception) as error:
             mail_thunder_logger.error(f"smtp_try_to_login_with_env_or_content, failed: {repr(error)}")
             return self.login_state
         except OSError as error:
@@ -193,5 +221,35 @@ class SMTPWrapper(SMTPClientMixin, SMTP_SSL):
         self.login_state = False
 
 
+class SMTPStartTLSWrapper(SMTPClientMixin, SMTP):
+    """
+    SMTP upgraded to TLS with ``STARTTLS`` before anything else is sent; Microsoft 365's
+    ``smtp.office365.com:587`` by default. A server that does not offer ``STARTTLS`` is refused: the connection is
+    closed and ``smtplib.SMTPNotSupportedError`` raised, so nothing is ever sent in the clear.
+    """
+
+    def __init__(self, host: str = "smtp.office365.com", port: int = 587):
+        super().__init__(host, port)
+        try:
+            self.starttls(context=ssl.create_default_context())
+        except (smtplib.SMTPException, OSError):
+            self.close()
+            raise
+        self.login_state = False
+
+
+def default_smtp_client() -> SMTPClientMixin:
+    """
+    The client ``smtp_instance`` builds: the server of the provider the OAuth2 settings name (Microsoft over
+    ``STARTTLS``), else Gmail over implicit TLS.
+    """
+    provider = configured_oauth2_provider()
+    if provider is None:
+        return SMTPWrapper()
+    if provider.smtp_starttls:
+        return SMTPStartTLSWrapper(provider.smtp_host, provider.smtp_port)
+    return SMTPWrapper(provider.smtp_host, provider.smtp_port)
+
+
 # Connects to the SMTP server on first use, not at import (see utils/lazy_instance).
-smtp_instance = LazyInstance(SMTPWrapper, "smtp_instance")
+smtp_instance = LazyInstance(default_smtp_client, "smtp_instance")

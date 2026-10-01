@@ -197,9 +197,9 @@ MailThunder 使用 ``mimetypes.guess_type()`` 自動偵測附件的 MIME 類型�
 
 .. note::
 
-   MailThunder 使用 ``SMTP_SSL``（連接時即啟用 SSL）。若您的供應商要求
-   在 587 埠使用 STARTTLS，您可能需要直接使用底層 ``smtplib``
-   或繼承 ``SMTPWrapper``。
+   ``SMTPWrapper`` 使用 ``SMTP_SSL``（連接時即啟用 SSL）。若您的供應商要求
+   在 587 埠使用 STARTTLS（Microsoft 365 即是），請改用 ``SMTPStartTLSWrapper``，
+   它的方法相同，並會拒絕不提供 STARTTLS 的伺服器。
 
 ----
 

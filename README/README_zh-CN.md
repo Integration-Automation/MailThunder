@@ -24,6 +24,7 @@
 - [身份验证](#身份验证)
   - [JSON 配置文件](#json-配置文件)
   - [环境变量](#环境变量)
+  - [OAuth2（Google 与 Microsoft）](#oauth2google-与-microsoft)
 - [脚本引擎](#脚本引擎)
   - [Action JSON 格式](#action-json-格式)
   - [可用的脚本指令](#可用的脚本指令)
@@ -34,6 +35,7 @@
 - [Socket 服务器](#socket-服务器)
 - [API 参考](#api-参考)
   - [SMTPWrapper](#smtpwrapper)
+  - [SMTPStartTLSWrapper](#smtpstarttlswrapper)
   - [IMAPWrapper](#imapwrapper)
   - [Executor 函数](#executor-函数)
   - [工具函数](#工具函数)
@@ -44,7 +46,7 @@
 
 ## 功能特色
 
-- **SMTP 支持** — 通过 SSL 发送邮件，默认使用 Gmail，也可自定义其他 SMTP 服务
+- **SMTP 支持** — 通过隐式 TLS 发送邮件，默认使用 Gmail，也可自定义其他 SMTP 服务；或通过 STARTTLS（Microsoft 365）
 - **IMAP4 支持** — 通过 IMAP4 SSL 读取、搜索和导出邮件
 - **附件处理** — 自动检测文本、图片、音频和二进制文件的 MIME 类型
 - **HTML 邮件** — 支持发送 HTML 格式的邮件与附件
@@ -53,6 +55,7 @@
 - **Socket 服务器** — 通过 TCP Socket 远程控制 MailThunder
 - **包管理器** — 动态加载 Python 包至脚本执行器
 - **环境变量验证** — 支持配置文件或操作系统环境变量进行身份验证
+- **OAuth2 登录** — Gmail 与 Microsoft 365 的 SASL `XOAUTH2`，以标准库交换 refresh token 并缓存访问令牌
 - **自动导出** — 一行指令即可将邮箱所有邮件导出为本地文件
 - **Context Manager 支持** — SMTP 和 IMAP 连接均可使用 `with` 语法
 - **日志记录** — 内置所有操作的日志记录
@@ -163,7 +166,7 @@ with IMAPWrapper() as imap:
 
 ## 身份验证
 
-MailThunder 支持两种身份验证方式。它会先尝试 JSON 配置文件，若找不到则回退至环境变量。
+MailThunder 以密码或 OAuth2 登录。它会先读 JSON 配置文件，再读环境变量；有 OAuth2 配置时，以 OAuth2 取代密码。
 
 ### JSON 配置文件
 
@@ -194,6 +197,51 @@ set_mail_thunder_os_environ(
 ```bash
 export mail_thunder_user="your_email@gmail.com"
 export mail_thunder_user_password="your_app_password"
+```
+
+### OAuth2（Google 与 Microsoft）
+
+Google 与 Microsoft 都在淘汰邮件的密码登录。使用 OAuth2 时，MailThunder 在服务商的令牌端点以 refresh token 换取短效的
+访问令牌（只用标准库，且必须是 `https`），再以 SASL `XOAUTH2` 登录。client ID、client secret 与 refresh token
+要先通过服务商的授权流程获取一次（Google Cloud 的 OAuth 客户端，或 Microsoft Entra 的应用注册）；MailThunder
+不执行那个流程。
+
+在 `mail_thunder_content.json` 中：
+
+```json
+{
+  "user": "you@example.com",
+  "oauth2": {
+    "provider": "microsoft",
+    "client_id": "...",
+    "client_secret": "...",
+    "refresh_token": "...",
+    "tenant": "common"
+  }
+}
+```
+
+或用环境变量：`mail_thunder_user` 加上 `mail_thunder_oauth2_provider`、`mail_thunder_oauth2_client_id`、`mail_thunder_oauth2_client_secret`、`mail_thunder_oauth2_refresh_token`；可选 `mail_thunder_oauth2_tenant`、`mail_thunder_oauth2_scope`、`mail_thunder_oauth2_token_url`、`mail_thunder_oauth2_access_token`（直接使用给定的令牌）。
+
+| 服务商 | SMTP | IMAP | 请求的范围 |
+|---|---|---|---|
+| `google`（默认） | `smtp.gmail.com:465`，隐式 TLS（`SMTPWrapper`） | `imap.gmail.com` | `https://mail.google.com/` |
+| `microsoft` | `smtp.office365.com:587`，STARTTLS（`SMTPStartTLSWrapper`） | `outlook.office365.com` | `https://outlook.office.com/` 上的 `SMTP.Send`、`IMAP.AccessAsUser.All`，以及 `offline_access` |
+
+`smtp_instance` 与 `imap_instance`（以及 `MT_smtp_*`／`MT_imap_*` 指令）会连到配置所指服务商的服务器，所以动作文件也能
+用 Microsoft。访问令牌会缓存，并在到期前一分钟刷新。其他服务商可用 `token_url`（与 `scope`），再以它的主机自行创建
+wrapper。密钥不会出现在日志或错误消息里。
+
+在 Python 中：
+
+```python
+from je_mail_thunder import OAuth2Settings, SMTPStartTLSWrapper, oauth2_token_cache
+
+settings = OAuth2Settings(user="you@contoso.com", provider="microsoft", client_id="...",
+                          client_secret="...", refresh_token="...", tenant="contoso.onmicrosoft.com")
+with SMTPStartTLSWrapper() as smtp:
+    smtp.oauth2_login(settings.user, oauth2_token_cache.access_token(settings))
+    smtp.create_message_and_send("Hello", {"Subject": "Hi", "From": settings.user, "To": "friend@example.com"})
 ```
 
 ---
@@ -411,26 +459,35 @@ client.close()
 
 ### SMTPWrapper
 
-继承自 `smtplib.SMTP_SSL`。默认主机：`smtp.gmail.com`，默认端口：`465`。
+继承自 `smtplib.SMTP_SSL`（经由 `SMTPClientMixin`）。默认主机：`smtp.gmail.com`，默认端口：`465`。
 
 | 方法 | 说明 |
 |------|------|
-| `later_init()` | 使用配置文件或环境变量登录 |
+| `later_init()` | 使用配置文件或环境变量登录（有 OAuth2 配置时用 OAuth2） |
 | `create_message(message_content, message_setting_dict, **kwargs)` | 创建 `EmailMessage` 对象 |
 | `create_message_with_attach(message_content, message_setting_dict, attach_file, use_html=False)` | 创建带附件的 `MIMEMultipart` 消息 |
 | `create_message_and_send(message_content, message_setting_dict, **kwargs)` | 创建并立即发送邮件 |
 | `create_message_with_attach_and_send(message_content, message_setting_dict, attach_file, use_html=False)` | 创建并发送带附件的邮件 |
-| `try_to_login_with_env_or_content()` | 尝试从配置文件或环境变量登录，返回 `bool` |
+| `try_to_login_with_env_or_content()` | 尝试从配置文件或环境变量登录（先 OAuth2 配置，再账号密码），返回 `bool` |
+| `oauth2_login(user, access_token)` | 以 SASL `XOAUTH2` 登录；被拒时抛出 `smtplib.SMTPAuthenticationError` |
 | `quit()` | 断开连接并关闭 |
 
 **使用其他 SMTP 服务商：**
 
 ```python
-from je_mail_thunder import SMTPWrapper
+from je_mail_thunder import SMTPStartTLSWrapper, SMTPWrapper
 
-# 示例：Outlook
-smtp = SMTPWrapper(host="smtp.office365.com", port=587)
+# 其他主机的隐式 TLS
+smtp = SMTPWrapper(host="smtp.example.com", port=465)
+# STARTTLS，例如 Microsoft 365（默认即 smtp.office365.com:587）
+smtp = SMTPStartTLSWrapper()
 ```
+
+### SMTPStartTLSWrapper
+
+继承自 `smtplib.SMTP`，方法与 `SMTPWrapper` 相同（两者都混入 `SMTPClientMixin`）。默认主机：`smtp.office365.com`，
+默认端口：`587`。它在发送任何其他内容前先以 `STARTTLS` 升级连接（验证证书与主机名），并拒绝不提供 `STARTTLS` 的
+服务器：关闭连接并抛出 `smtplib.SMTPNotSupportedError`。
 
 ### IMAPWrapper
 
@@ -438,11 +495,12 @@ smtp = SMTPWrapper(host="smtp.office365.com", port=587)
 
 | 方法 | 说明 |
 |------|------|
-| `later_init()` | 使用配置文件或环境变量登录 |
+| `later_init()` | 使用配置文件或环境变量登录（有 OAuth2 配置时用 OAuth2） |
 | `select_mailbox(mailbox="INBOX", readonly=False)` | 选择邮箱，返回 `bool` |
 | `search_mailbox(search_str="ALL", charset=None)` | 搜索并返回原始邮件详细信息列表 |
 | `mail_content_list(search_str="ALL", charset=None)` | 返回已解析的邮件内容字典列表 |
 | `output_all_mail_as_file(search_str="ALL", charset=None)` | 以主题为文件名导出所有邮件 |
+| `oauth2_login(user, access_token)` | 以 SASL `XOAUTH2` 登录；被拒时抛出 `imaplib.IMAP4.error` |
 | `quit()` | 关闭邮箱并登出 |
 
 **邮件内容字典格式：**
@@ -475,6 +533,10 @@ smtp = SMTPWrapper(host="smtp.office365.com", port=587)
 | `read_output_content()` | 从当前工作目录读取 `mail_thunder_content.json` |
 | `write_output_content()` | 将内容数据写入 `mail_thunder_content.json` |
 | `get_dir_files_as_list(path)` | 获取目录内所有文件列表 |
+| `OAuth2Settings(user, provider="google", client_id=None, client_secret=None, refresh_token=None, access_token=None, tenant="common", token_url=None, scope=None)` | OAuth2 登录配置；`OAUTH2_PROVIDERS` 有 `google` 与 `microsoft` 预设 |
+| `oauth2_token_cache.access_token(settings)` | 缓存的访问令牌，快到期时刷新（`refresh_access_token(settings)` 每次都向端点请求） |
+| `resolve_oauth2_settings()` | 从配置文件或环境变量获取 OAuth2 配置，没有则为 `None` |
+| `xoauth2_string(user, access_token)` | SASL `XOAUTH2` 的初始响应 |
 
 ---
 
@@ -486,7 +548,7 @@ MailThunder/
     __init__.py              # 公开 API 导出
     __main__.py              # CLI 入口点
     smtp/
-      smtp_wrapper.py        # SMTPWrapper 类
+      smtp_wrapper.py        # SMTPClientMixin、SMTPWrapper、SMTPStartTLSWrapper
     imap/
       imap_wrapper.py        # IMAPWrapper 类
     utils/
@@ -497,6 +559,7 @@ MailThunder/
       json_format/           # JSON 格式化
       lazy_instance/         # 首次使用时才连接的惰性客户端
       logging/               # 日志实例
+      oauth2/                # OAuth2 配置、令牌刷新、XOAUTH2
       package_manager/       # 动态包加载器
       project/               # 项目模板创建
       save_mail_user_content/ # 验证配置与环境变量处理

@@ -1,7 +1,13 @@
 # IMAP Wrapper
 from je_mail_thunder.imap.imap_wrapper import IMAPWrapper, imap_instance
 # SMTP Wrapper
-from je_mail_thunder.smtp.smtp_wrapper import SMTPWrapper, smtp_instance
+from je_mail_thunder.smtp.smtp_wrapper import SMTPClientMixin, SMTPStartTLSWrapper, SMTPWrapper, smtp_instance
+# OAuth2
+from je_mail_thunder.utils.oauth2.oauth2 import (
+    OAUTH2_PROVIDERS, OAuth2Provider, OAuth2Settings, OAuth2TokenCache, oauth2_token_cache, refresh_access_token,
+    xoauth2_string,
+)
+from je_mail_thunder.utils.save_mail_user_content.credentials import resolve_oauth2_settings
 # Content
 from je_mail_thunder.utils.save_mail_user_content.mail_thunder_content_data import is_need_to_save_content
 from je_mail_thunder.utils.save_mail_user_content.mail_thunder_content_data import mail_thunder_content_data_dict
@@ -19,7 +25,9 @@ from je_mail_thunder.utils.executor.action_executor import execute_action, execu
 # Project
 from je_mail_thunder.utils.project.create_project_structure import create_project_dir
 __all__ = [
-    "IMAPWrapper", "imap_instance", "SMTPWrapper", "smtp_instance", "is_need_to_save_content",
+    "IMAPWrapper", "imap_instance", "SMTPWrapper", "SMTPStartTLSWrapper", "SMTPClientMixin", "smtp_instance",
+    "OAUTH2_PROVIDERS", "OAuth2Provider", "OAuth2Settings", "OAuth2TokenCache", "oauth2_token_cache",
+    "refresh_access_token", "resolve_oauth2_settings", "xoauth2_string", "is_need_to_save_content",
     "mail_thunder_content_data_dict", "read_output_content", "write_output_content", "get_mail_thunder_os_environ",
     "set_mail_thunder_os_environ", "read_action_json", "get_dir_files_as_list", "execute_action", "execute_files",
     "add_command_to_executor", "create_project_dir"

@@ -4,12 +4,18 @@ from email import message_from_bytes
 from email import policy
 from email.header import decode_header
 from imaplib import IMAP4_SSL
-from typing import List, Dict, Union
+from typing import Dict, List, Union
 
 from je_mail_thunder.utils.exception.exception_tags import mail_thunder_content_login_failed
+from je_mail_thunder.utils.exception.exceptions import MailThunderOAuth2Exception
 from je_mail_thunder.utils.lazy_instance.lazy_instance import LazyInstance
 from je_mail_thunder.utils.logging.loggin_instance import mail_thunder_logger
-from je_mail_thunder.utils.save_mail_user_content.credentials import resolve_login_credentials
+from je_mail_thunder.utils.oauth2.oauth2 import oauth2_token_cache, xoauth2_string
+from je_mail_thunder.utils.save_mail_user_content.credentials import (
+    configured_oauth2_provider,
+    resolve_login_credentials,
+    resolve_oauth2_settings,
+)
 
 
 class IMAPWrapper(IMAP4_SSL):
@@ -37,13 +43,31 @@ class IMAPWrapper(IMAP4_SSL):
 
     _resolve_credentials = staticmethod(resolve_login_credentials)
 
+    def oauth2_login(self, user: str, access_token: str):
+        """
+        Log in with SASL ``XOAUTH2`` (OAuth2) instead of a password.
+
+        :raises imaplib.IMAP4.error: the server refused the token.
+        """
+        mail_thunder_logger.info("imap_oauth2_login")
+        # The first continuation gets the token; a second one carries the server's error, and the empty
+        # answer to it ends the exchange.
+        answers = iter([xoauth2_string(user, access_token).encode("utf-8")])
+        return self.authenticate("XOAUTH2", lambda _challenge: next(answers, b""))
+
     def try_to_login_with_env_or_content(self):
         """
-        Try to find user and password on cwd /mail_thunder_content.json or env var
+        Log in with the OAuth2 settings when there are any, else with the user and password
+        (``mail_thunder_content.json`` in the current directory first, then the environment).
+        A refused login raises ``imaplib.IMAP4.error``; network and OAuth2 setting errors are logged.
         :return: None
         """
         mail_thunder_logger.info("imap_try_to_login_with_env_or_content")
         try:
+            oauth2 = resolve_oauth2_settings()
+            if oauth2 is not None:
+                self.oauth2_login(oauth2.user, oauth2_token_cache.access_token(oauth2))
+                return
             credentials = self._resolve_credentials()
             if credentials is not None:
                 self.login(*credentials)
@@ -51,6 +75,8 @@ class IMAPWrapper(IMAP4_SSL):
             mail_thunder_logger.info(
                 f"imap_try_to_login_with_env_or_content, "
                 f"failed: {repr(error) + ' ' + mail_thunder_content_login_failed}")
+        except MailThunderOAuth2Exception as error:
+            mail_thunder_logger.error(f"imap_try_to_login_with_env_or_content, failed: {repr(error)}")
 
     def select_mailbox(self, mailbox: str = "INBOX", readonly: bool = False):
         """
@@ -183,5 +209,11 @@ class IMAPWrapper(IMAP4_SSL):
             mail_thunder_logger.error(f"imap_quit, failed: {repr(error)}")
 
 
+def default_imap_client() -> IMAPWrapper:
+    """The client ``imap_instance`` builds: the IMAP server of the provider the OAuth2 settings name, else Gmail."""
+    provider = configured_oauth2_provider()
+    return IMAPWrapper() if provider is None else IMAPWrapper(provider.imap_host)
+
+
 # Connects to the IMAP server on first use, not at import (see utils/lazy_instance).
-imap_instance = LazyInstance(IMAPWrapper, "imap_instance")
+imap_instance = LazyInstance(default_imap_client, "imap_instance")

@@ -24,6 +24,7 @@
 - [Authentication](#authentication)
   - [JSON Config File](#json-config-file)
   - [Environment Variables](#environment-variables)
+  - [OAuth2 (Google and Microsoft)](#oauth2-google-and-microsoft)
 - [Scripting Engine](#scripting-engine)
   - [Action JSON Format](#action-json-format)
   - [Available Script Commands](#available-script-commands)
@@ -34,6 +35,7 @@
 - [Socket Server](#socket-server)
 - [API Reference](#api-reference)
   - [SMTPWrapper](#smtpwrapper)
+  - [SMTPStartTLSWrapper](#smtpstarttlswrapper)
   - [IMAPWrapper](#imapwrapper)
   - [Executor Functions](#executor-functions)
   - [Utility Functions](#utility-functions)
@@ -44,7 +46,7 @@
 
 ## Features
 
-- **SMTP support** — Send emails via SSL with Gmail (default) or any SMTP provider
+- **SMTP support** — Send emails over implicit TLS with Gmail (default) or any SMTP provider, or over STARTTLS (Microsoft 365)
 - **IMAP4 support** — Read, search, and export emails via IMAP4 SSL
 - **Attachment handling** — Automatically detect MIME types for text, image, audio, and binary files
 - **HTML email** — Send HTML-formatted emails with attachments
@@ -53,6 +55,7 @@
 - **Socket server** — Control MailThunder remotely via TCP socket commands
 - **Package manager** — Dynamically load Python packages into the scripting executor
 - **Environment variable auth** — Authenticate via config file or OS environment variables
+- **OAuth2 login** — SASL `XOAUTH2` for Gmail and Microsoft 365, with refresh-token exchange and a token cache in the standard library
 - **Auto-export** — Export all mailbox emails to local files in one call
 - **Context manager support** — Use `with` statement for both SMTP and IMAP connections
 - **Logging** — Built-in logging for all operations
@@ -163,7 +166,7 @@ with IMAPWrapper() as imap:
 
 ## Authentication
 
-MailThunder supports two authentication methods. It tries the JSON config file first, then falls back to environment variables.
+MailThunder logs in with a password or with OAuth2. It reads the JSON config file first, then the environment variables; OAuth2 settings, when present, are used instead of a password.
 
 ### JSON Config File
 
@@ -194,6 +197,52 @@ Or set them in your shell:
 ```bash
 export mail_thunder_user="your_email@gmail.com"
 export mail_thunder_user_password="your_app_password"
+```
+
+### OAuth2 (Google and Microsoft)
+
+Google and Microsoft are retiring password logins for mail. With OAuth2, MailThunder exchanges a refresh token for a
+short-lived access token at the provider's token endpoint (standard library only, `https` required) and logs in with
+SASL `XOAUTH2`. Get the client ID, client secret and refresh token once through the provider's consent flow (a Google
+Cloud OAuth client, or a Microsoft Entra app registration); MailThunder does not run that flow.
+
+In `mail_thunder_content.json`:
+
+```json
+{
+  "user": "you@example.com",
+  "oauth2": {
+    "provider": "microsoft",
+    "client_id": "...",
+    "client_secret": "...",
+    "refresh_token": "...",
+    "tenant": "common"
+  }
+}
+```
+
+Or in the environment: `mail_thunder_user` plus `mail_thunder_oauth2_provider`, `mail_thunder_oauth2_client_id`, `mail_thunder_oauth2_client_secret`, `mail_thunder_oauth2_refresh_token`; optionally `mail_thunder_oauth2_tenant`, `mail_thunder_oauth2_scope`, `mail_thunder_oauth2_token_url`, `mail_thunder_oauth2_access_token` (a token used as given).
+
+| Provider | SMTP | IMAP | Scope it asks for |
+|---|---|---|---|
+| `google` (default) | `smtp.gmail.com:465`, implicit TLS (`SMTPWrapper`) | `imap.gmail.com` | `https://mail.google.com/` |
+| `microsoft` | `smtp.office365.com:587`, STARTTLS (`SMTPStartTLSWrapper`) | `outlook.office365.com` | `SMTP.Send`, `IMAP.AccessAsUser.All` on `https://outlook.office.com/`, `offline_access` |
+
+`smtp_instance` and `imap_instance`, and so the `MT_smtp_*` / `MT_imap_*` commands, connect to the servers of the
+provider the settings name, so action files work with Microsoft too. Access tokens are cached and refreshed a minute
+before they expire. Another provider works with `token_url` (and `scope`); create the wrappers with its hosts.
+Secrets never appear in log lines or error messages.
+
+From Python:
+
+```python
+from je_mail_thunder import OAuth2Settings, SMTPStartTLSWrapper, oauth2_token_cache
+
+settings = OAuth2Settings(user="you@contoso.com", provider="microsoft", client_id="...",
+                          client_secret="...", refresh_token="...", tenant="contoso.onmicrosoft.com")
+with SMTPStartTLSWrapper() as smtp:
+    smtp.oauth2_login(settings.user, oauth2_token_cache.access_token(settings))
+    smtp.create_message_and_send("Hello", {"Subject": "Hi", "From": settings.user, "To": "friend@example.com"})
 ```
 
 ---
@@ -411,26 +460,36 @@ Send `"quit_server"` to shut down the server.
 
 ### SMTPWrapper
 
-Extends `smtplib.SMTP_SSL`. Default host: `smtp.gmail.com`, default port: `465`.
+Extends `smtplib.SMTP_SSL` (through `SMTPClientMixin`). Default host: `smtp.gmail.com`, default port: `465`.
 
 | Method | Description |
 |--------|-------------|
-| `later_init()` | Log in using config file or environment variables |
+| `later_init()` | Log in using config file or environment variables (OAuth2 when configured) |
 | `create_message(message_content, message_setting_dict, **kwargs)` | Create an `EmailMessage` object |
 | `create_message_with_attach(message_content, message_setting_dict, attach_file, use_html=False)` | Create a `MIMEMultipart` message with attachment |
 | `create_message_and_send(message_content, message_setting_dict, **kwargs)` | Create and immediately send an email |
 | `create_message_with_attach_and_send(message_content, message_setting_dict, attach_file, use_html=False)` | Create and send an email with attachment |
-| `try_to_login_with_env_or_content()` | Attempt login from config or env vars, returns `bool` |
+| `try_to_login_with_env_or_content()` | Attempt login from config or env vars (OAuth2 settings first, then user and password), returns `bool` |
+| `oauth2_login(user, access_token)` | Log in with SASL `XOAUTH2`; raises `smtplib.SMTPAuthenticationError` when refused |
 | `quit()` | Disconnect and close |
 
 **Using a different SMTP provider:**
 
 ```python
-from je_mail_thunder import SMTPWrapper
+from je_mail_thunder import SMTPStartTLSWrapper, SMTPWrapper
 
-# Example: Outlook
-smtp = SMTPWrapper(host="smtp.office365.com", port=587)
+# Implicit TLS on another host
+smtp = SMTPWrapper(host="smtp.example.com", port=465)
+# STARTTLS, e.g. Microsoft 365 (smtp.office365.com:587 is the default)
+smtp = SMTPStartTLSWrapper()
 ```
+
+### SMTPStartTLSWrapper
+
+Extends `smtplib.SMTP` with the same methods as `SMTPWrapper` (both mix in `SMTPClientMixin`). Default host:
+`smtp.office365.com`, default port: `587`. It upgrades the connection with `STARTTLS` (certificate and host name
+verified) before anything else is sent, and refuses a server that does not offer it: the connection is closed and
+`smtplib.SMTPNotSupportedError` raised.
 
 ### IMAPWrapper
 
@@ -438,11 +497,12 @@ Extends `imaplib.IMAP4_SSL`. Default host: `imap.gmail.com`.
 
 | Method | Description |
 |--------|-------------|
-| `later_init()` | Log in using config file or environment variables |
+| `later_init()` | Log in using config file or environment variables (OAuth2 when configured) |
 | `select_mailbox(mailbox="INBOX", readonly=False)` | Select a mailbox, returns `bool` |
 | `search_mailbox(search_str="ALL", charset=None)` | Search and return raw mail details as list |
 | `mail_content_list(search_str="ALL", charset=None)` | Return parsed mail content as list of dicts |
 | `output_all_mail_as_file(search_str="ALL", charset=None)` | Export all emails to files named by subject |
+| `oauth2_login(user, access_token)` | Log in with SASL `XOAUTH2`; raises `imaplib.IMAP4.error` when refused |
 | `quit()` | Close mailbox and logout |
 
 **Mail content dict format:**
@@ -475,6 +535,10 @@ Extends `imaplib.IMAP4_SSL`. Default host: `imap.gmail.com`.
 | `read_output_content()` | Read `mail_thunder_content.json` from cwd |
 | `write_output_content()` | Write content data to `mail_thunder_content.json` |
 | `get_dir_files_as_list(path)` | Get all files in a directory as list |
+| `OAuth2Settings(user, provider="google", client_id=None, client_secret=None, refresh_token=None, access_token=None, tenant="common", token_url=None, scope=None)` | OAuth2 login settings; `OAUTH2_PROVIDERS` holds the `google` and `microsoft` presets |
+| `oauth2_token_cache.access_token(settings)` | A cached access token, refreshed when it is about to expire (`refresh_access_token(settings)` always asks the endpoint) |
+| `resolve_oauth2_settings()` | The OAuth2 settings from the config file or the environment, or `None` |
+| `xoauth2_string(user, access_token)` | The SASL `XOAUTH2` initial response |
 
 ---
 
@@ -486,7 +550,7 @@ MailThunder/
     __init__.py              # Public API exports
     __main__.py              # CLI entry point
     smtp/
-      smtp_wrapper.py        # SMTPWrapper class
+      smtp_wrapper.py        # SMTPClientMixin, SMTPWrapper, SMTPStartTLSWrapper
     imap/
       imap_wrapper.py        # IMAPWrapper class
     utils/
@@ -497,6 +561,7 @@ MailThunder/
       json_format/           # JSON formatting
       lazy_instance/         # Lazy clients that connect on first use
       logging/               # Logger instance
+      oauth2/                # OAuth2 settings, token refresh, XOAUTH2
       package_manager/       # Dynamic package loader
       project/               # Project template scaffolding
       save_mail_user_content/ # Auth config and env var handling

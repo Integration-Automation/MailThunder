@@ -199,9 +199,9 @@ Pass custom ``host`` and ``port`` to the constructor:
 
 .. note::
 
-   MailThunder uses ``SMTP_SSL`` (implicit SSL on connect). If your provider
-   requires STARTTLS on port 587, you may need to use the underlying
-   ``smtplib`` directly or subclass ``SMTPWrapper``.
+   ``SMTPWrapper`` uses ``SMTP_SSL`` (implicit SSL on connect). If your provider
+   requires STARTTLS on port 587 (Microsoft 365 does), use ``SMTPStartTLSWrapper``,
+   which has the same methods and refuses a server that does not offer STARTTLS.
 
 ----
 

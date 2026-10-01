@@ -8,7 +8,8 @@
 MailThunder (`je_mail_thunder`, PyPI `je-mail-thunder`) is a small email automation library that
 uses only the standard library. `pyproject.toml` builds `je_mail_thunder` and `dev.toml` builds
 `je_mail_thunder_dev`. `SMTPWrapper` and `IMAPWrapper` extend `smtplib.SMTP_SSL` and
-`imaplib.IMAP4_SSL` with credential lookup, logging and context-manager support. A JSON action
+`imaplib.IMAP4_SSL` (and `SMTPStartTLSWrapper` extends `smtplib.SMTP`, upgraded with STARTTLS) with credential
+lookup, password or OAuth2 (`XOAUTH2`) login, logging and context-manager support. A JSON action
 executor exposes the same operations to action files, a CLI and a TCP socket server.
 
 ## 2. Layers and directories
@@ -17,10 +18,11 @@ executor exposes the same operations to action files, a CLI and a TCP socket ser
 | --- | --- |
 | `je_mail_thunder/__init__.py` | Public facade (`__all__`) |
 | `je_mail_thunder/__main__.py` | Legacy flag CLI (`python -m je_mail_thunder`) |
-| `je_mail_thunder/smtp/smtp_wrapper.py` | `SMTPClientMixin` (messages, login, send, quit; mixed in before an `smtplib` class), `SMTPWrapper(SMTPClientMixin, SMTP_SSL)` (default `smtp.gmail.com:465`) and the module instance `smtp_instance` (a `LazyInstance`) |
-| `je_mail_thunder/imap/imap_wrapper.py` | `IMAPWrapper(IMAP4_SSL)` (default `imap.gmail.com`) and the module instance `imap_instance` (a `LazyInstance`) |
+| `je_mail_thunder/smtp/smtp_wrapper.py` | `SMTPClientMixin` (messages, login, send, quit; mixed in before an `smtplib` class), `SMTPWrapper(SMTPClientMixin, SMTP_SSL)` (default `smtp.gmail.com:465`), `SMTPStartTLSWrapper(SMTPClientMixin, SMTP)` (default `smtp.office365.com:587`; STARTTLS before anything else, refused when the server lacks it), `default_smtp_client()` and the module instance `smtp_instance` (a `LazyInstance` of it) |
+| `je_mail_thunder/imap/imap_wrapper.py` | `IMAPWrapper(IMAP4_SSL)` (default `imap.gmail.com`; `oauth2_login`), `default_imap_client()` and the module instance `imap_instance` (a `LazyInstance` of it) |
+| `je_mail_thunder/utils/oauth2/oauth2.py` | OAuth2 with the standard library: `OAUTH2_PROVIDERS` (`google`, `microsoft`: token URL, scope, SMTP/IMAP hosts), `OAuth2Settings` (secrets out of `repr`), `refresh_access_token` (https only), `OAuth2TokenCache` / `oauth2_token_cache`, `xoauth2_string` |
 | `je_mail_thunder/utils/executor/action_executor.py` | `Executor` (je_action_core's `ActionExecutor` with MailThunder's settings): `event_dict` (`MT_*` commands plus je_action_core's `SAFE_BUILTINS` allowlist), `execute_action`, `execute_files`, `add_command_to_executor`, `action_list_from_mapping` |
-| `je_mail_thunder/utils/save_mail_user_content/` | Credential sources: `mail_thunder_content.json` in the working directory (`read_output_content` / `write_output_content`) and the env vars `mail_thunder_user` / `mail_thunder_user_password` (`set_/get_mail_thunder_os_environ`); `credentials.resolve_login_credentials` picks one, for both wrappers |
+| `je_mail_thunder/utils/save_mail_user_content/` | Credential sources: `mail_thunder_content.json` in the working directory (`read_output_content` / `write_output_content`) and the env vars `mail_thunder_user` / `mail_thunder_user_password` (`set_/get_mail_thunder_os_environ`); `credentials.resolve_login_credentials` picks one, for both wrappers; `credentials.resolve_oauth2_settings` reads the `"oauth2"` object of the file, else the `mail_thunder_oauth2_*` env vars, and `configured_oauth2_provider` picks the servers the module instances connect to |
 | `je_mail_thunder/utils/socket_server/mail_thunder_socket_server.py` | `start_mail_thunder_socket_server`: je_action_core's TCP action server (old name `start_autocontrol_socket_server` kept as a deprecated alias) with payload validation first (`_validate_payload`, `MAX_ACTIONS`) and oversized payloads dropped |
 | `je_mail_thunder/utils/package_manager/` | `package_manager` (je_action_core's, gate on): loads an installed package's members into the executor; `executor.allow_packages` / `set_allow_arbitrary_packages` are its Python-only switches |
 | `je_mail_thunder/utils/project/` | `create_project_dir` scaffolding; `template/template_keyword.py` and `template_executor.py` hold the templates |
@@ -68,7 +70,9 @@ action JSON / --execute_str → __main__ → execute_action → Executor._execut
 **Login**
 
 ```
-MT_smtp_later_init / MT_imap_later_init → try_to_login_with_env_or_content → _resolve_credentials (credentials.resolve_login_credentials)
+MT_smtp_later_init / MT_imap_later_init → try_to_login_with_env_or_content
+  → resolve_oauth2_settings() → oauth2_token_cache.access_token() (refresh at the token endpoint) → oauth2_login (AUTH XOAUTH2)
+  → else _resolve_credentials (credentials.resolve_login_credentials)
   → read_output_content() (./mail_thunder_content.json) else get_mail_thunder_os_environ() → login()
 ```
 
@@ -76,8 +80,9 @@ MT_smtp_later_init / MT_imap_later_init → try_to_login_with_env_or_content →
 `execute_action` → return values, then `Return_Data_Over_JE`.
 
 **Import-time behaviour**: importing opens no connection. `smtp_instance` and `imap_instance` are
-`LazyInstance` proxies (`utils/lazy_instance/lazy_instance.py`) that build the real `SMTPWrapper` /
-`IMAPWrapper` — and so connect — the first time anything is read from them; a connection failure
+`LazyInstance` proxies (`utils/lazy_instance/lazy_instance.py`) that build the real client
+(`default_smtp_client()` / `default_imap_client()`: the OAuth2 provider's servers when the settings name one,
+else Gmail) — and so connect — the first time anything is read from them; a connection failure
 raises there, at use, and the next use retries. `Executor.__init__` registers `deferred(instance,
 "method")` callables, which look the method up only when the action runs, so building the executor
 does not connect either. Login still waits until `later_init`.
@@ -151,7 +156,8 @@ does not connect either. Login still waits until `later_init`.
   changing signatures (§ Engineering Principles).
 - Credentials come only from `mail_thunder_content.json` or env vars. Never hardcode, log or commit
   them (§ Security Requirements › Credential Handling).
-- SSL/TLS only. The socket server binds `localhost` by default (§ Security Requirements › Network
+- SSL/TLS only: implicit TLS, or STARTTLS that must succeed before anything else is sent. OAuth2 token
+  endpoints must be `https`. The socket server binds `localhost` by default (§ Security Requirements › Network
   Security).
 - Validate input at boundaries. Sanitize file names in `output_all_mail_as_file` and attachments.
   Cap socket reads (§ Security Requirements › Input Validation).

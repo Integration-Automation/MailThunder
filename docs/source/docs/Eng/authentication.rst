@@ -1,9 +1,10 @@
 Authentication
 ==============
 
-MailThunder supports two authentication methods. When ``later_init()`` or
-``try_to_login_with_env_or_content()`` is called, it tries the JSON config file
-first, then falls back to environment variables.
+MailThunder logs in with a password or with OAuth2. When ``later_init()`` or
+``try_to_login_with_env_or_content()`` is called, it uses the OAuth2 settings if
+there are any, else the user and password: the JSON config file first, then the
+environment variables.
 
 Authentication Flow
 -------------------
@@ -13,6 +14,11 @@ Authentication Flow
    later_init() called
        │
        ▼
+   OAuth2 settings? ("oauth2" in mail_thunder_content.json, else mail_thunder_oauth2_* env vars)
+       │
+       ├── Found ──▶ access token (cached, or refreshed at the token endpoint) ──▶ AUTH XOAUTH2
+       │
+       ▼ None
    Read mail_thunder_content.json from cwd
        │
        ├── File found and has "user" + "password"
@@ -108,22 +114,73 @@ This calls ``os.environ.update()`` to set two environment variables:
    creds = get_mail_thunder_os_environ()
    # Returns: {"mail_thunder_user": "...", "mail_thunder_user_password": "..."}
 
-Method 3: Manual Credential Injection
---------------------------------------
+Method 3: OAuth2 (Google and Microsoft)
+---------------------------------------
 
-You can directly update the global credential dict before calling login:
+Google and Microsoft are retiring password logins for mail. With OAuth2, MailThunder exchanges a refresh token
+for a short-lived access token at the provider's token endpoint (standard library only, ``https`` required),
+caches it until a minute before it expires, and logs in with SASL ``XOAUTH2``. OAuth2 settings, when present,
+are used instead of a password. Get the client ID, client secret and refresh token once through the provider's
+consent flow (a Google Cloud OAuth client, or a Microsoft Entra app registration); MailThunder does not run it.
+
+**In** ``mail_thunder_content.json`` (the ``user`` may also sit inside ``oauth2``):
+
+.. code-block:: json
+
+   {
+     "user": "you@example.com",
+     "oauth2": {
+       "provider": "microsoft",
+       "client_id": "...",
+       "client_secret": "...",
+       "refresh_token": "...",
+       "tenant": "common"
+     }
+   }
+
+**Or in the environment:** ``mail_thunder_user`` plus ``mail_thunder_oauth2_provider``,
+``mail_thunder_oauth2_client_id``, ``mail_thunder_oauth2_client_secret`` and ``mail_thunder_oauth2_refresh_token``;
+optionally ``mail_thunder_oauth2_tenant``, ``mail_thunder_oauth2_scope``, ``mail_thunder_oauth2_token_url``, or
+``mail_thunder_oauth2_access_token`` to use a token as given.
+
+.. list-table::
+   :header-rows: 1
+
+   * - Provider
+     - SMTP
+     - IMAP
+     - Scope it asks for
+   * - ``google`` (default)
+     - ``smtp.gmail.com:465``, implicit TLS (``SMTPWrapper``)
+     - ``imap.gmail.com``
+     - ``https://mail.google.com/``
+   * - ``microsoft``
+     - ``smtp.office365.com:587``, STARTTLS (``SMTPStartTLSWrapper``)
+     - ``outlook.office365.com``
+     - ``SMTP.Send`` and ``IMAP.AccessAsUser.All`` on ``https://outlook.office.com/``, ``offline_access``
+
+``smtp_instance`` and ``imap_instance`` (and so the ``MT_smtp_*`` / ``MT_imap_*`` commands) connect to the
+servers of the provider the settings name. ``SMTPStartTLSWrapper`` upgrades with ``STARTTLS`` before anything
+else is sent and refuses a server that does not offer it. Another provider works with ``token_url`` (and
+``scope``); create the wrappers with its hosts. Client secrets and tokens never appear in log lines, error
+messages or the settings' ``repr``.
 
 .. code-block:: python
 
-   from je_mail_thunder import mail_thunder_content_data_dict
+   from je_mail_thunder import OAuth2Settings, SMTPStartTLSWrapper, oauth2_token_cache
 
-   mail_thunder_content_data_dict.update({
-       "user": "your_email@gmail.com",
-       "password": "your_app_password",
-   })
+   settings = OAuth2Settings(user="you@contoso.com", provider="microsoft", client_id="...",
+                             client_secret="...", refresh_token="...", tenant="contoso.onmicrosoft.com")
+   with SMTPStartTLSWrapper() as smtp:
+       smtp.oauth2_login(settings.user, oauth2_token_cache.access_token(settings))
 
-This is useful for programmatic scenarios where credentials come from a vault,
-database, or other external source.
+Credentials From Code
+---------------------
+
+The login reads ``mail_thunder_content.json`` or the environment, not ``mail_thunder_content_data_dict``: that
+dict is what ``write_output_content()`` writes to the file. To log in with credentials from a vault or a
+database, set the environment variables (``set_mail_thunder_os_environ``), or fill the dict and call
+``write_output_content()`` (the file then holds them in plain text).
 
 Gmail-Specific Setup
 --------------------

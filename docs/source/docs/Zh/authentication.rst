@@ -1,9 +1,9 @@
 認證設定
 ========
 
-MailThunder 支援兩種認證方式。當呼叫 ``later_init()`` 或
-``try_to_login_with_env_or_content()`` 時，系統會先嘗試 JSON 設定檔，
-若找不到則使用環境變數。
+MailThunder 以密碼或 OAuth2 登入。當呼叫 ``later_init()`` 或
+``try_to_login_with_env_or_content()`` 時，有 OAuth2 設定就用它，否則用帳號密碼：
+先嘗試 JSON 設定檔，若找不到則使用環境變數。
 
 認證流程
 --------
@@ -13,6 +13,11 @@ MailThunder 支援兩種認證方式。當呼叫 ``later_init()`` 或
    later_init() 被呼叫
        │
        ▼
+   有 OAuth2 設定嗎？（mail_thunder_content.json 的 "oauth2"，否則 mail_thunder_oauth2_* 環境變數）
+       │
+       ├── 有 ──▶ 存取權杖（快取的，或在權杖端點更新）──▶ AUTH XOAUTH2
+       │
+       ▼ 沒有
    讀取目前工作目錄的 mail_thunder_content.json
        │
        ├── 找到檔案且包含 "user" + "password"
@@ -108,21 +113,69 @@ MailThunder 支援兩種認證方式。當呼叫 ``later_init()`` 或
    creds = get_mail_thunder_os_environ()
    # 回傳: {"mail_thunder_user": "...", "mail_thunder_user_password": "..."}
 
-方式三：手動注入認證資訊
--------------------------
+方式三：OAuth2（Google 與 Microsoft）
+--------------------------------------
 
-您可以在呼叫登入前直接更新全域認證字典：
+Google 與 Microsoft 都在淘汰郵件的密碼登入。使用 OAuth2 時，MailThunder 在服務商的權杖端點以 refresh token
+換取短效的存取權杖（只用標準函式庫，且必須是 ``https``），快取到到期前一分鐘，再以 SASL ``XOAUTH2`` 登入。
+有 OAuth2 設定時，以它取代密碼。client ID、client secret 與 refresh token 要先透過服務商的授權流程取得一次
+（Google Cloud 的 OAuth 用戶端，或 Microsoft Entra 的應用程式註冊）；MailThunder 不執行那個流程。
+
+**在** ``mail_thunder_content.json`` **中**\ （``user`` 也可以放在 ``oauth2`` 裡）：
+
+.. code-block:: json
+
+   {
+     "user": "you@example.com",
+     "oauth2": {
+       "provider": "microsoft",
+       "client_id": "...",
+       "client_secret": "...",
+       "refresh_token": "...",
+       "tenant": "common"
+     }
+   }
+
+**或用環境變數：** ``mail_thunder_user`` 加上 ``mail_thunder_oauth2_provider``、``mail_thunder_oauth2_client_id``、
+``mail_thunder_oauth2_client_secret`` 與 ``mail_thunder_oauth2_refresh_token``；選用 ``mail_thunder_oauth2_tenant``、
+``mail_thunder_oauth2_scope``、``mail_thunder_oauth2_token_url``，或以 ``mail_thunder_oauth2_access_token`` 直接使用給定的權杖。
+
+.. list-table::
+   :header-rows: 1
+
+   * - 服務商
+     - SMTP
+     - IMAP
+     - 要求的範圍
+   * - ``google``\ （預設）
+     - ``smtp.gmail.com:465``，隱含式 TLS（``SMTPWrapper``）
+     - ``imap.gmail.com``
+     - ``https://mail.google.com/``
+   * - ``microsoft``
+     - ``smtp.office365.com:587``，STARTTLS（``SMTPStartTLSWrapper``）
+     - ``outlook.office365.com``
+     - ``https://outlook.office.com/`` 上的 ``SMTP.Send`` 與 ``IMAP.AccessAsUser.All``，以及 ``offline_access``
+
+``smtp_instance`` 與 ``imap_instance``（以及 ``MT_smtp_*``／``MT_imap_*`` 指令）會連到設定所指服務商的伺服器。
+``SMTPStartTLSWrapper`` 在送出任何其他內容前先以 ``STARTTLS`` 升級，並拒絕不提供它的伺服器。其他服務商可用
+``token_url``（與 ``scope``），再以它的主機自行建立 wrapper。client secret 與權杖不會出現在日誌、錯誤訊息或設定的
+``repr`` 裡。
 
 .. code-block:: python
 
-   from je_mail_thunder import mail_thunder_content_data_dict
+   from je_mail_thunder import OAuth2Settings, SMTPStartTLSWrapper, oauth2_token_cache
 
-   mail_thunder_content_data_dict.update({
-       "user": "your_email@gmail.com",
-       "password": "your_app_password",
-   })
+   settings = OAuth2Settings(user="you@contoso.com", provider="microsoft", client_id="...",
+                             client_secret="...", refresh_token="...", tenant="contoso.onmicrosoft.com")
+   with SMTPStartTLSWrapper() as smtp:
+       smtp.oauth2_login(settings.user, oauth2_token_cache.access_token(settings))
 
-這在認證資訊來自金鑰庫、資料庫或其他外部來源的程式化情境中很有用。
+從程式提供認證資訊
+------------------
+
+登入讀的是 ``mail_thunder_content.json`` 或環境變數，不是 ``mail_thunder_content_data_dict``：那個字典是
+``write_output_content()`` 寫進檔案的內容。認證資訊來自金鑰庫或資料庫時，請設定環境變數
+（``set_mail_thunder_os_environ``），或填好字典後呼叫 ``write_output_content()``\ （檔案會以明文保存它們）。
 
 Gmail 特殊設定
 --------------
