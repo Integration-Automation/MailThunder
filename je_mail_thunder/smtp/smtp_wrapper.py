@@ -11,15 +11,14 @@ from smtplib import SMTP_SSL
 
 from je_mail_thunder.utils.lazy_instance.lazy_instance import LazyInstance
 from je_mail_thunder.utils.logging.loggin_instance import mail_thunder_logger
-from je_mail_thunder.utils.save_mail_user_content.mail_thunder_content_save import read_output_content
-from je_mail_thunder.utils.save_mail_user_content.save_on_env import get_mail_thunder_os_environ
+from je_mail_thunder.utils.save_mail_user_content.credentials import resolve_login_credentials
 
 
-class SMTPWrapper(SMTP_SSL):
-
-    def __init__(self, host: str = "smtp.gmail.com", port: int = 465):
-        super().__init__(host, port)
-        self.login_state = False
+class SMTPClientMixin:
+    """
+    What MailThunder's SMTP clients add to :mod:`smtplib`: building messages, logging in with the content file or
+    the environment, sending and quitting. It goes before the ``smtplib`` class in the bases.
+    """
 
     def __enter__(self):
         return self
@@ -111,20 +110,7 @@ class SMTPWrapper(SMTP_SSL):
                 f"message_setting_dict: {message_setting_dict}, attach_file: {attach_file}, "
                 f"use_html: {use_html}, failed: {repr(error)}")
 
-    @staticmethod
-    def _resolve_credentials():
-        user_info = read_output_content()
-        if isinstance(user_info, dict):
-            user = user_info.get("user")
-            password = user_info.get("password")
-            if user is not None and password is not None:
-                return user, password
-        env_info = get_mail_thunder_os_environ()
-        user = env_info.get("mail_thunder_user")
-        password = env_info.get("mail_thunder_user_password")
-        if user is not None and password is not None:
-            return user, password
-        return None
+    _resolve_credentials = staticmethod(resolve_login_credentials)
 
     def try_to_login_with_env_or_content(self):
         """
@@ -197,6 +183,14 @@ class SMTPWrapper(SMTP_SSL):
             mail_thunder_logger.error(
                 f"smtp_create_message_and_send, message_content: {message_content}, "
                 f"message_setting_dict: {message_setting_dict}, params:{kwargs}, failed: {repr(error)}")
+
+
+class SMTPWrapper(SMTPClientMixin, SMTP_SSL):
+    """SMTP over implicit TLS (``smtplib.SMTP_SSL``); Gmail's ``smtp.gmail.com:465`` by default."""
+
+    def __init__(self, host: str = "smtp.gmail.com", port: int = 465):
+        super().__init__(host, port)
+        self.login_state = False
 
 
 # Connects to the SMTP server on first use, not at import (see utils/lazy_instance).

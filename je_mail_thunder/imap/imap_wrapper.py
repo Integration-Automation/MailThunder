@@ -9,8 +9,7 @@ from typing import List, Dict, Union
 from je_mail_thunder.utils.exception.exception_tags import mail_thunder_content_login_failed
 from je_mail_thunder.utils.lazy_instance.lazy_instance import LazyInstance
 from je_mail_thunder.utils.logging.loggin_instance import mail_thunder_logger
-from je_mail_thunder.utils.save_mail_user_content.mail_thunder_content_save import read_output_content
-from je_mail_thunder.utils.save_mail_user_content.save_on_env import get_mail_thunder_os_environ
+from je_mail_thunder.utils.save_mail_user_content.credentials import resolve_login_credentials
 
 
 class IMAPWrapper(IMAP4_SSL):
@@ -36,20 +35,7 @@ class IMAPWrapper(IMAP4_SSL):
         except Exception as error:
             mail_thunder_logger.error(f"imap_later_init, failed: {repr(error)}")
 
-    @staticmethod
-    def _resolve_credentials():
-        user_info = read_output_content()
-        if isinstance(user_info, dict):
-            user = user_info.get("user")
-            password = user_info.get("password")
-            if user is not None and password is not None:
-                return user, password
-        env_info = get_mail_thunder_os_environ()
-        user = env_info.get("mail_thunder_user")
-        password = env_info.get("mail_thunder_user_password")
-        if user is not None and password is not None:
-            return user, password
-        return None
+    _resolve_credentials = staticmethod(resolve_login_credentials)
 
     def try_to_login_with_env_or_content(self):
         """

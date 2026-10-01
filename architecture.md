@@ -17,10 +17,10 @@ executor exposes the same operations to action files, a CLI and a TCP socket ser
 | --- | --- |
 | `je_mail_thunder/__init__.py` | Public facade (`__all__`) |
 | `je_mail_thunder/__main__.py` | Legacy flag CLI (`python -m je_mail_thunder`) |
-| `je_mail_thunder/smtp/smtp_wrapper.py` | `SMTPWrapper(SMTP_SSL)` (default `smtp.gmail.com:465`) and the module instance `smtp_instance` (a `LazyInstance`) |
+| `je_mail_thunder/smtp/smtp_wrapper.py` | `SMTPClientMixin` (messages, login, send, quit; mixed in before an `smtplib` class), `SMTPWrapper(SMTPClientMixin, SMTP_SSL)` (default `smtp.gmail.com:465`) and the module instance `smtp_instance` (a `LazyInstance`) |
 | `je_mail_thunder/imap/imap_wrapper.py` | `IMAPWrapper(IMAP4_SSL)` (default `imap.gmail.com`) and the module instance `imap_instance` (a `LazyInstance`) |
 | `je_mail_thunder/utils/executor/action_executor.py` | `Executor` (je_action_core's `ActionExecutor` with MailThunder's settings): `event_dict` (`MT_*` commands plus je_action_core's `SAFE_BUILTINS` allowlist), `execute_action`, `execute_files`, `add_command_to_executor`, `action_list_from_mapping` |
-| `je_mail_thunder/utils/save_mail_user_content/` | Credential sources: `mail_thunder_content.json` in the working directory (`read_output_content` / `write_output_content`) and the env vars `mail_thunder_user` / `mail_thunder_user_password` (`set_/get_mail_thunder_os_environ`) |
+| `je_mail_thunder/utils/save_mail_user_content/` | Credential sources: `mail_thunder_content.json` in the working directory (`read_output_content` / `write_output_content`) and the env vars `mail_thunder_user` / `mail_thunder_user_password` (`set_/get_mail_thunder_os_environ`); `credentials.resolve_login_credentials` picks one, for both wrappers |
 | `je_mail_thunder/utils/socket_server/mail_thunder_socket_server.py` | `start_mail_thunder_socket_server`: je_action_core's TCP action server (old name `start_autocontrol_socket_server` kept as a deprecated alias) with payload validation first (`_validate_payload`, `MAX_ACTIONS`) and oversized payloads dropped |
 | `je_mail_thunder/utils/package_manager/` | `package_manager` (je_action_core's, gate on): loads an installed package's members into the executor; `executor.allow_packages` / `set_allow_arbitrary_packages` are its Python-only switches |
 | `je_mail_thunder/utils/project/` | `create_project_dir` scaffolding; `template/template_keyword.py` and `template_executor.py` hold the templates |
@@ -68,7 +68,7 @@ action JSON / --execute_str → __main__ → execute_action → Executor._execut
 **Login**
 
 ```
-MT_smtp_later_init / MT_imap_later_init → try_to_login_with_env_or_content → _resolve_credentials
+MT_smtp_later_init / MT_imap_later_init → try_to_login_with_env_or_content → _resolve_credentials (credentials.resolve_login_credentials)
   → read_output_content() (./mail_thunder_content.json) else get_mail_thunder_os_environ() → login()
 ```
 
@@ -99,8 +99,8 @@ does not connect either. Login still waits until `later_init`.
   2. Give it `__enter__` / `__exit__` and `later_init`, and reuse the credential flow in
      `save_mail_user_content/`.
   3. Add a module-level instance, register it in the executor, export it from the facade, and add tests.
-- **New credential source**: extend `save_mail_user_content/` and both `_resolve_credentials` helpers
-  (SMTP and IMAP).
+- **New credential source**: extend `save_mail_user_content/` and `credentials.resolve_login_credentials`, which
+  both wrappers use.
 - **Project template keyword**: edit `utils/project/template/template_keyword.py` /
   `template_executor.py`, which are wired from `utils/project/create_project_structure.py`.
 
