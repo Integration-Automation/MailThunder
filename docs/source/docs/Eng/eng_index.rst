@@ -71,7 +71,7 @@ Supported Platforms
 
 - **Python**: 3.10 or later
 - **OS**: Windows, macOS, Linux
-- **Dependencies**: None beyond the Python standard library
+- **Dependencies**: ``je_action_core`` only (the shared action executor; standard library only)
 
 Next Steps
 ----------

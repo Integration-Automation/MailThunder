@@ -69,7 +69,7 @@ MailThunder 核心模組架構：
 
 - **Python**: 3.10 以上
 - **作業系統**: Windows、macOS、Linux
-- **相依套件**: 無 (僅使用 Python 標準函式庫)
+- **相依套件**: 只有 ``je_action_core`` (共用的 action 執行器，只用標準函式庫)
 
 下一步
 ------

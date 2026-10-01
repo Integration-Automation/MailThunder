@@ -62,6 +62,7 @@
 ## Requirements
 
 - Python 3.10 or later
+- `je_action_core`, installed with it: the action executor MailThunder shares with APITestka, LoadDensity and FileAutomation (it uses only the Python standard library)
 
 ---
 

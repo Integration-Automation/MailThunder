@@ -7,7 +7,8 @@ Requirements
 ------------
 
 - **Python 3.10** or later
-- No additional dependencies beyond the Python standard library
+- ``je_action_core``, installed with it: the action executor shared with APITestka, LoadDensity and
+  FileAutomation, which itself uses only the Python standard library
 - ``pip`` for package installation
 
 Install from PyPI

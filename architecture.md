@@ -19,12 +19,12 @@ executor exposes the same operations to action files, a CLI and a TCP socket ser
 | `je_mail_thunder/__main__.py` | Legacy flag CLI (`python -m je_mail_thunder`) |
 | `je_mail_thunder/smtp/smtp_wrapper.py` | `SMTPWrapper(SMTP_SSL)` (default `smtp.gmail.com:465`) and the module instance `smtp_instance` (a `LazyInstance`) |
 | `je_mail_thunder/imap/imap_wrapper.py` | `IMAPWrapper(IMAP4_SSL)` (default `imap.gmail.com`) and the module instance `imap_instance` (a `LazyInstance`) |
-| `je_mail_thunder/utils/executor/action_executor.py` | `Executor.event_dict` (`MT_*` commands plus the `SAFE_BUILTINS` allowlist), `execute_action`, `execute_files`, `add_command_to_executor` |
+| `je_mail_thunder/utils/executor/action_executor.py` | `Executor` (je_action_core's `ActionExecutor` with MailThunder's settings): `event_dict` (`MT_*` commands plus je_action_core's `SAFE_BUILTINS` allowlist), `execute_action`, `execute_files`, `add_command_to_executor`, `action_list_from_mapping` |
 | `je_mail_thunder/utils/save_mail_user_content/` | Credential sources: `mail_thunder_content.json` in the working directory (`read_output_content` / `write_output_content`) and the env vars `mail_thunder_user` / `mail_thunder_user_password` (`set_/get_mail_thunder_os_environ`) |
-| `je_mail_thunder/utils/socket_server/mail_thunder_socket_server.py` | TCP server `start_mail_thunder_socket_server` (old name `start_autocontrol_socket_server` kept as a deprecated alias) with payload validation (`_validate_payload`, `MAX_PAYLOAD_BYTES`, `MAX_ACTIONS`) |
-| `je_mail_thunder/utils/package_manager/` | `package_manager`: loads an installed package's members into the executor |
+| `je_mail_thunder/utils/socket_server/mail_thunder_socket_server.py` | `start_mail_thunder_socket_server`: je_action_core's TCP action server (old name `start_autocontrol_socket_server` kept as a deprecated alias) with payload validation first (`_validate_payload`, `MAX_ACTIONS`) and oversized payloads dropped |
+| `je_mail_thunder/utils/package_manager/` | `package_manager` (je_action_core's, gate off): loads an installed package's members into the executor |
 | `je_mail_thunder/utils/project/` | `create_project_dir` scaffolding; `template/template_keyword.py` and `template_executor.py` hold the templates |
-| `je_mail_thunder/utils/{json,json_format,file_process,logging,exception}/` | Action JSON I/O, JSON reformat, directory listing, `mail_thunder_logger` (file at `$MAIL_THUNDER_LOG_FILE` or `~/.je_mail_thunder/logs/Mail_Thunder.log`, opened on first use), `MailThunderException` hierarchy |
+| `je_mail_thunder/utils/{json,json_format,file_process,logging,exception}/` | Action JSON I/O (je_action_core's `ActionJsonFile`), JSON reformat, directory listing (je_action_core's), `mail_thunder_logger` (file at `$MAIL_THUNDER_LOG_FILE` or `~/.je_mail_thunder/logs/Mail_Thunder.log`, opened on first use), `MailThunderException` hierarchy |
 | `test/unit_test/` | pytest suite (`testpaths = ["test"]`). `manual_test/` holds scripts that need real mailboxes; its `conftest.py` excludes them from collection |
 | `docs/source/` | Sphinx docs (`docs/Eng`, `docs/Zh`, `docs/API`) |
 
@@ -123,9 +123,23 @@ does not connect either. Login still waits until `later_init`.
     action-server default.
 - **Builtins policy**: the executor registers only the `SAFE_BUILTINS` allowlist (22 side-effect-free
   builtins such as `print`, `len`, `sorted`); `eval`, `exec`, `open`, `__import__`, `getattr` and the
-  like are not commands. LoadDensity and WebRunner instead blacklist `_UNSAFE_BUILTINS`, and APITestka
-  registers no builtins (workspace X-12). JSON scripts that PyBreeze or users wrote against the old
-  "every builtin" behaviour lose everything outside the allowlist.
+  like are not commands. LoadDensity and WebRunner register the same allowlist, and APITestka registers no
+  builtins (workspace X-12). JSON scripts that PyBreeze or users wrote against the old "every builtin"
+  behaviour lose everything outside the allowlist.
+- **ActionCore (this repo depends on it)**: `je_action_core` (Integration-Automation/ActionCore) holds the executor,
+  registry, package manager, action-file reading and writing, file listing and the TCP action server. MailThunder
+  configures them as follows:
+  - **executor**: document key `mail_thunder`, legacy key `auto_control` (with a `DeprecationWarning`); an empty
+    or non-list action list returns `{}` and logs `action_is_null_error`; `LegacyActionParser` with
+    `cant_execute_action_error`; plain record keys; `LoggingReporter(mail_thunder_logger)`;
+  - **registry**: functions only;
+  - **package manager**: `<package>_<member>` names, dotted identifiers only, import and attribute errors
+    logged, gate off;
+  - **socket server**: `_validate_payload` runs first; `ValueError`, `OSError` and `TypeError` are answered;
+    oversized payloads are dropped; messages go to the console.
+
+  Until the package is on PyPI, the CI installs it from GitHub at a fixed commit (`progress.md` #9). ActionCore
+  lists MailThunder in its own §6.
 
 ## 7. Design constraints
 

@@ -62,6 +62,7 @@
 ## 系統需求
 
 - Python 3.10 或更新版本
+- `je_action_core`，安裝時會一併裝上：MailThunder 與 APITestka、LoadDensity、FileAutomation 共用的 action 執行器（它只用 Python 標準函式庫）
 
 ---
 

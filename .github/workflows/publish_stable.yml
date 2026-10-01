@@ -41,6 +41,12 @@ jobs:
           pip install --require-hashes --only-binary :all: -r .github/requirements/test.txt
 
       # The package is standard library only; the tests import the checked-out source.
+      # je_action_core has no dependencies and is not on PyPI yet (ActionCore progress.md #1), so it cannot be
+      # in the hash-locked requirements; install it from GitHub at a fixed commit until it is.
+      - name: Install je_action_core
+        run: |
+          pip install --no-deps "je_action_core @ git+https://github.com/Integration-Automation/ActionCore@6cbc1869863efe784f459a9707e298b5a9386db5"
+
       - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}

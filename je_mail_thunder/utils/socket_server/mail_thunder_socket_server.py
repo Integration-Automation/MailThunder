@@ -1,8 +1,17 @@
-import json
-import socketserver
+"""
+The MailThunder socket server (port 9942): je_action_core's TCP action server running ``execute_action``,
+with a payload check first (at most 256 actions of one or two elements, each named by a string).
+"""
 import sys
-import threading
 import warnings
+
+from je_action_core import (
+    ActionRequestHandler,
+    ActionTCPServer,
+    OversizePolicy,
+    SocketServerSettings,
+    start_action_socket_server,
+)
 
 from je_mail_thunder.utils.executor.action_executor import (
     ACTION_LIST_KEY,
@@ -10,8 +19,8 @@ from je_mail_thunder.utils.executor.action_executor import (
     execute_action,
 )
 
-MAX_PAYLOAD_BYTES = 8192
 MAX_ACTIONS = 256
+_MAX_ACTION_ELEMENTS = 2  # [name] or [name, payload]
 
 
 def _validate_payload(payload):
@@ -34,48 +43,10 @@ def _validate_payload(payload):
     if len(actions) > MAX_ACTIONS:
         raise ValueError(f"action list exceeds max length {MAX_ACTIONS}")
     for entry in actions:
-        if not isinstance(entry, list) or len(entry) == 0 or len(entry) > 2:
+        if not isinstance(entry, list) or len(entry) == 0 or len(entry) > _MAX_ACTION_ELEMENTS:
             raise ValueError(f"invalid action entry: {entry!r}")
         if not isinstance(entry[0], str):
             raise ValueError(f"action command name must be str: {entry!r}")
-
-
-class TCPServerHandler(socketserver.BaseRequestHandler):
-
-    def handle(self):
-        raw = self.request.recv(MAX_PAYLOAD_BYTES).strip()
-        if len(raw) >= MAX_PAYLOAD_BYTES:
-            print("payload exceeds max buffer size; rejected", file=sys.stderr, flush=True)
-            return
-        try:
-            command_string = str(raw, encoding="utf-8")
-        except UnicodeDecodeError as error:
-            print(repr(error), file=sys.stderr, flush=True)
-            return
-        client_socket = self.request
-        print("command is: " + command_string, flush=True)
-        if command_string == "quit_server":
-            self.server.shutdown()
-            self.server.close_flag = True
-            print("Now quit server", flush=True)
-            return
-        try:
-            execute_str = json.loads(command_string)
-            _validate_payload(execute_str)
-            for execute_return in execute_action(execute_str).values():
-                client_socket.sendto(str(execute_return).encode("utf-8"), self.client_address)
-                client_socket.sendto("\n".encode("utf-8"), self.client_address)
-            client_socket.sendto("Return_Data_Over_JE".encode("utf-8"), self.client_address)
-            client_socket.sendto("\n".encode("utf-8"), self.client_address)
-        except (ValueError, OSError, TypeError) as error:
-            print(repr(error), file=sys.stderr)
-            try:
-                client_socket.sendto(str(error).encode("utf-8"), self.client_address)
-                client_socket.sendto("\n".encode("utf-8"), self.client_address)
-                client_socket.sendto("Return_Data_Over_JE".encode("utf-8"), self.client_address)
-                client_socket.sendto("\n".encode("utf-8"), self.client_address)
-            except OSError as send_error:
-                print(repr(send_error))
 
 
 # One slot in the sibling servers' range (AutoControl 9938, APITestka 9939, LoadDensity 9940,
@@ -83,11 +54,17 @@ class TCPServerHandler(socketserver.BaseRequestHandler):
 DEFAULT_PORT = 9942
 
 
-class TCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
-
-    def __init__(self, server_address, request_handler_class):
-        super().__init__(server_address, request_handler_class)
-        self.close_flag: bool = False
+# The names this module has always exported.
+TCPServer = ActionTCPServer
+TCPServerHandler = ActionRequestHandler
+_SETTINGS = SocketServerSettings(
+    execute=execute_action,
+    validate=_validate_payload,
+    handled=(ValueError, OSError, TypeError),
+    oversize=OversizePolicy.REJECT,
+    log_info=lambda message: print(message, flush=True),
+    log_error=lambda message: print(message, file=sys.stderr, flush=True),
+)
 
 
 def start_mail_thunder_socket_server(host: str = "localhost", port: int = DEFAULT_PORT) -> TCPServer:
@@ -95,11 +72,7 @@ def start_mail_thunder_socket_server(host: str = "localhost", port: int = DEFAUL
 
     It binds exactly ``host`` and ``port``; the command line is not consulted.
     """
-    server = TCPServer((host, port), TCPServerHandler)
-    server_thread = threading.Thread(target=server.serve_forever)
-    server_thread.daemon = True
-    server_thread.start()
-    return server
+    return start_action_socket_server(host, port, _SETTINGS)
 
 
 def start_autocontrol_socket_server(host: str = "localhost", port: int = DEFAULT_PORT) -> TCPServer:
