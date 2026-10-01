@@ -138,8 +138,8 @@ does not connect either. Login still waits until `later_init`.
   - **socket server**: `_validate_payload` runs first; `ValueError`, `OSError` and `TypeError` are answered;
     oversized payloads are dropped; messages go to the console.
 
-  Until the package is on PyPI, the CI installs it from GitHub at a fixed commit (`progress.md` #9). ActionCore
-  lists MailThunder in its own §6.
+  It is a PyPI dependency (`je_action_core>=0.0.1`; hash-locked for CI in `.github/requirements/test.txt`).
+  ActionCore lists MailThunder in its own §6.
 
 ## 7. Design constraints
 

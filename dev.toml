@@ -14,7 +14,7 @@ description = ""
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.10"
 # Standard library only (smtplib, imaplib, email, socketserver).
-dependencies = ["je_action_core"]
+dependencies = ["je_action_core>=0.0.1"]
 license = "MIT"
 license-files = ["LICENSE"]
 classifiers = [

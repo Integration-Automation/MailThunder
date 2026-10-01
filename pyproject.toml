@@ -14,7 +14,7 @@ description = ""
 requires-python = ">=3.10"
 license = "MIT"
 license-files = ["LICENSE"]
-dependencies = ["je_action_core"]
+dependencies = ["je_action_core>=0.0.1"]
 classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
