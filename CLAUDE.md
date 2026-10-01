@@ -121,6 +121,7 @@ Workspace rule shared by every repository under `D:\Codes` (full text: `D:\Codes
 - Write concise commit messages that describe the "why", not just the "what".
 - **Do not mention any AI assistant, model name, or tool name** (including but not limited to Claude, GPT, Copilot, etc.) in commit messages, PR descriptions, or code comments.
 - **Do not include `Co-Authored-By` headers referencing AI tools.**
+- Both branches publish to PyPI from CI: a push to `main` releases `je_mail_thunder` (`publish_stable.yml`), and a push to `dev` that passes the tests and changes what the package ships releases `je_mail_thunder_dev` (the `publish-dev` job of `test_dev.yml`, `scripts/dev_release.py`). Never bump a version by hand; the version in `dev.toml` is only a floor.
 - Format: `<type>: <description>` (e.g., `fix: prevent path traversal in mail export`, `feat: add OAuth2 support for IMAP login`).
 - Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `perf`, `security`.
 

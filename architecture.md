@@ -27,6 +27,7 @@ executor exposes the same operations to action files, a CLI and a TCP socket ser
 | `je_mail_thunder/utils/package_manager/` | `package_manager` (je_action_core's, gate on): loads an installed package's members into the executor; `executor.allow_packages` / `set_allow_arbitrary_packages` are its Python-only switches |
 | `je_mail_thunder/utils/project/` | `create_project_dir` scaffolding; `template/template_keyword.py` and `template_executor.py` hold the templates |
 | `je_mail_thunder/utils/{json,json_format,file_process,logging,exception}/` | Action JSON I/O (je_action_core's `ActionJsonFile`), JSON reformat, directory listing (je_action_core's), `mail_thunder_logger` (file at `$MAIL_THUNDER_LOG_FILE` or `~/.je_mail_thunder/logs/Mail_Thunder.log`, opened on first use), `MailThunderException` hierarchy |
+| `scripts/dev_release.py` | Release helper for the dev channel, run only by CI (standard library only): `prepare` writes `pyproject.toml` from `dev.toml` with the next version, `changed <dist>` compares the built wheel with the newest published one |
 | `test/unit_test/` | pytest suite (`testpaths = ["test"]`). `manual_test/` holds scripts that need real mailboxes; its `conftest.py` excludes them from collection |
 | `docs/source/` | Sphinx docs (`docs/Eng`, `docs/Zh`, `docs/API`) |
 
@@ -55,6 +56,16 @@ executor exposes the same operations to action files, a CLI and a TCP socket ser
   - If `sys.argv` carries one or two extra arguments, they override the host and port.
   - `quit_server` shuts it down.
   - Replies end with `Return_Data_Over_JE`.
+- **PyPI packages**: `je_mail_thunder` (stable) and `je_mail_thunder_dev` (dev channel), both published by CI.
+  - Stable: a push to `main` runs `publish_stable.yml`, which bumps `pyproject.toml`, uploads, tags and
+    creates the GitHub release.
+  - Dev: the `publish-dev` job of `test_dev.yml` runs after the `test` matrix on a push to `dev`, builds from
+    `dev.toml` and uploads when the commit is still the tip of `dev` and the wheel differs from the newest
+    published one. `scripts/dev_release.py` takes the version from PyPI (newest release plus one patch), so
+    nothing is committed back and the version in `dev.toml` is only a floor. The job reads no secret but
+    `PYPI_API_TOKEN`.
+  - `test/unit_test/test_dev_toml_parity.py` keeps the dependencies, Python floor, entry points and
+    `[tool.setuptools]` of `dev.toml` equal to `pyproject.toml`.
 - There is no MCP server, LSP, pytest plugin or GUI.
 
 ## 4. Main flows
@@ -180,6 +191,7 @@ does not connect either. Login still waits until `later_init`.
 - The action format (`mail_thunder` key and its `auto_control` alias, `MT_` prefix), the builtins policy, or the import-time
   instance creation changes.
 - The credential sources (file name, env var names, lookup order) change.
+- A release channel changes: which workflow publishes which package, or how its version is chosen.
 - A §6 contract changes, for example PyBreeze's imports or its subprocess invocation.
 - A CLAUDE.md section referenced in §7 is renamed or its rule changes.
 - Refresh the "Last verified" line whenever this file is re-checked against HEAD.

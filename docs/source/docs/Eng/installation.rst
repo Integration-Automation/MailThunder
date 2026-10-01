@@ -26,6 +26,9 @@ Install from PyPI
 
    pip install je_mail_thunder_dev
 
+``je_mail_thunder_dev`` follows the ``dev`` branch: CI publishes a new version each time a push to ``dev``
+passes the tests and changes what the package ships.
+
 Install from Source
 -------------------
 

@@ -83,6 +83,8 @@ pip install je_mail_thunder
 pip install je_mail_thunder_dev
 ```
 
+`je_mail_thunder_dev` 跟随 `dev` 分支：每次推送到 `dev` 通过测试、并且包内容有变化时，CI 就会发布一个新版本。
+
 ---
 
 ## 快速开始
