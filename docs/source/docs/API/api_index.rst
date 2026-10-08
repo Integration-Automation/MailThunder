@@ -194,6 +194,8 @@ Module Map
    * - ``je_mail_thunder.utils.oauth2.oauth2``
      - ``OAuth2Settings``, ``OAuth2Provider``, ``OAUTH2_PROVIDERS``, ``OAuth2TokenCache``, ``oauth2_token_cache``,
        ``refresh_access_token()``, ``xoauth2_string()``
+   * - ``je_mail_thunder.utils.tls.tls_context``
+     - ``verified_client_context()``
    * - ``je_mail_thunder.utils.save_mail_user_content.credentials``
      - ``resolve_authentication()``, ``resolve_oauth2_settings()``, ``resolve_login_credentials()``
    * - ``je_mail_thunder.attachments.attachment``

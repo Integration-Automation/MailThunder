@@ -234,6 +234,16 @@ Google 與 Microsoft 都在淘汰郵件的密碼登入。使用 OAuth2 時，Mai
 ``write_output_content()`` 寫進檔案的內容。認證資訊來自金鑰庫或資料庫時，請設定環境變數
 （``set_mail_thunder_os_environ``），或填好字典後呼叫 ``write_output_content()``\ （檔案會以明文保存它們）。
 
+伺服器憑證
+----------
+
+所有 SMTP 與 IMAP 連線（``SMTPWrapper``、``SMTPStartTLSWrapper``、``IMAPWrapper``，以及使用這些供應商的 ``Mail``）
+都會在送出使用者名稱或權杖之前，依系統的信任憑證庫驗證伺服器的憑證與主機名稱。``smtplib.SMTP_SSL`` 與
+``imaplib.IMAP4_SSL`` 本身兩者都不檢查，所以 wrapper 一律交給它們一個會驗證的 context。
+
+使用自簽憑證或私有憑證授權單位所簽發憑證的伺服器會被拒絕，並拋出 ``ssl.SSLCertVerificationError``。
+請不要找關閉檢查的開關：改在 ``SSL_CERT_FILE``\ （或 ``SSL_CERT_DIR``）環境變數中指定包含該憑證的 CA bundle。
+
 Gmail 特殊設定
 --------------
 

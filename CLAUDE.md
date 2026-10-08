@@ -36,6 +36,7 @@ je_mail_thunder/
     socket_server/           # TCP socket server for remote command execution
     save_mail_user_content/  # Credential storage (JSON file / env vars) and the password / OAuth2 lookup
     oauth2/                  # OAuth2 settings, token refresh and cache, XOAUTH2 (stdlib only)
+    tls/                     # The verifying TLS context every SMTP / IMAP connection is opened with
     project/template/        # Template method pattern for project scaffolding
     package_manager/         # Dynamic package loading
     json/                    # JSON file I/O
@@ -97,16 +98,18 @@ je_mail_thunder/
 - `project_mail()` runs a project's `mail/config.py` and `mail/triggers.py`. It is Python-only: never register it, or anything else that runs a file, as an action command.
 
 ### Network Security
-- SMTP uses `SMTP_SSL` (port 465), or `SMTPStartTLSWrapper` (port 587), which upgrades with `STARTTLS` and a verifying `ssl.create_default_context()` before anything else is sent and refuses a server that does not offer it — always use SSL/TLS. Do not downgrade to plain SMTP or send credentials before TLS.
+- SMTP uses `SMTP_SSL` (port 465), or `SMTPStartTLSWrapper` (port 587), which upgrades with `STARTTLS` before anything else is sent and refuses a server that does not offer it — always use SSL/TLS. Do not downgrade to plain SMTP or send credentials before TLS.
 - OAuth2 token endpoints must be `https`; client secrets, refresh tokens and access tokens never go into logs, exception messages or a `repr`.
 - IMAP uses `IMAP4_SSL` — always use SSL/TLS. Do not downgrade to plain IMAP.
+- Every `SMTP_SSL`, `starttls` and `IMAP4_SSL` is given `verified_client_context()` (`utils/tls/`): without a context the standard library verifies neither the certificate nor the host name. Never pass a context that turns verification off; a private CA goes in `SSL_CERT_FILE`.
 - Web API providers (`providers/http.py`, Microsoft Graph) request `https` URLs only, and a provider's token goes only to its own API host. The Graph webhook listener binds `localhost` by default and ignores notifications without its `clientState`.
 - Socket server binds to `localhost` by default. Do not change the default bind address to `0.0.0.0` without explicit user configuration.
-- MailThunder Studio (`studio/`) binds `localhost`, checks its per-run token and the `Host` header on every API request, serves no third-party script, writes page content as text only (`textContent`, never `innerHTML`), and never returns a credential. It consumes the core API (`Mail`, `StudioApi`), never a provider directly.
+- MailThunder Studio (`studio/`) speaks plain HTTP, so it binds loopback addresses only (`localhost`, `127.x.x.x`) and refuses any other; it checks its per-run token and the `Host` header on every API request, serves no third-party script, writes page content as text only (`textContent`, never `innerHTML`), and never returns a credential. It consumes the core API (`Mail`, `StudioApi`), never a provider directly.
 
 ### Dependency Security
 - Keep dependencies minimal (`requirements.txt` is intentionally small).
 - Audit new dependencies before adding. Prefer stdlib solutions.
+- `pylock.toml` (PEP 751) pins what `[project] dependencies` resolve to, with hashes. Regenerate it with `python -m pip lock "<each dependency>" -o pylock.toml` when a dependency or its range changes; `test_dev_toml_parity.py` fails when the lock falls outside the declared range.
 
 ## Documentation
 

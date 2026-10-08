@@ -1,14 +1,41 @@
 """
-What the SMTP and IMAP wrappers share with the core: the attachment policy before a send, and file names that
-are safe to write for exported mail.
+What the SMTP and IMAP wrappers guard: the attachment policy before a send, file names that are safe to write for
+exported mail, and a TLS connection that verifies who it reaches.
 """
+import imaplib
+import smtplib
+import ssl
+
 import pytest
 
 from je_mail_thunder.attachments.policy import DEFAULT_ATTACHMENT_POLICY, AttachmentPolicy
 from je_mail_thunder.imap.imap_wrapper import IMAPWrapper
 from je_mail_thunder.smtp.smtp_wrapper import SMTPStartTLSWrapper, SMTPWrapper
+from je_mail_thunder.utils.tls.tls_context import verified_client_context
 
 _SETTINGS = {"Subject": "Report", "From": "me@example.com", "To": "you@example.com"}
+
+
+def test_the_tls_context_verifies_the_certificate_and_the_host_name():
+    context = verified_client_context()
+    assert context.verify_mode == ssl.CERT_REQUIRED
+    assert context.check_hostname is True
+    assert context.minimum_version >= ssl.TLSVersion.TLSv1_2
+    assert verified_client_context() is not context
+
+
+def test_smtp_over_implicit_tls_verifies_the_server(monkeypatch):
+    monkeypatch.setattr(smtplib.SMTP, "connect", lambda self, host, port, source_address=None: (220, b"ok"))
+    client = SMTPWrapper("smtp.example.com")
+    assert client.context.verify_mode == ssl.CERT_REQUIRED
+    assert client.context.check_hostname is True
+
+
+def test_imap_verifies_the_server(monkeypatch):
+    monkeypatch.setattr(imaplib.IMAP4, "__init__", lambda self, host="", port=993, timeout=None: None)
+    client = IMAPWrapper("imap.example.com")
+    assert client.ssl_context.verify_mode == ssl.CERT_REQUIRED
+    assert client.ssl_context.check_hostname is True
 
 
 def _smtp(wrapper=SMTPWrapper):

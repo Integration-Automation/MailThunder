@@ -1,0 +1,13 @@
+lock-version = "1.0"
+created-by = "pip"
+
+[[packages]]
+name = "je-action-core"
+version = "0.0.3"
+
+[[packages.wheels]]
+name = "je_action_core-0.0.3-py3-none-any.whl"
+url = "https://files.pythonhosted.org/packages/71/f5/b6b0e6a66fc44aa046c3b61de06c634b2b184a6ff74af9e6ef923bb13e14/je_action_core-0.0.3-py3-none-any.whl"
+
+[packages.wheels.hashes]
+sha256 = "395890665483e58f17fede17aa809bf6e2762ba8f0bd6751126fe46efabb8c85"

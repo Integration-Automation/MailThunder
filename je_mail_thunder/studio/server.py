@@ -2,13 +2,14 @@
 The HTTP server of MailThunder Studio: one page, its script and style, and a JSON API over
 :class:`~je_mail_thunder.studio.api.StudioApi`. Standard library only.
 
-It is a local tool. It binds ``localhost`` unless told otherwise, every API request must carry the token that
-was printed when the server started, and a request whose ``Host`` is not the address it was started on is
-refused, so a web page open in the same browser cannot reach it.
+It is a local tool. It speaks plain HTTP, so it binds only this machine's loopback addresses; every API request
+must carry the token that was printed when the server started, and a request whose ``Host`` is not the address
+it was started on is refused, so a web page open in the same browser cannot reach it.
 """
 from __future__ import annotations
 
 import hmac
+import ipaddress
 import json
 import secrets
 import threading
@@ -19,7 +20,7 @@ from typing import Any, Optional, Tuple
 from je_mail_thunder.core.mail import Mail
 from je_mail_thunder.studio.api import StudioApi
 from je_mail_thunder.studio.page import INDEX_HTML, STUDIO_CSS, STUDIO_JS
-from je_mail_thunder.utils.exception.exceptions import MailThunderException
+from je_mail_thunder.utils.exception.exceptions import MailThunderException, MailThunderStudioException
 from je_mail_thunder.utils.logging.loggin_instance import mail_thunder_logger
 
 # One slot above the Graph webhook listener (9946).
@@ -39,7 +40,19 @@ _SECURITY_HEADERS = (
     ("Referrer-Policy", "no-referrer"),
     ("Cache-Control", "no-store"),
 )
-_LOCAL_NAMES = ("localhost", "127.0.0.1", "[::1]")
+_LOCAL_NAMES = ("localhost", "127.0.0.1")
+# Only ever served on a loopback address (see _is_loopback), where there is no network to listen in on.
+_SCHEME = "http"
+
+
+def _is_loopback(host: str) -> bool:
+    """Whether binding ``host`` keeps the server on this machine."""
+    if host == "localhost":
+        return True
+    try:
+        return ipaddress.IPv4Address(host).is_loopback
+    except ValueError:
+        return False
 
 
 class _StudioHandler(BaseHTTPRequestHandler):
@@ -94,7 +107,7 @@ class _StudioHandler(BaseHTTPRequestHandler):
             return
         route = self.server.api.routes.get((self.command, path))
         if route is None:
-            self._json(404, {"error": "NotFound", "message": f"there is no {self.command} {path}"})
+            self._json(404, {"error": "NotFound", "message": "MailThunder Studio has nothing at this address"})
             return
         try:
             self._json(200, route(self._payload()))
@@ -124,9 +137,14 @@ class StudioServer(ThreadingHTTPServer):
     def __init__(self, api: StudioApi, host: str = "localhost", port: int = DEFAULT_PORT) -> None:
         """
         :param api: what the pages show and do
-        :param host: the address to bind; anything but ``localhost`` exposes the mailbox to that network
+        :param host: the address to bind: ``localhost`` or a ``127.x.x.x`` address
         :param port: the port to bind; 0 picks a free one
+        :raises MailThunderStudioException: when ``host`` would put the page and its token on a network
         """
+        if not _is_loopback(host):
+            raise MailThunderStudioException(
+                f"MailThunder Studio speaks plain HTTP, so it serves only localhost or a 127.x.x.x address, not "
+                f"{host!r}; reach it from another machine through an SSH tunnel")
         super().__init__((host, port), _StudioHandler)
         self.api = api
         self.token = secrets.token_urlsafe(32)
@@ -139,7 +157,8 @@ class StudioServer(ThreadingHTTPServer):
     @property
     def url(self) -> str:
         """The address to open: the token travels in the fragment, which browsers do not send to any server."""
-        return f"http://{self.host}:{self.server_address[1]}/#token={self.token}"
+        location = f"{self.host}:{self.server_address[1]}"
+        return urllib.parse.urlunsplit((_SCHEME, location, "/", "", f"token={self.token}"))
 
     def serve_in_background(self) -> threading.Thread:
         """
@@ -166,10 +185,11 @@ def start_studio(mail: Optional[Mail] = None, host: str = "localhost", port: int
     Start MailThunder Studio on a daemon thread.
 
     :param mail: the ``Mail`` to show and use; ``Mail()`` by default
-    :param host: the address to bind; ``localhost`` unless the mailbox should be reachable from elsewhere
+    :param host: the address to bind: ``localhost`` or a ``127.x.x.x`` address
     :param port: the port to bind
     :param project: the project directory the Projects page describes
     :return: the running server; ``server.url`` is the address to open and ``server.stop()`` ends it
+    :raises MailThunderStudioException: when ``host`` is not a loopback address
     """
     server = StudioServer(StudioApi(mail, project), host, port)
     server.serve_in_background()

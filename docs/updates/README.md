@@ -58,6 +58,7 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | ID | Date | Title | Tags | Batch |
 |---|---|---|---|---|
+| U-20261008-15 | 2026-10-08 | SMTP and IMAP verify the server's certificate; Studio serves loopback only; a lock file | #security #bugfix #tls #studio #sonarcloud | [2026-10](2026-10.md) |
 | U-20261008-14 | 2026-10-08 | Roadmap status, the import name stays, PyPI description names what was added | #decision #roadmap-2.0 #packaging | [2026-10](2026-10.md) |
 | U-20261008-13 | 2026-10-08 | A script that runs the core mail API against a real mailbox | #tests #manual | [2026-10](2026-10.md) |
 | U-20261008-12 | 2026-10-08 | MailThunder Studio: a local page over the core API | #done #studio #ui #roadmap-2.0 | [2026-10](2026-10.md) |
@@ -107,5 +108,5 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | File | Period | Entries |
 |---|---|---:|
-| [2026-10.md](2026-10.md) | 2026-10 | 23 |
+| [2026-10.md](2026-10.md) | 2026-10 | 24 |
 | [2026-09.md](2026-09.md) | 2026-09 | 21 |

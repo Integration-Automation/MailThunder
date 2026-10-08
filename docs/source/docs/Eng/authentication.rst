@@ -242,6 +242,18 @@ dict is what ``write_output_content()`` writes to the file. To log in with crede
 database, set the environment variables (``set_mail_thunder_os_environ``), or fill the dict and call
 ``write_output_content()`` (the file then holds them in plain text).
 
+Server Certificates
+-------------------
+
+Every SMTP and IMAP connection (``SMTPWrapper``, ``SMTPStartTLSWrapper``, ``IMAPWrapper``, and so ``Mail`` on
+those providers) verifies the server's certificate and host name against the system's trust store before a
+user name or a token is sent. ``smtplib.SMTP_SSL`` and ``imaplib.IMAP4_SSL`` check neither on their own, so
+the wrappers always hand them a verifying context.
+
+A server with a self-signed certificate, or one issued by a private certificate authority, is refused with
+``ssl.SSLCertVerificationError``. Do not look for a switch that turns the check off: name a CA bundle that
+holds the certificate in the ``SSL_CERT_FILE`` (or ``SSL_CERT_DIR``) environment variable instead.
+
 Gmail-Specific Setup
 --------------------
 

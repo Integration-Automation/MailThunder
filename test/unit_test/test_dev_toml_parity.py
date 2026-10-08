@@ -69,3 +69,17 @@ def test_entry_points_match(table):
 def test_shipped_files_match():
     # Package discovery and package data decide which files reach the wheel.
     assert DEV_FILE["tool"]["setuptools"] == STABLE_FILE["tool"]["setuptools"]
+
+
+def test_the_lock_file_pins_the_runtime_dependencies_inside_their_ranges():
+    # pylock.toml (PEP 751) records what [project] dependencies resolve to. When this fails, regenerate it:
+    #   python -m pip lock "<each dependency>" -o pylock.toml
+    requirements = pytest.importorskip("packaging.requirements")  # reason: installed with pytest, not by us
+    names = pytest.importorskip("packaging.utils")
+    locked = {package["name"]: package for package in _load("pylock.toml")["packages"]}
+    for line in STABLE["dependencies"]:
+        requirement = requirements.Requirement(line)
+        package = locked.get(names.canonicalize_name(requirement.name))
+        assert package is not None, f"{requirement.name} is not in pylock.toml"
+        assert requirement.specifier.contains(package["version"]), f"pylock.toml is outside {line}"
+        assert all(wheel["hashes"]["sha256"] for wheel in package["wheels"]), f"{requirement.name} has no hash"

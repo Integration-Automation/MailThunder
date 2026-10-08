@@ -16,12 +16,17 @@ from je_mail_thunder.utils.save_mail_user_content.credentials import (
     resolve_login_credentials,
     resolve_oauth2_settings,
 )
+from je_mail_thunder.utils.tls.tls_context import verified_client_context
 
 
 class IMAPWrapper(IMAP4_SSL):
+    """
+    IMAP over TLS (``imaplib.IMAP4_SSL``); Gmail's ``imap.gmail.com`` by default. The server's certificate and
+    host name are verified: ``IMAP4_SSL`` checks neither unless it is given a context.
+    """
 
     def __init__(self, host: str = 'imap.gmail.com'):
-        super().__init__(host)
+        super().__init__(host, ssl_context=verified_client_context())
 
     def __enter__(self):
         return self

@@ -682,7 +682,9 @@ python -m je_mail_thunder.studio --port 9950 --no-browser
 | 日志 | 日志档的结尾与审计日志 |
 | 设置 | MailThunder 存放文件的位置、已注册的提供商，以及运行环境的版本 |
 
-Studio 是给坐在这台电脑前的人使用的工具。它只绑定 `localhost`；每个 API 请求都需要该次运行的随机令牌，令牌放在地址的
+Studio 是给坐在这台电脑前的人使用的工具。它使用纯 HTTP，所以只在 loopback 地址上提供服务（`localhost`，或以 `--host`
+指定 `127.x.x.x`），其他地址一律拒绝；要从另一台机器使用，请通过 SSH 转发端口（`ssh -L 9947:localhost:9947 host`）。
+每个 API 请求都需要该次运行的随机令牌，令牌放在地址的
 fragment 里，浏览器不会把它送给任何服务器；`Host` 不同的请求会被拒绝；页面不会从其他地方加载任何东西，所有内容都以
 文本写入，所以通过邮件送来的内容无法在浏览器中运行；任何回应都不包含密码或令牌；从页面发出的邮件也不能指定附件。
 不使用时请把它停掉。`je_mail_thunder.studio.server` 的 `start_studio(mail)` 可以从 Python 启动它。
@@ -959,6 +961,10 @@ context manager；第一次调用之前不会连接。
 
 继承自 `smtplib.SMTP_SSL`（经由 `SMTPClientMixin`）。默认主机：`smtp.gmail.com`，默认端口：`465`。
 
+所有 SMTP 与 IMAP 连接都会依系统的信任证书库验证服务器的证书与主机名（`smtplib.SMTP_SSL` 与 `imaplib.IMAP4_SSL`
+本身两者都不检查）。使用自签名证书或私有证书颁发机构的服务器会被拒绝并抛出 `ssl.SSLCertVerificationError`，直到在
+`SSL_CERT_FILE`（或 `SSL_CERT_DIR`）环境变量中指定包含该证书的 CA bundle 为止。
+
 | 方法 | 说明 |
 |------|------|
 | `later_init()` | 使用配置文件或环境变量登录（有 OAuth2 配置时用 OAuth2） |
@@ -989,7 +995,7 @@ smtp = SMTPStartTLSWrapper()
 
 ### IMAPWrapper
 
-继承自 `imaplib.IMAP4_SSL`。默认主机：`imap.gmail.com`。
+继承自 `imaplib.IMAP4_SSL`。默认主机：`imap.gmail.com`。与 SMTP 相同，会验证服务器的证书与主机名。
 
 | 方法 | 说明 |
 |------|------|
@@ -1066,6 +1072,7 @@ MailThunder/
       lazy_instance/         # 首次使用时才连接的惰性客户端
       logging/               # 日志实例
       oauth2/                # OAuth2 配置、令牌刷新、XOAUTH2
+      tls/                   # 每个 SMTP / IMAP 连接使用的、会验证证书的 TLS context
       package_manager/       # 动态包加载器
       project/               # 项目模板创建
       save_mail_user_content/ # 验证配置与环境变量处理

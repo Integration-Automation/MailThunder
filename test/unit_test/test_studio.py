@@ -2,6 +2,7 @@
 MailThunder Studio: what its API answers, and what its server lets through. The server is bound to a free
 port on localhost and spoken to with ``urllib``; the mail behind it is on recording providers.
 """
+import ipaddress
 import json
 import urllib.error
 import urllib.request
@@ -210,6 +211,19 @@ def test_the_api_needs_the_token_and_the_right_host(server):
     assert _request(server, "/api/nothing")[0] == 404
     assert _request(server, "/api/send")[0] == 404
     assert _request(server, "/etc/passwd", token=False)[0] == 404
+
+
+@pytest.mark.parametrize("host", ["", str(ipaddress.IPv4Address(0)), "::", "192.0.2.10", "studio.example.com"])
+def test_studio_serves_only_loopback_addresses(studio, host):
+    with pytest.raises(MailThunderStudioException, match="plain HTTP"):
+        StudioServer(studio, host, 0)
+
+
+def test_an_address_studio_does_not_have_is_not_echoed_back(server):
+    status, body, _headers = _request(server, "/api/<script>alert(1)</script>")
+    assert status == 404
+    assert json.loads(body)["error"] == "NotFound"
+    assert "script" not in body
 
 
 def test_the_api_over_http(server, studio):

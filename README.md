@@ -700,7 +700,9 @@ It prints an address such as `http://localhost:9947/#token=...` and opens it. Th
 | Logs | the end of the log file and the audit log |
 | Settings | where MailThunder keeps its files, the registered providers and the versions it runs on |
 
-Studio is a tool for the person at the keyboard. It binds `localhost`; every API request needs the random token of
+Studio is a tool for the person at the keyboard. It speaks plain HTTP, so it serves only a loopback address
+(`localhost`, or `--host 127.x.x.x`) and refuses any other; from another machine, forward the port through SSH
+(`ssh -L 9947:localhost:9947 host`). Every API request needs the random token of
 that run, which travels in the address's fragment and is never sent to a server by the browser; a request with
 another `Host` is refused; the page loads nothing from elsewhere and writes everything as text, so nothing that
 arrived by mail can run in the browser; no answer holds a password or a token; and a mail sent from the page cannot
@@ -979,6 +981,11 @@ manager; nothing connects until the first call.
 
 Extends `smtplib.SMTP_SSL` (through `SMTPClientMixin`). Default host: `smtp.gmail.com`, default port: `465`.
 
+Every SMTP and IMAP connection verifies the server's certificate and host name against the system's trust store
+(`smtplib.SMTP_SSL` and `imaplib.IMAP4_SSL` check neither on their own). A server with a self-signed certificate
+or a private certificate authority is refused with `ssl.SSLCertVerificationError` until a CA bundle that holds its
+certificate is named in the `SSL_CERT_FILE` (or `SSL_CERT_DIR`) environment variable.
+
 | Method | Description |
 |--------|-------------|
 | `later_init()` | Log in using config file or environment variables (OAuth2 when configured) |
@@ -1010,7 +1017,7 @@ verified) before anything else is sent, and refuses a server that does not offer
 
 ### IMAPWrapper
 
-Extends `imaplib.IMAP4_SSL`. Default host: `imap.gmail.com`.
+Extends `imaplib.IMAP4_SSL`. Default host: `imap.gmail.com`. The server's certificate and host name are verified, as for SMTP.
 
 | Method | Description |
 |--------|-------------|
@@ -1087,6 +1094,7 @@ MailThunder/
       lazy_instance/         # Lazy clients that connect on first use
       logging/               # Logger instance
       oauth2/                # OAuth2 settings, token refresh, XOAUTH2
+      tls/                   # The verifying TLS context of every SMTP / IMAP connection
       package_manager/       # Dynamic package loader
       project/               # Project template scaffolding
       save_mail_user_content/ # Auth config and env var handling

@@ -31,6 +31,7 @@ without naming a protocol; it is the foundation of the MailThunder 2.0 roadmap
 | `je_mail_thunder/studio/` | MailThunder Studio, a local web page over the core API only: `api.StudioApi` (JSON-ready methods for the eight pages: dashboard, accounts, templates, triggers, policies, projects, logs, settings; never returns a secret), `server.StudioServer` / `start_studio` (standard-library HTTP server on `localhost:9947`; token and `Host` checked on every request), `page` (the HTML, CSS and script as text), `__main__` (`python -m je_mail_thunder.studio`) |
 | `je_mail_thunder/auth/` | How an account logs in, behind one interface: `base.Authentication` (`user`, `mechanism`, `login(client)` for the SMTP / IMAP wrappers, `authorization()` for HTTP; what a mechanism cannot do raises `MailThunderAuthenticationException`), `password.PasswordAuth` / `AppPasswordAuth`, `oauth2.OAuth2Auth` (bearer token from `utils/oauth2`'s cache), `xoauth2.XOAUTH2Auth` (the same token as SASL `XOAUTH2`); secrets stay out of every `repr` |
 | `je_mail_thunder/attachments/` | What a message may carry: `attachment.Attachment` (a file to send by `path`, or one that arrived as `content`; `save` writes it under `mime.safe_filename`), `policy.AttachmentPolicy` / `DEFAULT_ATTACHMENT_POLICY` (count, size, extension and MIME-type limits), `validator.validate_attachments` (count → existence → size → extension → MIME type → total size; raises the `MailThunderAttachmentException` subclasses), `mime` (type and extension from the file name) |
+| `je_mail_thunder/utils/tls/tls_context.py` | `verified_client_context()`: the TLS client context (certificate and host name verified, TLS 1.2 or newer) that `SMTPWrapper`, `SMTPStartTLSWrapper` and `IMAPWrapper` open every connection with |
 | `je_mail_thunder/utils/oauth2/oauth2.py` | OAuth2 with the standard library: `OAUTH2_PROVIDERS` (`google`, `microsoft`: token URL, scope, SMTP/IMAP hosts), `OAuth2Settings` (secrets out of `repr`), `refresh_access_token` (https only), `OAuth2TokenCache` / `oauth2_token_cache`, `xoauth2_string` |
 | `je_mail_thunder/utils/executor/action_executor.py` | `Executor` (je_action_core's `ActionExecutor` with MailThunder's settings): `event_dict` (`MT_*` commands plus je_action_core's `SAFE_BUILTINS` allowlist), `execute_action`, `execute_files`, `add_command_to_executor`, `action_list_from_mapping` |
 | `je_mail_thunder/utils/save_mail_user_content/` | Credential sources: `mail_thunder_content.json` in the working directory (`read_output_content` / `write_output_content`) and the env vars `mail_thunder_user` / `mail_thunder_user_password` (`set_/get_mail_thunder_os_environ`); `credentials.resolve_login_credentials` picks one, for both wrappers; `credentials.resolve_oauth2_settings` reads the `"oauth2"` object of the file, else the `mail_thunder_oauth2_*` env vars, and `configured_oauth2_provider` picks the servers the module instances connect to; `credentials.resolve_authentication` returns the same choice as an `auth` object (`XOAUTH2Auth`, else `PasswordAuth`, else `None`); `credentials.configured_mail_provider` reads `"mail_provider"` / `mail_thunder_mail_provider`, the provider of `Mail()` |
@@ -225,7 +226,8 @@ does not connect either. Login still waits until `later_init`.
   - **socket server**: `_validate_payload` runs first; `ValueError`, `OSError` and `TypeError` are answered;
     oversized payloads are dropped; messages go to the console.
 
-  It is a PyPI dependency (`je_action_core>=0.0.1`; hash-locked for CI in `.github/requirements/test.txt`).
+  It is a PyPI dependency (`je_action_core>=0.0.1`; hash-locked for CI in `.github/requirements/test.txt`, and
+  resolved with its hash in `pylock.toml`, which `test_dev_toml_parity.py` keeps inside that range).
   ActionCore lists MailThunder in its own §6.
 
 ## 7. Design constraints
@@ -238,9 +240,11 @@ does not connect either. Login still waits until `later_init`.
   changing signatures (§ Engineering Principles).
 - Credentials come only from `mail_thunder_content.json` or env vars. Never hardcode, log or commit
   them (§ Security Requirements › Credential Handling).
-- SSL/TLS only: implicit TLS, or STARTTLS that must succeed before anything else is sent. OAuth2 token
-  endpoints and web API providers must be `https`. The socket server, the Graph webhook listener and MailThunder Studio
-  bind `localhost` by default (§ Security Requirements › Network
+- SSL/TLS only: implicit TLS, or STARTTLS that must succeed before anything else is sent, always with
+  `utils/tls/tls_context.verified_client_context()`, which verifies the certificate and the host name (the
+  standard library verifies neither when it is given no context). OAuth2 token
+  endpoints and web API providers must be `https`. The socket server and the Graph webhook listener
+  bind `localhost` by default, and MailThunder Studio binds loopback addresses only (§ Security Requirements › Network
   Security).
 - Validate input at boundaries. Sanitize file names in `output_all_mail_as_file` and attachments.
   Cap socket reads (§ Security Requirements › Input Validation).

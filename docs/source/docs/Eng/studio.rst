@@ -24,7 +24,7 @@ The page opens in the browser. The button in the corner switches between English
    * - Option
      - Meaning
    * - ``--host HOST``
-     - The address to bind. ``localhost`` by default; any other address exposes the mailbox to that network
+     - The loopback address to bind: ``localhost`` (the default) or a ``127.x.x.x`` address. Any other is refused
    * - ``--port PORT``
      - The port to bind (9947)
    * - ``--project DIR``
@@ -88,7 +88,9 @@ Security
 
 Studio can send mail and read logs, so it is built as a tool for the person at the keyboard:
 
-- It binds ``localhost`` unless ``--host`` says otherwise.
+- It speaks plain HTTP, so it serves only a loopback address (``localhost`` or ``127.x.x.x``) and refuses
+  any other. To use it from another machine, forward the port through SSH
+  (``ssh -L 9947:localhost:9947 host``).
 - Every API request must carry a random token that is created when the server starts. The token is
   in the fragment of the printed address (after ``#``), which a browser does not send to any server
   or put in a ``Referer``.

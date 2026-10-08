@@ -682,7 +682,9 @@ python -m je_mail_thunder.studio --port 9950 --no-browser
 | 日誌 | 日誌檔的結尾與稽核日誌 |
 | 設定 | MailThunder 存放檔案的位置、已註冊的供應商，以及執行環境的版本 |
 
-Studio 是給坐在這台電腦前的人使用的工具。它只綁定 `localhost`；每個 API 請求都需要該次執行的隨機權杖，權杖放在位址的
+Studio 是給坐在這台電腦前的人使用的工具。它使用純 HTTP，所以只在 loopback 位址上提供服務（`localhost`，或以 `--host`
+指定 `127.x.x.x`），其他位址一律拒絕；要從另一台機器使用，請透過 SSH 轉送連接埠（`ssh -L 9947:localhost:9947 host`）。
+每個 API 請求都需要該次執行的隨機權杖，權杖放在位址的
 fragment 裡，瀏覽器不會把它送給任何伺服器；`Host` 不同的請求會被拒絕；頁面不會從其他地方載入任何東西，所有內容都以
 文字寫入，所以透過郵件送來的內容無法在瀏覽器中執行；任何回應都不包含密碼或權杖；從頁面寄出的郵件也不能指定附件。
 不使用時請把它停掉。`je_mail_thunder.studio.server` 的 `start_studio(mail)` 可以從 Python 啟動它。
@@ -959,6 +961,10 @@ context manager；第一次呼叫之前不會連線。
 
 繼承自 `smtplib.SMTP_SSL`（經由 `SMTPClientMixin`）。預設主機：`smtp.gmail.com`，預設埠號：`465`。
 
+所有 SMTP 與 IMAP 連線都會依系統的信任憑證庫驗證伺服器的憑證與主機名稱（`smtplib.SMTP_SSL` 與 `imaplib.IMAP4_SSL`
+本身兩者都不檢查）。使用自簽憑證或私有憑證授權單位的伺服器會被拒絕並拋出 `ssl.SSLCertVerificationError`，直到在
+`SSL_CERT_FILE`（或 `SSL_CERT_DIR`）環境變數中指定包含該憑證的 CA bundle 為止。
+
 | 方法 | 說明 |
 |------|------|
 | `later_init()` | 使用設定檔或環境變數登入（有 OAuth2 設定時用 OAuth2） |
@@ -989,7 +995,7 @@ smtp = SMTPStartTLSWrapper()
 
 ### IMAPWrapper
 
-繼承自 `imaplib.IMAP4_SSL`。預設主機：`imap.gmail.com`。
+繼承自 `imaplib.IMAP4_SSL`。預設主機：`imap.gmail.com`。與 SMTP 相同，會驗證伺服器的憑證與主機名稱。
 
 | 方法 | 說明 |
 |------|------|
@@ -1066,6 +1072,7 @@ MailThunder/
       lazy_instance/         # 首次使用時才連線的惰性客戶端
       logging/               # 日誌實例
       oauth2/                # OAuth2 設定、權杖更新、XOAUTH2
+      tls/                   # 每個 SMTP / IMAP 連線使用的、會驗證憑證的 TLS context
       package_manager/       # 動態套件載入器
       project/               # 專案模板建立
       save_mail_user_content/ # 驗證設定與環境變數處理

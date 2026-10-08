@@ -1,5 +1,4 @@
 import smtplib
-import ssl
 from email.message import EmailMessage
 from email.mime.audio import MIMEAudio
 from email.mime.base import MIMEBase
@@ -23,6 +22,7 @@ from je_mail_thunder.utils.save_mail_user_content.credentials import (
     resolve_login_credentials,
     resolve_oauth2_settings,
 )
+from je_mail_thunder.utils.tls.tls_context import verified_client_context
 
 
 class SMTPClientMixin:
@@ -224,10 +224,13 @@ class SMTPClientMixin:
 
 
 class SMTPWrapper(SMTPClientMixin, SMTP_SSL):
-    """SMTP over implicit TLS (``smtplib.SMTP_SSL``); Gmail's ``smtp.gmail.com:465`` by default."""
+    """
+    SMTP over implicit TLS (``smtplib.SMTP_SSL``); Gmail's ``smtp.gmail.com:465`` by default. The server's
+    certificate and host name are verified: ``SMTP_SSL`` checks neither unless it is given a context.
+    """
 
     def __init__(self, host: str = "smtp.gmail.com", port: int = 465):
-        super().__init__(host, port)
+        super().__init__(host, port, context=verified_client_context())
         self.login_state = False
 
 
@@ -235,13 +238,14 @@ class SMTPStartTLSWrapper(SMTPClientMixin, SMTP):
     """
     SMTP upgraded to TLS with ``STARTTLS`` before anything else is sent; Microsoft 365's
     ``smtp.office365.com:587`` by default. A server that does not offer ``STARTTLS`` is refused: the connection is
-    closed and ``smtplib.SMTPNotSupportedError`` raised, so nothing is ever sent in the clear.
+    closed and ``smtplib.SMTPNotSupportedError`` raised, so nothing is ever sent in the clear. The server's
+    certificate and host name are verified.
     """
 
     def __init__(self, host: str = "smtp.office365.com", port: int = 587):
         super().__init__(host, port)
         try:
-            self.starttls(context=ssl.create_default_context())
+            self.starttls(context=verified_client_context())
         except (smtplib.SMTPException, OSError):
             self.close()
             raise

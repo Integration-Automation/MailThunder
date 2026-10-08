@@ -20,7 +20,7 @@ def create_server(arguments: Optional[List[str]] = None) -> StudioServer:
         prog="python -m je_mail_thunder.studio",
         description="MailThunder Studio: a local page for the account, templates, triggers, policies and logs.")
     parser.add_argument("--host", default="localhost",
-                        help="address to bind (default: localhost; another one exposes the mailbox to that network)")
+                        help="loopback address to bind: localhost (the default) or 127.x.x.x")
     parser.add_argument("--port", type=int, default=DEFAULT_PORT, help=f"port to bind (default: {DEFAULT_PORT})")
     parser.add_argument("--project", help="use the mail layer of this project directory; this runs its "
                                           "mail/config.py and mail/triggers.py")
