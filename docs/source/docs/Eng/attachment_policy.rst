@@ -151,5 +151,8 @@ The same function is available as ``je_mail_thunder.attachments.mime.safe_filena
 
 .. note::
 
+   ``Mail`` applies its policy to every ``send`` and ``create_draft`` (``Mail(policy=...)``;
+   ``DEFAULT_ATTACHMENT_POLICY`` unless one is given). See :doc:`mail_api`.
+
    The ``SMTPWrapper`` methods (``create_message_with_attach_and_send``) do not apply a policy.
    Call ``validate_attachments`` yourself before using them.

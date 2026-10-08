@@ -29,6 +29,7 @@ docs/
         eng_index.rst                    #   Overview & architecture
         installation.rst                 #   Installation guide
         authentication.rst               #   Authentication setup
+        mail_api.rst                     #   Core mail API (Mail)
         send_google_mail.rst             #   Sending emails (SMTP)
         read_google_mail.rst             #   Reading emails (IMAP)
         attachment_policy.rst            #   Attachment policy & validation
@@ -43,6 +44,7 @@ docs/
         zh_index.rst                     #   總覽與架構
         installation.rst                 #   安裝指南
         authentication.rst               #   認證設定
+        mail_api.rst                     #   核心郵件 API (Mail)
         send_google_mail.rst             #   寄送郵件 (SMTP)
         read_google_mail.rst             #   讀取郵件 (IMAP)
         attachment_policy.rst            #   附件政策與驗證
@@ -55,7 +57,7 @@ docs/
         exceptions.rst                   #   例外處理
       API/                               # API reference
         api_index.rst                    #   Public exports & module map
-        core_api.rst                     #   Core mail API (attachments, authentication)
+        core_api.rst                     #   Core mail API reference
         smtp_api.rst                     #   SMTPWrapper API
         imap_api.rst                     #   IMAPWrapper API
         executor_api.rst                 #   Executor API

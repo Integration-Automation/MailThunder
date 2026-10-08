@@ -4,7 +4,7 @@
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![PyPI](https://img.shields.io/pypi/v/je_mail_thunder)](https://pypi.org/project/je-mail-thunder/)
 
-**MailThunder** is a lightweight and flexible email automation tool for Python. It wraps SMTP and IMAP4 protocols, provides a JSON-based scripting engine and project templates, and makes sending, receiving, and managing email content effortless.
+**MailThunder** is a lightweight and flexible email automation tool for Python. Its provider-agnostic `Mail` API sends and reads mail the same way whatever the provider; it wraps SMTP and IMAP4 protocols, provides a JSON-based scripting engine and project templates, and makes sending, receiving, and managing email content effortless.
 
 **[繁體中文](README/README_zh-TW.md)** | **[简体中文](README/README_zh-CN.md)**
 
@@ -21,6 +21,12 @@
   - [Sending an Email with Attachment](#sending-an-email-with-attachment)
   - [Reading Emails (IMAP)](#reading-emails-imap)
   - [Exporting All Emails to Files](#exporting-all-emails-to-files)
+- [Core Mail API](#core-mail-api)
+  - [Sending Mail](#sending-mail)
+  - [Reading, Drafts and Deleting](#reading-drafts-and-deleting)
+  - [Accounts and Providers](#accounts-and-providers)
+  - [Errors](#errors)
+  - [Moving from the Wrappers](#moving-from-the-wrappers)
 - [Authentication](#authentication)
   - [JSON Config File](#json-config-file)
   - [Environment Variables](#environment-variables)
@@ -36,6 +42,7 @@
 - [Command-Line Interface](#command-line-interface)
 - [Socket Server](#socket-server)
 - [API Reference](#api-reference)
+  - [Mail](#mail)
   - [SMTPWrapper](#smtpwrapper)
   - [SMTPStartTLSWrapper](#smtpstarttlswrapper)
   - [IMAPWrapper](#imapwrapper)
@@ -48,6 +55,7 @@
 
 ## Features
 
+- **Provider-agnostic `Mail` API** — One object sends, reads, drafts and deletes mail, behind a provider interface new backends plug into (SMTP and IMAP today)
 - **SMTP support** — Send emails over implicit TLS with Gmail (default) or any SMTP provider, or over STARTTLS (Microsoft 365)
 - **IMAP4 support** — Read, search, and export emails via IMAP4 SSL
 - **Attachment handling** — Automatically detect MIME types for text, image, audio, and binary files
@@ -171,6 +179,128 @@ with IMAPWrapper() as imap:
 
 ---
 
+## Core Mail API
+
+`Mail` is the provider-agnostic API: the same calls send, read, draft and delete mail whatever the account's provider
+is. It uses the credentials described under [Authentication](#authentication), connects on first use, keeps the
+connection for the calls that follow, and raises an exception when something fails instead of only logging it.
+
+### Sending Mail
+
+```python
+from je_mail_thunder import Mail
+
+with Mail() as mail:                       # Gmail, or the provider the OAuth2 settings name
+    mail.send(
+        to="receiver@example.com",         # one address, several separated by commas, or a list
+        cc=["team@example.com"],
+        subject="Nightly report",
+        text="42 passed, 0 failed.",
+        html="<b>42</b> passed, 0 failed.",
+        attachments=["report.html"],
+    )
+```
+
+With both `text` and `html`, the message carries the two as alternatives. The sender is the account's user unless
+`sender=` is given; `bcc`, `reply_to` and `headers` are accepted too. Before anything reaches the server the message
+is checked: at least one recipient, valid addresses, a one-line subject and one-line header values (so a value cannot
+smuggle in a second header), and the attachments against the [attachment policy](#attachment-policy)
+(`Mail(policy=...)`; 25 MiB of any type by default).
+
+### Reading, Drafts and Deleting
+
+```python
+from je_mail_thunder import Mail
+
+with Mail() as mail:
+    for message in mail.get_messages(folder="INBOX", limit=10, unread_only=True):
+        print(message.message_id, message.sender, message.subject)
+        for attachment in message.attachments:
+            attachment.save("downloads")    # under a name that cannot leave the directory
+
+    message = mail.get_message("4321")      # by the message_id get_messages gave
+    mail.create_draft(to="receiver@example.com", subject="Later", text="...")
+    mail.delete_message("4321")
+```
+
+`get_messages` returns an iterator, newest first: messages are fetched one at a time, so a large mailbox is never held
+in memory, and reading does not mark a message as read. `query=` takes a search in the provider's own syntax (IMAP
+`SEARCH` criteria such as `'FROM "ci@example.com" SINCE 1-Oct-2026'`). Each message is a `MailMessage` with `subject`,
+`sender`, `to`, `cc`, `reply_to`, `date`, `text`, `html`, `attachments`, `headers` and `message_id`.
+
+### Accounts and Providers
+
+```python
+from je_mail_thunder import AppPasswordAuth, Mail, MailAccount, MailServers
+
+Mail(provider="microsoft")                  # Microsoft 365; login from the config file or the environment
+Mail(provider="gmail", auth=AppPasswordAuth("you@gmail.com", "abcd efgh ijkl mnop"))
+Mail(account=MailAccount(                   # any other SMTP / IMAP server
+    provider="smtp",
+    auth=AppPasswordAuth("you@example.com", "..."),
+    servers=MailServers(smtp_host="smtp.example.com", imap_host="imap.example.com"),
+))
+```
+
+| Provider name | Sends over | Reads over |
+|---|---|---|
+| `google` (or `gmail`) | SMTP, `smtp.gmail.com:465`, implicit TLS | IMAP, `imap.gmail.com` |
+| `microsoft` | SMTP, `smtp.office365.com:587`, STARTTLS | IMAP, `outlook.office365.com` |
+| `smtp` | SMTP on the account's `MailServers` (implicit TLS on 465, or `smtp_starttls=True` on 587) | IMAP on the account's `MailServers` |
+
+Without a provider name, `Mail()` uses the provider the OAuth2 settings name, else Gmail: the same servers
+`smtp_instance` and `imap_instance` use. Connections always use TLS. A new backend implements `MailSender` and / or
+`MailStore` and is added with `register_provider(name, factory)`; `Mail` and the code that uses it stay the same.
+
+### Errors
+
+Every failure is logged and raised as a `MailThunderException` subclass
+(`je_mail_thunder.utils.exception.exceptions`):
+
+| Exception | Meaning |
+|---|---|
+| `MailThunderMessageException` | the message cannot be sent as it is: no recipient, no sender, an invalid address or header |
+| `MailThunderAttachmentException` | an attachment is missing or breaks the policy |
+| `MailThunderAuthenticationException` | there are no credentials, or the server refused the login |
+| `MailThunderConnectionException` | the server could not be reached, or the connection was lost |
+| `MailThunderSendException` | the server refused the message, or some of its recipients (`refused`) |
+| `MailThunderProviderException` | base of the two above; also an unknown provider, a refused folder or an unknown message id |
+
+A message is never sent twice: a failure while sending is reported, not retried. A connection the server dropped
+while it sat idle is replaced before the next call.
+
+### Moving from the Wrappers
+
+`SMTPWrapper`, `IMAPWrapper`, `smtp_instance`, `imap_instance` and the `MT_smtp_*` / `MT_imap_*` commands keep working
+as before, so code can move one call at a time:
+
+| Wrapper call | `Mail` call |
+|---|---|
+| `smtp.later_init()` / `imap.later_init()` | not needed: `Mail` logs in on first use |
+| `smtp.create_message_and_send(content, settings)` | `mail.send(to=..., subject=..., text=content)` |
+| `smtp.create_message_with_attach_and_send(content, settings, file, use_html=True)` | `mail.send(to=..., subject=..., html=content, attachments=[file])` |
+| `imap.select_mailbox("INBOX")` then `imap.mail_content_list()` | `mail.get_messages(folder="INBOX")` |
+| `smtp.quit()` / `imap.quit()` | `mail.close()`, or `with Mail() as mail:` |
+
+```python
+from je_mail_thunder import Mail, legacy_message, mail_from_wrappers, smtp_instance
+
+# The arguments of create_message_and_send / create_message_with_attach_and_send, as a message
+message = legacy_message("Hello", {"Subject": "Hi", "From": "me@gmail.com", "To": "you@example.com"},
+                         attach_file="report.pdf", use_html=False)
+Mail().send(message)
+
+# Or keep a wrapper that is already logged in, and send through it with the checks Mail adds
+smtp_instance.later_init()
+mail_from_wrappers(smtp=smtp_instance).send(message)
+```
+
+What differs: `Mail` raises where the wrapper methods log the error and return `None`; a message needs at least one
+valid recipient; attachments are checked against the policy; reading does not mark messages as read and gives
+`MailMessage` objects instead of `{"SUBJECT": ..., "BODY": ...}` dicts.
+
+---
+
 ## Authentication
 
 MailThunder logs in with a password or with OAuth2. It reads the JSON config file first, then the environment variables; OAuth2 settings, when present, are used instead of a password.
@@ -278,7 +408,8 @@ with SMTPWrapper() as smtp:
 `Authorization` header. A mechanism that cannot do one of them raises `MailThunderAuthenticationException`, which
 `MailThunderOAuth2Exception` now subclasses. `settings` is an `OAuth2Settings`; the token comes from the shared token
 cache and is refreshed a minute before it expires. `resolve_authentication()` prefers OAuth2 settings to a password,
-as the wrappers do. Passwords and tokens never appear in a `repr`.
+as the wrappers do. Passwords and tokens never appear in a `repr`. Give one to `Mail(auth=...)` or
+`MailAccount(auth=...)` to log in with it.
 
 ---
 
@@ -322,7 +453,8 @@ read the file name, not the content: they stop the wrong file being sent by mist
 directory parts, `..`, control characters and the characters Windows refuses are removed, so the file cannot land
 outside `directory`.
 
-The `SMTPWrapper` methods do not apply a policy; call `validate_attachments` yourself before using them.
+`Mail` applies its policy to every `send` and `create_draft`. The `SMTPWrapper` methods do not apply one; call
+`validate_attachments` yourself before using them.
 
 ---
 
@@ -362,9 +494,36 @@ Action files use a list of commands. Each command is an array where the first el
 | `MT_imap_mail_content_list` | Get all mail content as list | `{"search_str": str, "charset": str}` |
 | `MT_imap_output_all_mail_as_file` | Export all emails to files | `{"search_str": str, "charset": str}` |
 | `MT_imap_quit` | Disconnect from IMAP server | None |
+| `MT_mail_send` | Send a message through the configured provider | `{"to": str or list, "subject": str, "text": str, "html": str, "cc": ..., "bcc": ..., "attachments": [paths], "sender": str, "reply_to": ..., "headers": dict}` |
+| `MT_mail_create_draft` | Store a message as a draft | the `MT_mail_send` arguments, plus `"folder": str` |
+| `MT_mail_get_messages` | Get the messages of a folder, newest first | `{"folder": str, "limit": int, "unread_only": bool, "query": str}` (default: INBOX, no limit) |
+| `MT_mail_get_message` | Get one message by its id | `{"message_id": str, "folder": str}` |
+| `MT_mail_delete_message` | Delete one message by its id | `{"message_id": str, "folder": str}` |
+| `MT_mail_close` | Close the provider connections | None |
 | `MT_set_mail_thunder_os_environ` | Set auth env vars | `{"mail_thunder_user": str, "mail_thunder_user_password": str}` |
 | `MT_get_mail_thunder_os_environ` | Get auth env vars | None |
 | `MT_add_package_to_executor` | Load a Python package into executor | `["package_name"]` |
+
+The `MT_mail_*` commands use the [Core Mail API](#core-mail-api) on `mail_instance`, a `Mail()` for the account of the
+config file or the environment. They connect on first use and return JSON-ready values. Its attachment policy is set
+from Python (`mail_instance.policy = AttachmentPolicy(...)`), never by an action, so an action file cannot loosen it.
+
+**Example — Send a message and read the inbox through the Core Mail API:**
+
+```json
+{
+  "mail_thunder": [
+    ["MT_mail_send", {
+      "to": "receiver@example.com",
+      "subject": "Automated Email",
+      "text": "Hello World!",
+      "attachments": ["report.html"]
+    }],
+    ["MT_mail_get_messages", {"limit": 5, "unread_only": true}],
+    ["MT_mail_close"]
+  ]
+}
+```
 
 **Example — Send an email via JSON script:**
 
@@ -537,6 +696,28 @@ Send `"quit_server"` to shut down the server.
 
 ## API Reference
 
+### Mail
+
+`Mail(provider=None, auth=None, account=None, policy=None, providers=None)`: the provider-agnostic API. A context
+manager; nothing connects until the first call.
+
+| Method | Description |
+|--------|-------------|
+| `send(message=None, **fields)` | Check and send a `MailMessage`, or the message built from `fields`; returns it |
+| `create_draft(message=None, folder=None, **fields)` | Check a message and store it as a draft; returns its id, or `None` |
+| `get_messages(folder="INBOX", limit=None, unread_only=False, query=None)` | Iterate over a folder's messages, newest first |
+| `get_message(message_id, folder="INBOX")` | Return one message |
+| `delete_message(message_id, folder="INBOX")` | Delete one message |
+| `close()` | Close the connections; the next call connects again |
+
+| Name | Description |
+|------|-------------|
+| `MailMessage(subject, to, cc, bcc, sender, reply_to, text, html, attachments, headers, message_id, date)` | The provider-independent message; `to_dict()` gives JSON-ready values |
+| `MailAccount(provider="google", auth=None, servers=None)` / `MailServers(smtp_host, smtp_port, smtp_starttls, imap_host, drafts_folder)` | Whose mail, on which servers, with which login |
+| `MailSender` / `MailStore` / `register_provider(name, factory)` | The provider interfaces and the registry; `SMTPProvider` and `IMAPProvider` implement them |
+| `mail_instance` | The `Mail()` the `MT_mail_*` commands use |
+| `legacy_message(...)` / `mail_from_wrappers(smtp=None, imap=None, policy=None)` | Bridges from the wrapper API |
+
 ### SMTPWrapper
 
 Extends `smtplib.SMTP_SSL` (through `SMTPClientMixin`). Default host: `smtp.gmail.com`, default port: `465`.
@@ -630,6 +811,8 @@ MailThunder/
     __main__.py              # CLI entry point
     attachments/             # Attachment model, AttachmentPolicy and its validator
     auth/                    # Authentication: password, app password, OAuth2, XOAUTH2
+    core/                    # Mail (the provider-agnostic API), MailMessage, MailAccount
+    providers/               # MailSender / MailStore interfaces, SMTPProvider, IMAPProvider, registry
     smtp/
       smtp_wrapper.py        # SMTPClientMixin, SMTPWrapper, SMTPStartTLSWrapper
     imap/

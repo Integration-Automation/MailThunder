@@ -224,6 +224,9 @@ Google 與 Microsoft 都在淘汰郵件的密碼登入。使用 OAuth2 時，Mai
 
 密碼與權杖不會出現在 ``repr``、日誌或例外訊息中。
 
+把認證物件交給 ``Mail(auth=...)`` 或 ``MailAccount(auth=...)`` 就能用它登入（:doc:`mail_api`）；
+沒有指定時，``Mail`` 使用 ``resolve_authentication()``。
+
 從程式提供認證資訊
 ------------------
 

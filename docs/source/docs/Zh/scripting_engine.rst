@@ -121,6 +121,28 @@ MailThunder 內建強大的 JSON 腳本引擎，讓您無需撰寫 Python 程式
    * - ``MT_imap_quit``
      - 斷開 IMAP 連線
 
+**郵件命令（核心 API，見** :doc:`mail_api` **）：**
+
+.. list-table::
+   :header-rows: 1
+   :widths: 45 55
+
+   * - 命令
+     - 說明
+   * - ``MT_mail_send``
+     - 透過設定的供應商寄送郵件（``to``、``subject``、``text``、``html``、``cc``、``bcc``、
+       ``attachments``、``sender``、``reply_to``、``headers``）
+   * - ``MT_mail_create_draft``
+     - 將郵件存成草稿（相同的引數，另加 ``folder``）
+   * - ``MT_mail_get_messages``
+     - 取得資料夾的郵件，最新的在前（``folder``、``limit``、``unread_only``、``query``）
+   * - ``MT_mail_get_message``
+     - 依識別碼取得一封郵件（``message_id``、``folder``）
+   * - ``MT_mail_delete_message``
+     - 依識別碼刪除一封郵件（``message_id``、``folder``）
+   * - ``MT_mail_close``
+     - 關閉供應商的連線
+
 **認證命令：**
 
 .. list-table::

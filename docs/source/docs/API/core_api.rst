@@ -190,3 +190,230 @@ The login of ``mail_thunder_content.json`` or the environment: an ``XOAUTH2Auth`
 OAuth2 settings, else a ``PasswordAuth``, else ``None``.
 
 **Raises:** ``MailThunderOAuth2Exception`` when the OAuth2 settings found are incomplete or invalid.
+
+----
+
+Mail
+----
+
+**Module:** ``je_mail_thunder.core.mail``
+
+.. code-block:: python
+
+   class Mail:
+       def __init__(self, provider: Optional[str] = None, auth: Optional[Authentication] = None,
+                    account: Optional[MailAccount] = None, policy: Optional[AttachmentPolicy] = None,
+                    providers: Optional[Sequence[MailProvider]] = None) -> None: ...
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 80
+
+   * - Parameter
+     - Description
+   * - ``provider``
+     - A registered provider name. Without one: the provider the OAuth2 settings name (those of
+       ``auth``, else of the config file or the environment), else ``"google"``
+   * - ``auth``
+     - How the account logs in. By default ``resolve_authentication()``, looked up on first use
+   * - ``account``
+     - The whole ``MailAccount``, instead of ``provider`` and ``auth`` (giving both raises
+       ``MailThunderProviderException``)
+   * - ``policy``
+     - The ``AttachmentPolicy`` checked before sending. ``DEFAULT_ATTACHMENT_POLICY`` by default;
+       it can be replaced later through the ``policy`` attribute
+   * - ``providers``
+     - Ready providers to use instead of the ones the account's provider name stands for
+
+Building a ``Mail`` reads and connects nothing. It is a context manager, and one instance
+serialises the calls of the threads that share it.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 45 55
+
+   * - Member
+     - Description
+   * - ``send(message=None, **message_fields)``
+     - Check and send a ``MailMessage``, or the message built from the fields. Returns the message
+       as sent
+   * - ``create_draft(message=None, folder=None, **message_fields)``
+     - Check a message like ``send`` and store it as a draft. Returns its ``message_id`` when the
+       provider reports it, else ``None``
+   * - ``get_messages(folder="INBOX", limit=None, unread_only=False, query=None)``
+     - An iterator over a folder's messages, newest first, fetched one at a time. An invalid
+       ``limit`` raises at the call
+   * - ``get_message(message_id, folder="INBOX")``
+     - One message
+   * - ``delete_message(message_id, folder="INBOX")``
+     - Delete one message
+   * - ``close()``
+     - Close the providers' connections; the next call connects again
+   * - ``account``
+     - The ``MailAccount`` in use (``None`` for a ``Mail`` built from providers without one)
+   * - ``providers``
+     - The providers in use, built without connecting on first access
+
+**Raises:** ``MailThunderMessageException``, ``MailThunderAttachmentException``,
+``MailThunderAuthenticationException``, ``MailThunderConnectionException``,
+``MailThunderSendException`` or ``MailThunderProviderException``, each logged first.
+
+``mail_instance`` is the ``Mail()`` the ``MT_mail_*`` commands use
+(``je_mail_thunder.core.actions``: ``mail_send``, ``mail_create_draft``, ``mail_get_messages``,
+``mail_get_message``).
+
+MailMessage
+~~~~~~~~~~~
+
+**Module:** ``je_mail_thunder.core.message``
+
+.. code-block:: python
+
+   @dataclass(frozen=True)
+   class MailMessage:
+       subject: str = ""
+       to: Tuple[str, ...] = ()
+       cc: Tuple[str, ...] = ()
+       bcc: Tuple[str, ...] = ()
+       sender: Optional[str] = None
+       reply_to: Tuple[str, ...] = ()
+       text: Optional[str] = None
+       html: Optional[str] = None
+       attachments: Tuple[Attachment, ...] = ()
+       headers: Mapping[str, str] = {}
+       message_id: Optional[str] = None
+       date: Optional[datetime] = None
+
+The address fields accept an address, several separated by commas, or a list, and are stored as
+tuples with one address each. ``attachments`` accepts paths or ``Attachment`` objects. ``headers``
+is copied and read-only. A value of the wrong type raises ``MailThunderMessageException``.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
+
+   * - Member
+     - Description
+   * - ``recipients``
+     - ``to + cc + bcc``
+   * - ``to_dict()``
+     - JSON-ready values; attachments are described by name, type and size
+   * - ``message_from_fields(fields)``
+     - A message from a mapping of field names; an unknown name raises
+       ``MailThunderMessageException``
+   * - ``check_outgoing(message)``
+     - Refuse a message without a recipient or sender, with an invalid address, or with a subject or
+       header that is not one line
+   * - ``parse_addresses(value)``
+     - The addresses in one header value, or ``None`` when it is not a valid address list
+
+``je_mail_thunder.core.rfc822`` converts to and from the MIME form: ``to_email_message(message)``,
+``from_email_message(email_message, message_id=None)`` and ``parse_message(raw, message_id=None)``.
+
+MailAccount and MailServers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Module:** ``je_mail_thunder.core.account``
+
+.. code-block:: python
+
+   @dataclass(frozen=True)
+   class MailAccount:
+       provider: str = "google"
+       auth: Optional[Authentication] = None
+       servers: Optional[MailServers] = None
+
+   @dataclass(frozen=True)
+   class MailServers:
+       smtp_host: Optional[str] = None
+       smtp_port: Optional[int] = None
+       smtp_starttls: bool = False
+       imap_host: Optional[str] = None
+       drafts_folder: Optional[str] = None
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
+
+   * - Member
+     - Description
+   * - ``MailAccount.provider``
+     - Lower-cased; ``"gmail"`` becomes ``"google"``
+   * - ``MailAccount.resolved_servers``
+     - ``servers`` when given, else the provider's preset; raises ``MailThunderProviderException``
+       when neither exists
+   * - ``MailAccount.authentication()``
+     - ``auth`` when given, else ``resolve_authentication()``; raises
+       ``MailThunderAuthenticationException`` when there is nothing to log in with
+   * - ``MailServers.port``
+     - ``smtp_port`` when given, else 587 with ``smtp_starttls``, else 465
+   * - ``default_account()``
+     - The account of the config file or the environment, on the servers ``smtp_instance`` and
+       ``imap_instance`` use
+
+----
+
+Providers
+---------
+
+**Modules:** ``je_mail_thunder.providers.base``, ``je_mail_thunder.providers.smtp``,
+``je_mail_thunder.providers.imap``, ``je_mail_thunder.providers.registry``
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - Class
+     - Description
+   * - ``MailProvider``
+     - Base of every provider: a ``name``, an abstract ``close()``, and the context manager protocol
+   * - ``MailSender``
+     - A provider that sends: abstract ``send(message)``
+   * - ``MailStore``
+     - A provider that reads and manages stored mail: abstract ``get_messages``, ``get_message``,
+       ``create_draft`` and ``delete_message``
+   * - ``SMTPProvider(account=None, client=None)``
+     - A ``MailSender`` over ``SMTPWrapper`` (implicit TLS) or ``SMTPStartTLSWrapper``. It reports
+       recipients the server refused as ``MailThunderSendException.refused`` and never sends twice
+   * - ``IMAPProvider(account=None, client=None)``
+     - A ``MailStore`` over ``IMAPWrapper``. Messages are identified by UID and read with
+       ``BODY.PEEK[]``; a draft goes to the folder flagged ``\Drafts``; a delete expunges only
+       that message when the server has ``UIDPLUS``
+
+Both connect and log in on first use, keep the connection, ask it for a sign of life after 30 idle
+seconds and reconnect when it is dead. Given a ``client`` (a wrapper that is already logged in)
+they use it as it is and never close it.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
+
+   * - Function
+     - Description
+   * - ``register_provider(name, factory)``
+     - Make a provider name usable. ``factory(account)`` returns the account's providers without
+       connecting
+   * - ``registered_providers()``
+     - The registered names, sorted (``google``, ``microsoft``, ``smtp``)
+   * - ``mailbox_name(folder)``
+     - ``je_mail_thunder.providers.imap``: a folder name as IMAP takes it (modified UTF-7, quoted)
+
+----
+
+Bridges from the Wrapper API
+----------------------------
+
+**Module:** ``je_mail_thunder.core.compat``
+
+.. list-table::
+   :header-rows: 1
+   :widths: 45 55
+
+   * - Function
+     - Description
+   * - ``legacy_message(message_content, message_setting_dict, attach_file=None, use_html=False)``
+     - The ``MailMessage`` for the arguments of ``SMTPWrapper.create_message`` /
+       ``create_message_with_attach``. ``Subject``, ``From``, ``To``, ``Cc``, ``Bcc`` and ``Reply-To``
+       (any case) become fields, the rest ``headers``
+   * - ``mail_from_wrappers(smtp=None, imap=None, policy=None)``
+     - A ``Mail`` on wrappers that are already connected and logged in. They stay the caller's

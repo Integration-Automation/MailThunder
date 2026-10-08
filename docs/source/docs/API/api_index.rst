@@ -12,6 +12,22 @@ All public APIs are accessible from the top-level ``je_mail_thunder`` package:
 .. code-block:: python
 
    from je_mail_thunder import (
+       # Core mail API
+       Mail,                     # Provider-agnostic mail API
+       mail_instance,            # The Mail the MT_mail_* commands use
+       MailMessage,              # Provider-independent message
+       MailAccount,              # Provider, login and servers of an account
+       MailServers,              # SMTP / IMAP servers of an account
+       MailProvider,             # Base of the providers
+       MailSender,               # Interface of a provider that sends
+       MailStore,                # Interface of a provider that reads
+       SMTPProvider,             # MailSender over SMTP
+       IMAPProvider,             # MailStore over IMAP
+       register_provider,        # Add a provider name
+       registered_providers,     # The provider names
+       legacy_message,           # Wrapper arguments as a MailMessage
+       mail_from_wrappers,       # Mail on wrappers that are already logged in
+
        # SMTP
        SMTPWrapper,              # SMTP wrapper class
        smtp_instance,            # Pre-created SMTP instance (or None)
@@ -74,6 +90,28 @@ Module Map
      - ``SMTPWrapper`` class, ``smtp_instance``
    * - ``je_mail_thunder.imap.imap_wrapper``
      - ``IMAPWrapper`` class, ``imap_instance``
+   * - ``je_mail_thunder.core.mail``
+     - ``Mail`` class, ``mail_instance``
+   * - ``je_mail_thunder.core.message``
+     - ``MailMessage`` class, ``message_from_fields()``, ``check_outgoing()``, ``parse_addresses()``
+   * - ``je_mail_thunder.core.rfc822``
+     - ``to_email_message()``, ``from_email_message()``, ``parse_message()``
+   * - ``je_mail_thunder.core.account``
+     - ``MailAccount``, ``MailServers``, ``default_account()``, ``SERVER_PRESETS``
+   * - ``je_mail_thunder.core.actions``
+     - ``mail_send()``, ``mail_create_draft()``, ``mail_get_messages()``, ``mail_get_message()``
+   * - ``je_mail_thunder.core.compat``
+     - ``legacy_message()``, ``mail_from_wrappers()``
+   * - ``je_mail_thunder.providers.base``
+     - ``MailProvider``, ``MailSender``, ``MailStore``
+   * - ``je_mail_thunder.providers.smtp``
+     - ``SMTPProvider``
+   * - ``je_mail_thunder.providers.imap``
+     - ``IMAPProvider``, ``mailbox_name()``
+   * - ``je_mail_thunder.providers.registry``
+     - ``register_provider()``, ``registered_providers()``, ``create_providers()``
+   * - ``je_mail_thunder.providers.session``
+     - ``WrapperProvider`` (the connection of a provider built on a wrapper)
    * - ``je_mail_thunder.auth.base``
      - ``Authentication`` class
    * - ``je_mail_thunder.auth.password``

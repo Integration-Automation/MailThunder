@@ -1,7 +1,7 @@
 # MailThunder Architecture
 
 > Short overview for people and agents.
-> Last verified: 2026-09-22 against `221812f` on `dev`.
+> Last verified: 2026-10-08 against `3f5053f` on `feat/mailthunder-2.0-foundation`.
 
 ## 1. Purpose
 
@@ -11,6 +11,9 @@ uses only the standard library. `pyproject.toml` builds `je_mail_thunder` and `d
 `imaplib.IMAP4_SSL` (and `SMTPStartTLSWrapper` extends `smtplib.SMTP`, upgraded with STARTTLS) with credential
 lookup, password or OAuth2 (`XOAUTH2`) login, logging and context-manager support. A JSON action
 executor exposes the same operations to action files, a CLI and a TCP socket server.
+The core mail API (`Mail`) puts a provider interface over those wrappers, so callers send and read mail
+without naming a protocol; it is the foundation of the MailThunder 2.0 roadmap
+(`docs/MAILTHUNDER-2.0-ROADMAP.md`; what is left of it: `progress.md`).
 
 ## 2. Layers and directories
 
@@ -20,6 +23,8 @@ executor exposes the same operations to action files, a CLI and a TCP socket ser
 | `je_mail_thunder/__main__.py` | Legacy flag CLI (`python -m je_mail_thunder`) |
 | `je_mail_thunder/smtp/smtp_wrapper.py` | `SMTPClientMixin` (messages, login, send, quit; mixed in before an `smtplib` class), `SMTPWrapper(SMTPClientMixin, SMTP_SSL)` (default `smtp.gmail.com:465`), `SMTPStartTLSWrapper(SMTPClientMixin, SMTP)` (default `smtp.office365.com:587`; STARTTLS before anything else, refused when the server lacks it), `default_smtp_client()` and the module instance `smtp_instance` (a `LazyInstance` of it) |
 | `je_mail_thunder/imap/imap_wrapper.py` | `IMAPWrapper(IMAP4_SSL)` (default `imap.gmail.com`; `oauth2_login`), `default_imap_client()` and the module instance `imap_instance` (a `LazyInstance` of it) |
+| `je_mail_thunder/core/` | The provider-agnostic API: `mail.Mail` (send, create_draft, get_messages, get_message, delete_message, close; checks a message and its attachments, then hands it to a provider; one lock per instance) and the module instance `mail_instance`; `message.MailMessage` (frozen; `check_outgoing` refuses what cannot be sent); `rfc822` (to and from `email.message.EmailMessage`); `account.MailAccount` / `MailServers` / `default_account()`; `actions` (the `MT_mail_*` commands, JSON-ready); `compat` (`legacy_message`, `mail_from_wrappers`) |
+| `je_mail_thunder/providers/` | Backends behind `Mail`: `base.MailProvider` with the roles `MailSender` and `MailStore`; `session.WrapperProvider` (a wrapper connection opened and logged in on first use, pinged after 30 idle seconds, replaced when dead; an already connected wrapper is used as it is); `smtp.SMTPProvider`; `imap.IMAPProvider` (UIDs, `BODY.PEEK[]`, `\Drafts` lookup, modified UTF-7 folder names); `registry` (`register_provider`, `create_providers`; `google`, `microsoft`, `smtp`) |
 | `je_mail_thunder/auth/` | How an account logs in, behind one interface: `base.Authentication` (`user`, `mechanism`, `login(client)` for the SMTP / IMAP wrappers, `authorization()` for HTTP; what a mechanism cannot do raises `MailThunderAuthenticationException`), `password.PasswordAuth` / `AppPasswordAuth`, `oauth2.OAuth2Auth` (bearer token from `utils/oauth2`'s cache), `xoauth2.XOAUTH2Auth` (the same token as SASL `XOAUTH2`); secrets stay out of every `repr` |
 | `je_mail_thunder/attachments/` | What a message may carry: `attachment.Attachment` (a file to send by `path`, or one that arrived as `content`; `save` writes it under `mime.safe_filename`), `policy.AttachmentPolicy` / `DEFAULT_ATTACHMENT_POLICY` (count, size, extension and MIME-type limits), `validator.validate_attachments` (count → existence → size → extension → MIME type → total size; raises the `MailThunderAttachmentException` subclasses), `mime` (type and extension from the file name) |
 | `je_mail_thunder/utils/oauth2/oauth2.py` | OAuth2 with the standard library: `OAUTH2_PROVIDERS` (`google`, `microsoft`: token URL, scope, SMTP/IMAP hosts), `OAuth2Settings` (secrets out of `repr`), `refresh_access_token` (https only), `OAuth2TokenCache` / `oauth2_token_cache`, `xoauth2_string` |
@@ -37,6 +42,8 @@ executor exposes the same operations to action files, a CLI and a TCP socket ser
 
 - **Python facade**: `import je_mail_thunder` gives you:
   - wrappers: `SMTPWrapper`, `smtp_instance`, `IMAPWrapper`, `imap_instance`;
+  - core mail API: `Mail`, `mail_instance`, `MailMessage`, `MailAccount`, `MailServers`, `MailProvider`, `MailSender`, `MailStore`,
+    `SMTPProvider`, `IMAPProvider`, `register_provider`, `registered_providers`, `legacy_message`, `mail_from_wrappers`;
   - attachments: `Attachment`, `AttachmentPolicy`, `DEFAULT_ATTACHMENT_POLICY`, `validate_attachments`;
   - authentication: `Authentication`, `PasswordAuth`, `AppPasswordAuth`, `OAuth2Auth`, `XOAUTH2Auth`, `resolve_authentication`;
   - execution: `execute_action`, `execute_files`, `add_command_to_executor`, `read_action_json`,
@@ -49,6 +56,8 @@ executor exposes the same operations to action files, a CLI and a TCP socket ser
 - **Commands**: examples are `MT_smtp_later_init`, `MT_smtp_create_message_and_send`,
   `MT_imap_select_mailbox`, `MT_imap_output_all_mail_as_file` and `MT_add_package_to_executor`.
   `MT_smtp_quit` closes the SMTP connection; its pre-prefix name `smtp_quit` is still registered.
+  `MT_mail_send`, `MT_mail_create_draft`, `MT_mail_get_messages`, `MT_mail_get_message`, `MT_mail_delete_message` and
+  `MT_mail_close` are the core mail API on `mail_instance`, with JSON-ready arguments and results (`core/actions.py`).
 - **CLI**: `python -m je_mail_thunder` takes:
   - `-e/--execute_file <json>`, `-d/--execute_dir <dir>`, `-c/--create_project <path>` and `--execute_str <json>`;
   - on `win32`/`cygwin`/`msys`, `--execute_str` is decoded with `json.loads` twice;
@@ -93,6 +102,19 @@ MT_smtp_later_init / MT_imap_later_init → try_to_login_with_env_or_content
   → read_output_content() (./mail_thunder_content.json) else get_mail_thunder_os_environ() → login()
 ```
 
+**Core mail API**
+
+```
+Mail.send(**fields) / MT_mail_send → message_from_fields → sender defaults to account.authentication().user
+  → check_outgoing (a recipient, valid addresses, one-line subject and headers) → validate_attachments(policy)
+  → the first MailSender of create_providers(account) → SMTPProvider._live_client()
+       first use: account.authentication() → SMTPWrapper / SMTPStartTLSWrapper → auth.login(client)
+       idle over 30 s: NOOP, and a new connection when it does not answer
+  → to_email_message → client.send_message → logged and raised as a MailThunder exception on failure, never retried
+Mail.get_messages(...) / MT_mail_get_messages → the first MailStore → IMAPProvider
+  → EXAMINE folder → UID SEARCH → UID FETCH BODY.PEEK[], one message per step of the iterator → parse_message
+```
+
 **Socket**: TCP client → `TCPServerHandler.handle` (8192-byte cap, `_validate_payload`) →
 `execute_action` → return values, then `Return_Data_Over_JE`.
 
@@ -103,6 +125,7 @@ else Gmail) — and so connect — the first time anything is read from them; a 
 raises there, at use, and the next use retries. `Executor.__init__` registers `deferred(instance,
 "method")` callables, which look the method up only when the action runs, so building the executor
 does not connect either. Login still waits until `later_init`.
+`mail_instance = Mail()` reads and connects nothing either: its account and providers are worked out on the first call.
 
 ## 5. Extension points
 
@@ -121,6 +144,12 @@ does not connect either. Login still waits until `later_init`.
   2. Give it `__enter__` / `__exit__` and `later_init`, and reuse the credential flow in
      `save_mail_user_content/`.
   3. Add a module-level instance, register it in the executor, export it from the facade, and add tests.
+- **New mail provider**:
+  1. Implement `providers.base.MailSender` and / or `MailStore`. A provider over one of the wrappers subclasses
+     `providers.session.WrapperProvider`, which gives it the lazy, logged-in, idle-checked connection.
+  2. Raise `MailThunderProviderException` subclasses for server errors; never retry a send.
+  3. Register it with `providers.registry.register_provider(name, factory)`; `Mail` is not edited.
+  4. Test it against a fake client (`test/unit_test/mail_fakes.py`).
 - **New credential source**: extend `save_mail_user_content/` and `credentials.resolve_login_credentials`, which
   both wrappers use, and `credentials.resolve_authentication`.
 - **New login mechanism**: subclass `auth.base.Authentication` (set `mechanism`, override `login` and / or
@@ -169,7 +198,7 @@ does not connect either. Login still waits until `later_init`.
 
 - Wrapper/Adapter pattern. Any class that holds a resource implements `__enter__` / `__exit__`
   (CLAUDE.md § Design Patterns & Software Engineering Principles › Required Patterns).
-- `smtp_instance`, `imap_instance`, `executor` and `package_manager` are module-level singletons; do
+- `smtp_instance`, `imap_instance`, `mail_instance`, `executor` and `package_manager` are module-level singletons; do
   not create duplicates (§ Required Patterns).
 - Every executable feature registers through `event_dict`. Extend with new commands instead of
   changing signatures (§ Engineering Principles).
@@ -194,6 +223,7 @@ does not connect either. Login still waits until `later_init`.
 ## 8. When to update this file
 
 - A subpackage under `je_mail_thunder/` or a facade export is added, removed or renamed.
+- A provider name, the `MailSender` / `MailStore` interface, a `MailMessage` field or an `MT_mail_*` command changes.
 - `__main__.py` flags, the Windows double decode, or the socket protocol (port, terminator,
   `quit_server`, payload limits) changes.
 - The action format (`mail_thunder` key and its `auto_control` alias, `MT_` prefix), the builtins policy, or the import-time

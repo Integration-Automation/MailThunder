@@ -4,7 +4,7 @@
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![PyPI](https://img.shields.io/pypi/v/je_mail_thunder)](https://pypi.org/project/je-mail-thunder/)
 
-**MailThunder** 是一款輕量且靈活的 Python 電子郵件自動化工具。它封裝了 SMTP 和 IMAP4 協定，提供 JSON 腳本引擎與專案模板功能，讓寄信、收信與管理郵件內容變得輕鬆簡單。
+**MailThunder** 是一款輕量且靈活的 Python 電子郵件自動化工具。它與供應商無關的 `Mail` API 不論背後是哪一家供應商，都以同樣的方式寄信與讀信；它封裝了 SMTP 和 IMAP4 協定，提供 JSON 腳本引擎與專案模板功能，讓寄信、收信與管理郵件內容變得輕鬆簡單。
 
 **[English](../README.md)** | **[简体中文](README_zh-CN.md)**
 
@@ -21,6 +21,12 @@
   - [寄送帶附件的郵件](#寄送帶附件的郵件)
   - [讀取郵件 (IMAP)](#讀取郵件-imap)
   - [匯出所有郵件為檔案](#匯出所有郵件為檔案)
+- [核心郵件 API](#核心郵件-api)
+  - [寄送郵件 (Mail)](#寄送郵件-mail)
+  - [讀取、草稿與刪除](#讀取草稿與刪除)
+  - [帳號與供應商](#帳號與供應商)
+  - [錯誤](#錯誤)
+  - [從 Wrapper 遷移](#從-wrapper-遷移)
 - [身份驗證](#身份驗證)
   - [JSON 設定檔](#json-設定檔)
   - [環境變數](#環境變數)
@@ -36,6 +42,7 @@
 - [命令列介面](#命令列介面)
 - [Socket 伺服器](#socket-伺服器)
 - [API 參考](#api-參考)
+  - [Mail](#mail)
   - [SMTPWrapper](#smtpwrapper)
   - [SMTPStartTLSWrapper](#smtpstarttlswrapper)
   - [IMAPWrapper](#imapwrapper)
@@ -48,6 +55,7 @@
 
 ## 功能特色
 
+- **與供應商無關的 `Mail` API** — 一個物件就能寄送、讀取、建立草稿與刪除郵件；背後是可以接上新後端的供應商介面（目前為 SMTP 與 IMAP）
 - **SMTP 支援** — 透過隱含式 TLS 寄送郵件，預設使用 Gmail，也可自訂其他 SMTP 服務；或透過 STARTTLS（Microsoft 365）
 - **IMAP4 支援** — 透過 IMAP4 SSL 讀取、搜尋和匯出郵件
 - **附件處理** — 自動偵測文字、圖片、音訊和二進位檔案的 MIME 類型
@@ -170,6 +178,124 @@ with IMAPWrapper() as imap:
 
 ---
 
+## 核心郵件 API
+
+`Mail` 是與供應商無關的 API：不論帳號用的是哪一家供應商，都用同一組呼叫來寄送、讀取、建立草稿與刪除郵件。
+它使用[身份驗證](#身份驗證)一節說明的認證資訊，在第一次使用時才連線，之後的呼叫沿用同一條連線；
+發生錯誤時會引發例外，而不是只寫入日誌。
+
+### 寄送郵件 (Mail)
+
+```python
+from je_mail_thunder import Mail
+
+with Mail() as mail:                       # Gmail，或 OAuth2 設定指定的供應商
+    mail.send(
+        to="receiver@example.com",         # 一個位址、以逗號分隔的多個位址，或清單
+        cc=["team@example.com"],
+        subject="Nightly report",
+        text="42 passed, 0 failed.",
+        html="<b>42</b> passed, 0 failed.",
+        attachments=["report.html"],
+    )
+```
+
+`text` 與 `html` 都給時，郵件會同時攜帶兩種版本。寄件者預設為帳號的使用者，也可以用 `sender=` 指定；
+另外接受 `bcc`、`reply_to` 與 `headers`。在任何資料送到伺服器之前，郵件會先經過檢查：至少一位收件者、
+位址有效、主旨與標頭的值為單行（因此無法透過某個值夾帶第二個標頭），以及附件是否符合[附件政策](#附件政策)
+（`Mail(policy=...)`；預設為 25 MiB、任何類型）。
+
+### 讀取、草稿與刪除
+
+```python
+from je_mail_thunder import Mail
+
+with Mail() as mail:
+    for message in mail.get_messages(folder="INBOX", limit=10, unread_only=True):
+        print(message.message_id, message.sender, message.subject)
+        for attachment in message.attachments:
+            attachment.save("downloads")    # 寫入的檔名不會離開該目錄
+
+    message = mail.get_message("4321")      # 使用 get_messages 給的 message_id
+    mail.create_draft(to="receiver@example.com", subject="Later", text="...")
+    mail.delete_message("4321")
+```
+
+`get_messages` 回傳迭代器，最新的郵件在前：郵件一封一封取回，不會把整個大信箱放進記憶體，而且讀取不會把郵件
+標成已讀。`query=` 接受供應商自己的搜尋語法（IMAP `SEARCH` 條件，例如 `'FROM "ci@example.com" SINCE 1-Oct-2026'`）。
+每封郵件都是 `MailMessage`，有 `subject`、`sender`、`to`、`cc`、`reply_to`、`date`、`text`、`html`、`attachments`、
+`headers` 與 `message_id`。
+
+### 帳號與供應商
+
+```python
+from je_mail_thunder import AppPasswordAuth, Mail, MailAccount, MailServers
+
+Mail(provider="microsoft")                  # Microsoft 365；以設定檔或環境變數登入
+Mail(provider="gmail", auth=AppPasswordAuth("you@gmail.com", "abcd efgh ijkl mnop"))
+Mail(account=MailAccount(                   # 其他任何 SMTP / IMAP 伺服器
+    provider="smtp",
+    auth=AppPasswordAuth("you@example.com", "..."),
+    servers=MailServers(smtp_host="smtp.example.com", imap_host="imap.example.com"),
+))
+```
+
+| 供應商名稱 | 寄送方式 | 讀取方式 |
+|---|---|---|
+| `google`（或 `gmail`） | SMTP，`smtp.gmail.com:465`，隱含式 TLS | IMAP，`imap.gmail.com` |
+| `microsoft` | SMTP，`smtp.office365.com:587`，STARTTLS | IMAP，`outlook.office365.com` |
+| `smtp` | 帳號 `MailServers` 指定的 SMTP（465 埠的隱含式 TLS，或 `smtp_starttls=True` 的 587 埠） | 帳號 `MailServers` 指定的 IMAP |
+
+沒有指定供應商名稱時，`Mail()` 使用 OAuth2 設定指定的供應商，否則使用 Gmail：與 `smtp_instance`、`imap_instance`
+連線的伺服器相同。連線一律使用 TLS。新的後端實作 `MailSender` 與／或 `MailStore`，再以
+`register_provider(name, factory)` 加入；`Mail` 與使用它的程式都不需要修改。
+
+### 錯誤
+
+每一次失敗都會被記錄，並以 `MailThunderException` 的子類別引發（`je_mail_thunder.utils.exception.exceptions`）：
+
+| 例外 | 意義 |
+|---|---|
+| `MailThunderMessageException` | 郵件無法照現在的樣子寄出：沒有收件者、沒有寄件者、位址或標頭無效 |
+| `MailThunderAttachmentException` | 附件不存在或違反政策 |
+| `MailThunderAuthenticationException` | 沒有認證資訊，或伺服器拒絕登入 |
+| `MailThunderConnectionException` | 無法連上伺服器，或連線中斷 |
+| `MailThunderSendException` | 伺服器拒絕這封郵件，或拒絕其中部分收件者（`refused`） |
+| `MailThunderProviderException` | 上面兩者的基底；未知的供應商、被拒絕的資料夾或未知的郵件識別碼也會引發 |
+
+郵件絕不會寄出兩次：寄送途中發生的失敗只會回報，不會重試。閒置時被伺服器中斷的連線，會在下一次呼叫前重新建立。
+
+### 從 Wrapper 遷移
+
+`SMTPWrapper`、`IMAPWrapper`、`smtp_instance`、`imap_instance` 以及 `MT_smtp_*` / `MT_imap_*` 指令都照舊運作，
+所以程式可以一次只搬一個呼叫：
+
+| Wrapper 呼叫 | `Mail` 呼叫 |
+|---|---|
+| `smtp.later_init()` / `imap.later_init()` | 不需要：`Mail` 會在第一次使用時登入 |
+| `smtp.create_message_and_send(content, settings)` | `mail.send(to=..., subject=..., text=content)` |
+| `smtp.create_message_with_attach_and_send(content, settings, file, use_html=True)` | `mail.send(to=..., subject=..., html=content, attachments=[file])` |
+| `imap.select_mailbox("INBOX")` 之後 `imap.mail_content_list()` | `mail.get_messages(folder="INBOX")` |
+| `smtp.quit()` / `imap.quit()` | `mail.close()`，或 `with Mail() as mail:` |
+
+```python
+from je_mail_thunder import Mail, legacy_message, mail_from_wrappers, smtp_instance
+
+# 把 create_message_and_send / create_message_with_attach_and_send 的引數轉成郵件
+message = legacy_message("Hello", {"Subject": "Hi", "From": "me@gmail.com", "To": "you@example.com"},
+                         attach_file="report.pdf", use_html=False)
+Mail().send(message)
+
+# 或沿用已經登入的 wrapper，透過它寄送，同時得到 Mail 加上的檢查
+smtp_instance.later_init()
+mail_from_wrappers(smtp=smtp_instance).send(message)
+```
+
+差異：wrapper 的方法記錄錯誤後回傳 `None`，`Mail` 則會引發例外；郵件至少要有一位有效的收件者；附件會依政策檢查；
+讀取不會把郵件標成已讀，而且得到的是 `MailMessage` 物件，不是 `{"SUBJECT": ..., "BODY": ...}` 字典。
+
+---
+
 ## 身份驗證
 
 MailThunder 以密碼或 OAuth2 登入。它會先讀 JSON 設定檔，再讀環境變數；有 OAuth2 設定時，以 OAuth2 取代密碼。
@@ -275,7 +401,8 @@ with SMTPWrapper() as smtp:
 `auth.login(client)` 登入 SMTP 或 IMAP wrapper，`auth.authorization()` 回傳 HTTP `Authorization` 標頭的值。
 某個機制做不到其中一項時會引發 `MailThunderAuthenticationException`；`MailThunderOAuth2Exception` 現在是它的子類別。
 `settings` 是 `OAuth2Settings`；權杖來自共用的權杖快取，並在到期前一分鐘更新。`resolve_authentication()` 與 wrapper
-一樣，有 OAuth2 設定時優先於密碼。密碼與權杖不會出現在 `repr` 中。
+一樣，有 OAuth2 設定時優先於密碼。密碼與權杖不會出現在 `repr` 中。把它交給 `Mail(auth=...)` 或
+`MailAccount(auth=...)` 就能用它登入。
 
 ---
 
@@ -318,7 +445,8 @@ total_bytes = validate_attachments(attachments, policy)
 `Attachment.save(directory)` 用來寫入隨郵件收到的附件。檔名會先處理成安全的名稱：目錄部分、`..`、控制字元與
 Windows 不接受的字元都會被移除，因此檔案不會落在 `directory` 之外。
 
-`SMTPWrapper` 的方法不會套用政策；使用它們之前請自行呼叫 `validate_attachments`。
+`Mail` 會在每次 `send` 與 `create_draft` 時套用它的政策。`SMTPWrapper` 的方法不會套用政策；使用它們之前請自行
+呼叫 `validate_attachments`。
 
 ---
 
@@ -358,9 +486,36 @@ MailThunder 內建 JSON 腳本引擎，讓你無需撰寫 Python 程式碼即可
 | `MT_imap_mail_content_list` | 取得所有郵件內容列表 | `{"search_str": str, "charset": str}` |
 | `MT_imap_output_all_mail_as_file` | 匯出所有郵件為檔案 | `{"search_str": str, "charset": str}` |
 | `MT_imap_quit` | 中斷 IMAP 連線 | 無 |
+| `MT_mail_send` | 透過設定的供應商寄送郵件 | `{"to": str 或 list, "subject": str, "text": str, "html": str, "cc": ..., "bcc": ..., "attachments": [路徑], "sender": str, "reply_to": ..., "headers": dict}` |
+| `MT_mail_create_draft` | 將郵件存成草稿 | `MT_mail_send` 的參數，另加 `"folder": str` |
+| `MT_mail_get_messages` | 取得資料夾的郵件，最新的在前 | `{"folder": str, "limit": int, "unread_only": bool, "query": str}`（預設：INBOX、不限數量） |
+| `MT_mail_get_message` | 依識別碼取得一封郵件 | `{"message_id": str, "folder": str}` |
+| `MT_mail_delete_message` | 依識別碼刪除一封郵件 | `{"message_id": str, "folder": str}` |
+| `MT_mail_close` | 關閉供應商的連線 | 無 |
 | `MT_set_mail_thunder_os_environ` | 設定驗證環境變數 | `{"mail_thunder_user": str, "mail_thunder_user_password": str}` |
 | `MT_get_mail_thunder_os_environ` | 取得驗證環境變數 | 無 |
 | `MT_add_package_to_executor` | 載入 Python 套件至執行器 | `["套件名稱"]` |
+
+`MT_mail_*` 指令在 `mail_instance` 上使用[核心郵件 API](#核心郵件-api)；`mail_instance` 是一個使用設定檔或環境變數
+帳號的 `Mail()`。這些指令在第一次使用時才連線，並回傳可轉成 JSON 的值。它的附件政策只能從 Python 設定
+（`mail_instance.policy = AttachmentPolicy(...)`），不能由動作設定，所以動作檔無法放寬它。
+
+**範例 — 透過核心郵件 API 寄送郵件並讀取收件匣：**
+
+```json
+{
+  "mail_thunder": [
+    ["MT_mail_send", {
+      "to": "receiver@example.com",
+      "subject": "Automated Email",
+      "text": "Hello World!",
+      "attachments": ["report.html"]
+    }],
+    ["MT_mail_get_messages", {"limit": 5, "unread_only": true}],
+    ["MT_mail_close"]
+  ]
+}
+```
 
 **範例 — 透過 JSON 腳本寄送郵件：**
 
@@ -533,6 +688,28 @@ client.close()
 
 ## API 參考
 
+### Mail
+
+`Mail(provider=None, auth=None, account=None, policy=None, providers=None)`：與供應商無關的 API。可作為
+context manager；第一次呼叫之前不會連線。
+
+| 方法 | 說明 |
+|------|------|
+| `send(message=None, **fields)` | 檢查並寄送 `MailMessage`，或由 `fields` 建立的郵件；回傳該郵件 |
+| `create_draft(message=None, folder=None, **fields)` | 檢查郵件並存成草稿；回傳其識別碼，或 `None` |
+| `get_messages(folder="INBOX", limit=None, unread_only=False, query=None)` | 迭代資料夾的郵件，最新的在前 |
+| `get_message(message_id, folder="INBOX")` | 回傳一封郵件 |
+| `delete_message(message_id, folder="INBOX")` | 刪除一封郵件 |
+| `close()` | 關閉連線；下一次呼叫會重新連線 |
+
+| 名稱 | 說明 |
+|------|------|
+| `MailMessage(subject, to, cc, bcc, sender, reply_to, text, html, attachments, headers, message_id, date)` | 與供應商無關的郵件；`to_dict()` 回傳可轉成 JSON 的值 |
+| `MailAccount(provider="google", auth=None, servers=None)` / `MailServers(smtp_host, smtp_port, smtp_starttls, imap_host, drafts_folder)` | 誰的郵件、在哪些伺服器上、用哪種方式登入 |
+| `MailSender` / `MailStore` / `register_provider(name, factory)` | 供應商介面與註冊表；`SMTPProvider` 與 `IMAPProvider` 實作了它們 |
+| `mail_instance` | `MT_mail_*` 指令使用的 `Mail()` |
+| `legacy_message(...)` / `mail_from_wrappers(smtp=None, imap=None, policy=None)` | 從 wrapper API 過渡的橋接函式 |
+
 ### SMTPWrapper
 
 繼承自 `smtplib.SMTP_SSL`（經由 `SMTPClientMixin`）。預設主機：`smtp.gmail.com`，預設埠號：`465`。
@@ -625,6 +802,8 @@ MailThunder/
     __main__.py              # CLI 進入點
     attachments/             # 附件模型、AttachmentPolicy 與驗證器
     auth/                    # 驗證機制：密碼、應用程式密碼、OAuth2、XOAUTH2
+    core/                    # Mail（與供應商無關的 API）、MailMessage、MailAccount
+    providers/               # MailSender / MailStore 介面、SMTPProvider、IMAPProvider、註冊表
     smtp/
       smtp_wrapper.py        # SMTPClientMixin、SMTPWrapper、SMTPStartTLSWrapper
     imap/

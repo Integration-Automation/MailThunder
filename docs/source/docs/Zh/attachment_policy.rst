@@ -148,5 +148,8 @@
 
 .. note::
 
+   ``Mail`` 會在每次 ``send`` 與 ``create_draft`` 時套用它的政策（``Mail(policy=...)``；
+   沒有指定時為 ``DEFAULT_ATTACHMENT_POLICY``）。見 :doc:`mail_api`。
+
    ``SMTPWrapper`` 的方法（``create_message_with_attach_and_send``）不會套用政策。
    使用它們之前，請自行呼叫 ``validate_attachments``。

@@ -25,6 +25,7 @@ managing email content effortless.
 Key Features
 ------------
 
+- **Provider-agnostic Mail API** — One object sends, reads, drafts and deletes mail, behind a provider interface new backends plug into
 - **SMTP support** — Send emails via SSL with Gmail (default) or any SMTP provider
 - **IMAP4 support** — Read, search, and export emails via IMAP4 SSL
 - **Attachment handling** — Automatically detect MIME types for text, image, audio, and binary files
@@ -43,6 +44,19 @@ Key Features
 
 Quick Example
 -------------
+
+**Send and read mail with the core API:**
+
+.. code-block:: python
+
+   from je_mail_thunder import Mail
+
+   with Mail() as mail:
+       mail.send(to="receiver@example.com", subject="Report", text="42 passed.", attachments=["report.html"])
+       for message in mail.get_messages(limit=5, unread_only=True):
+           print(message.sender, message.subject)
+
+The wrappers below keep working as before.
 
 **Send an email:**
 
@@ -82,6 +96,7 @@ Quick Example
    docs/Eng/eng_index
    docs/Eng/installation
    docs/Eng/authentication
+   docs/Eng/mail_api
    docs/Eng/send_google_mail
    docs/Eng/read_google_mail
    docs/Eng/attachment_policy
@@ -100,6 +115,7 @@ Quick Example
    docs/Zh/zh_index
    docs/Zh/installation
    docs/Zh/authentication
+   docs/Zh/mail_api
    docs/Zh/send_google_mail
    docs/Zh/read_google_mail
    docs/Zh/attachment_policy

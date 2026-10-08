@@ -21,6 +21,10 @@ MailThunder 為不同的錯誤情境定義了一組自訂例外類別。
            ├── JsonActionException
            ├── MailThunderAuthenticationException
            │     └── MailThunderOAuth2Exception
+           ├── MailThunderMessageException
+           ├── MailThunderProviderException
+           │     ├── MailThunderConnectionException
+           │     └── MailThunderSendException
            └── MailThunderAttachmentException
                  ├── AttachmentNotFound
                  ├── AttachmentTooLarge
@@ -54,10 +58,19 @@ MailThunder 為不同的錯誤情境定義了一組自訂例外類別。
    * - ``JsonActionException``
      - 找不到 JSON 動作檔或無法儲存
    * - ``MailThunderAuthenticationException``
-     - 沒有可用來登入的認證資訊，或該機制做不到被要求的事情（要求密碼提供 HTTP 授權、
+     - 沒有可用來登入的認證資訊、伺服器拒絕登入，或該機制做不到被要求的事情（要求密碼提供 HTTP 授權、
        要求單純的 OAuth2 登入郵件伺服器）
    * - ``MailThunderOAuth2Exception``
      - OAuth2 設定不完整或無效，或權杖端點拒絕、無法連線
+   * - ``MailThunderMessageException``
+     - 郵件無法照現在的樣子寄出：沒有收件者、沒有寄件者、位址無效，或主旨、標頭不是單行
+   * - ``MailThunderProviderException``
+     - 郵件供應商沒有設定好該項操作（未知的供應商名稱、沒有伺服器、沒有該資料夾或郵件），
+       或伺服器回應了錯誤
+   * - ``MailThunderConnectionException``
+     - 無法連上供應商的伺服器，或連線中斷
+   * - ``MailThunderSendException``
+     - 伺服器拒絕這封郵件，或拒絕其中部分收件者（``refused``）
    * - ``MailThunderAttachmentException``
      - 附件錯誤的基底；``AttachmentPolicy`` 或 ``Attachment`` 無效時也會引發
    * - ``AttachmentNotFound``

@@ -10,6 +10,7 @@
 MailThunder 封裝了 Python 的 ``smtplib.SMTP_SSL`` 和 ``imaplib.IMAP4_SSL``，
 提供更高階的介面來處理常見的電子郵件任務：
 
+- **寄送與讀取** 透過與供應商無關的 ``Mail`` API（:doc:`mail_api`）
 - **寄送** 純文字和 HTML 郵件，支援檔案附件，透過 SMTP
 - **讀取**、搜尋和匯出郵件，透過 IMAP4
 - **自動化** 郵件工作流程，使用 JSON 腳本引擎
@@ -28,6 +29,8 @@ MailThunder 核心模組架構：
      __main__.py              # CLI 進入點 (argparse)
      attachments/             # 附件模型、AttachmentPolicy 與驗證器
      auth/                    # 認證機制：密碼、應用程式密碼、OAuth2、XOAUTH2
+     core/                    # Mail（與供應商無關的 API）、MailMessage、MailAccount
+     providers/               # MailSender / MailStore 介面、SMTPProvider、IMAPProvider
      smtp/
        smtp_wrapper.py        # SMTPWrapper — 繼承 smtplib.SMTP_SSL
      imap/
@@ -78,6 +81,7 @@ MailThunder 核心模組架構：
 
 - :doc:`installation` — 安裝 MailThunder
 - :doc:`authentication` — 設定郵件認證
+- :doc:`mail_api` — 以與供應商無關的 API 寄送與讀取郵件
 - :doc:`send_google_mail` — 寄送第一封郵件
 - :doc:`read_google_mail` — 讀取收件匣郵件
 - :doc:`attachment_policy` — 寄送前檢查附件

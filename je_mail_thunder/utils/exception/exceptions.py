@@ -1,3 +1,6 @@
+from typing import Mapping, Optional
+
+
 class MailThunderException(Exception):
     pass
 
@@ -32,6 +35,31 @@ class MailThunderAuthenticationException(MailThunderException):
 
 class MailThunderOAuth2Exception(MailThunderAuthenticationException):
     """OAuth2 settings are invalid, or the token endpoint refused or could not be reached."""
+
+
+class MailThunderMessageException(MailThunderException):
+    """A message cannot be sent as it is: no recipient, no sender, or an address or header that is not valid."""
+
+
+class MailThunderProviderException(MailThunderException):
+    """A mail provider is not configured for the operation, or its server answered with an error."""
+
+
+class MailThunderConnectionException(MailThunderProviderException):
+    """The provider's server could not be reached, or the connection was lost."""
+
+
+class MailThunderSendException(MailThunderProviderException):
+    """
+    The server did not take the message for every recipient.
+
+    ``refused`` maps each refused recipient to the server's answer; it is empty when the whole message was
+    refused.
+    """
+
+    def __init__(self, message: str, refused: Optional[Mapping[str, object]] = None) -> None:
+        super().__init__(message)
+        self.refused = dict(refused or {})
 
 
 class MailThunderAttachmentException(MailThunderException):

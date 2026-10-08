@@ -21,6 +21,10 @@ Exception Hierarchy
            ├── JsonActionException
            ├── MailThunderAuthenticationException
            │     └── MailThunderOAuth2Exception
+           ├── MailThunderMessageException
+           ├── MailThunderProviderException
+           │     ├── MailThunderConnectionException
+           │     └── MailThunderSendException
            └── MailThunderAttachmentException
                  ├── AttachmentNotFound
                  ├── AttachmentTooLarge
@@ -54,10 +58,20 @@ Exception Reference
    * - ``JsonActionException``
      - JSON action file not found or cannot be saved
    * - ``MailThunderAuthenticationException``
-     - There is nothing to log in with, or the mechanism cannot do what it is asked (a password asked
-       for an HTTP authorization, plain OAuth2 asked to log in to a mail server)
+     - There is nothing to log in with, the server refused the login, or the mechanism cannot do what
+       it is asked (a password asked for an HTTP authorization, plain OAuth2 asked to log in to a mail server)
    * - ``MailThunderOAuth2Exception``
      - OAuth2 settings are incomplete or invalid, or the token endpoint refused or could not be reached
+   * - ``MailThunderMessageException``
+     - A message cannot be sent as it is: no recipient, no sender, an invalid address, or a subject or
+       header that is not one line
+   * - ``MailThunderProviderException``
+     - A mail provider is not configured for the operation (unknown provider name, no server, no such
+       folder or message), or its server answered with an error
+   * - ``MailThunderConnectionException``
+     - The provider's server could not be reached, or the connection was lost
+   * - ``MailThunderSendException``
+     - The server refused the message, or some of its recipients (``refused``)
    * - ``MailThunderAttachmentException``
      - Base of the attachment errors; also raised for an invalid ``AttachmentPolicy`` or ``Attachment``
    * - ``AttachmentNotFound``
@@ -142,5 +156,6 @@ You can catch MailThunder exceptions in your code:
    Most MailThunder methods (especially in ``SMTPWrapper`` and ``IMAPWrapper``) catch
    exceptions internally and log them rather than propagating. Exceptions are more
    commonly raised by the executor, JSON file utilities, and CLI components.
-   ``validate_attachments`` is different: it logs the failure and raises it, so a message
-   that breaks the policy is never sent. See :doc:`attachment_policy`.
+   ``Mail`` and ``validate_attachments`` are different: they log the failure and raise it, so a
+   message that cannot be sent is never half-sent in silence. See :doc:`mail_api` and
+   :doc:`attachment_policy`.

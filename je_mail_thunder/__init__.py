@@ -2,6 +2,16 @@
 from je_mail_thunder.imap.imap_wrapper import IMAPWrapper, imap_instance
 # SMTP Wrapper
 from je_mail_thunder.smtp.smtp_wrapper import SMTPClientMixin, SMTPStartTLSWrapper, SMTPWrapper, smtp_instance
+# Core mail API
+from je_mail_thunder.core.account import MailAccount, MailServers
+from je_mail_thunder.core.compat import legacy_message, mail_from_wrappers
+from je_mail_thunder.core.mail import Mail, mail_instance
+from je_mail_thunder.core.message import MailMessage
+# Providers
+from je_mail_thunder.providers.base import MailProvider, MailSender, MailStore
+from je_mail_thunder.providers.imap import IMAPProvider
+from je_mail_thunder.providers.registry import register_provider, registered_providers
+from je_mail_thunder.providers.smtp import SMTPProvider
 # Authentication
 from je_mail_thunder.auth.base import Authentication
 from je_mail_thunder.auth.oauth2 import OAuth2Auth
@@ -36,6 +46,9 @@ from je_mail_thunder.utils.executor.action_executor import execute_action, execu
 from je_mail_thunder.utils.project.create_project_structure import create_project_dir
 __all__ = [
     "IMAPWrapper", "imap_instance", "SMTPWrapper", "SMTPStartTLSWrapper", "SMTPClientMixin", "smtp_instance",
+    "Mail", "mail_instance", "MailAccount", "MailServers", "MailMessage", "legacy_message", "mail_from_wrappers",
+    "MailProvider", "MailSender", "MailStore", "SMTPProvider", "IMAPProvider", "register_provider",
+    "registered_providers",
     "Authentication", "PasswordAuth", "AppPasswordAuth", "OAuth2Auth", "XOAUTH2Auth", "resolve_authentication",
     "Attachment", "AttachmentPolicy", "DEFAULT_ATTACHMENT_POLICY", "validate_attachments",
     "OAUTH2_PROVIDERS", "OAuth2Provider", "OAuth2Settings", "OAuth2TokenCache", "oauth2_token_cache",

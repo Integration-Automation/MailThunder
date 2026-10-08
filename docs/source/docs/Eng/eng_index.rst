@@ -10,6 +10,7 @@ What is MailThunder?
 MailThunder wraps Python's ``smtplib.SMTP_SSL`` and ``imaplib.IMAP4_SSL`` to provide
 a higher-level interface for common email tasks:
 
+- **Sending and reading** through one provider-agnostic ``Mail`` API (:doc:`mail_api`)
 - **Sending** plain-text and HTML emails with file attachments via SMTP
 - **Reading**, searching, and exporting emails via IMAP4
 - **Automating** email workflows using a JSON-based scripting engine
@@ -28,6 +29,8 @@ MailThunder is organized into the following core modules:
      __main__.py              # CLI entry point (argparse)
      attachments/             # Attachment model, AttachmentPolicy and its validator
      auth/                    # Authentication: password, app password, OAuth2, XOAUTH2
+     core/                    # Mail (provider-agnostic API), MailMessage, MailAccount
+     providers/               # MailSender / MailStore interfaces, SMTPProvider, IMAPProvider
      smtp/
        smtp_wrapper.py        # SMTPWrapper — extends smtplib.SMTP_SSL
      imap/
@@ -80,6 +83,7 @@ Next Steps
 
 - :doc:`installation` — Install MailThunder
 - :doc:`authentication` — Configure email credentials
+- :doc:`mail_api` — Send and read mail with the provider-agnostic API
 - :doc:`send_google_mail` — Send your first email
 - :doc:`read_google_mail` — Read emails from your inbox
 - :doc:`attachment_policy` — Check attachments before they are sent

@@ -231,6 +231,9 @@ raises ``MailThunderOAuth2Exception`` when the OAuth2 settings it finds are inco
 
 Passwords and tokens never appear in a ``repr``, a log line or an exception message.
 
+Give an authentication object to ``Mail(auth=...)`` or ``MailAccount(auth=...)`` to log in with
+it (:doc:`mail_api`); without one, ``Mail`` uses ``resolve_authentication()``.
+
 Credentials From Code
 ---------------------
 

@@ -21,6 +21,10 @@ pytest                            # Run tests (testpaths = test/)
 
 ```
 je_mail_thunder/
+  core/                     # Mail (provider-agnostic API), MailMessage, MailAccount, MT_mail_* actions
+  providers/                # MailSender / MailStore interfaces, SMTPProvider, IMAPProvider, registry
+  auth/                     # Authentication: PasswordAuth, AppPasswordAuth, OAuth2Auth, XOAUTH2Auth
+  attachments/              # Attachment, AttachmentPolicy, validate_attachments
   smtp/smtp_wrapper.py      # SMTPClientMixin; SMTPWrapper (SMTP_SSL), SMTPStartTLSWrapper (SMTP + STARTTLS)
   imap/imap_wrapper.py      # IMAPWrapper (extends IMAP4_SSL)
   utils/
@@ -44,8 +48,9 @@ je_mail_thunder/
 - **Wrapper / Adapter Pattern**: `SMTPWrapper` and `IMAPWrapper` extend stdlib classes to add logging, auto-login, and context manager support. New protocol wrappers must follow this pattern.
 - **Command Pattern**: The `Executor` class maps string command names to callable actions. All new executable features must register through `event_dict`.
 - **Template Method Pattern**: Project scaffolding uses `template_executor.py` / `template_keyword.py`. Extend templates by adding keyword handlers, not by modifying the base flow.
-- **Singleton-like Module Instances**: `smtp_instance`, `imap_instance`, `executor`, `package_manager` are module-level singletons. Do not create duplicate global instances.
+- **Singleton-like Module Instances**: `smtp_instance`, `imap_instance`, `mail_instance`, `executor`, `package_manager` are module-level singletons. Do not create duplicate global instances.
 - **Context Manager Protocol**: All wrappers implement `__enter__` / `__exit__`. New resource-holding classes must do the same.
+- **Provider Interface**: `Mail` (`core/mail.py`) only talks to `MailSender` / `MailStore` (`providers/base.py`). A new backend implements them and registers through `register_provider`; do not branch on the provider inside `Mail`. `Mail` and the providers log a failure and raise it as a `MailThunderException` subclass.
 
 ### Engineering Principles
 
