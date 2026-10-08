@@ -5,6 +5,47 @@ This page documents all utility functions and modules in MailThunder.
 
 ----
 
+OAuth2
+------
+
+**Module:** ``je_mail_thunder.utils.oauth2.oauth2`` (standard library only)
+
+.. code-block:: python
+
+   OAUTH2_PROVIDERS: Mapping[str, OAuth2Provider]   # "google", "microsoft"
+
+   @dataclass(frozen=True)
+   class OAuth2Settings:
+       user: str
+       provider: str = "google"
+       client_id: str | None = None
+       client_secret: str | None = None      # hidden from repr
+       refresh_token: str | None = None      # hidden from repr
+       access_token: str | None = None       # hidden from repr; used as given when set
+       tenant: str = "common"                # Microsoft tenant in the token URL
+       token_url: str | None = None          # overrides the provider's (https only)
+       scope: str | None = None              # overrides the provider's
+
+   def refresh_access_token(settings) -> AccessToken      # POST grant_type=refresh_token
+   class OAuth2TokenCache: access_token(settings) -> str  # refreshed 60 s before expiry; thread-safe
+   oauth2_token_cache: OAuth2TokenCache                   # the cache the wrappers log in with
+   def xoauth2_string(user, access_token) -> str          # "user=...\x01auth=Bearer ...\x01\x01"
+
+Invalid settings, a refused refresh or an unreachable endpoint raise ``MailThunderOAuth2Exception``; the message
+names the endpoint's error code, never a secret.
+
+**Module:** ``je_mail_thunder.utils.save_mail_user_content.credentials``
+
+- ``resolve_oauth2_settings()``: the ``"oauth2"`` object of ``mail_thunder_content.json`` (its ``user``, else the
+  file's), else ``oauth2_settings_from_environ()``, else ``None``.
+- ``oauth2_settings_from_environ()``: ``mail_thunder_user`` and ``mail_thunder_oauth2_<field>`` for the fields above;
+  ``None`` without a refresh or access token.
+- ``resolve_login_credentials()``: ``(user, password)`` from the file, else the environment, else ``None``.
+- ``configured_oauth2_provider()``: the preset the settings name, which picks the servers ``smtp_instance`` and
+  ``imap_instance`` connect to.
+
+----
+
 Authentication Utilities
 ------------------------
 
@@ -379,6 +420,12 @@ Package Manager
      - Extract members matching a predicate and register in target's ``event_dict``.
    * - ``add_package_to_target(package, target)``
      - Run ``get_member()`` for isfunction, isbuiltin, and isclass predicates.
+   * - ``allow_packages(*packages: str)``
+     - Add packages, and their submodules, to the package gate's allowlist.
+   * - ``set_allow_arbitrary_packages(enabled: bool)``
+     - Allow (``True``) or refuse (``False``) packages outside the allowlist. Until either switch is
+       called, any package loads with a ``DeprecationWarning``. ``Executor`` has the same two static
+       methods; neither is an action command.
 
 **Singleton:**
 

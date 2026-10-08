@@ -18,7 +18,27 @@ MailThunder 為不同的錯誤情境定義了一組自訂例外類別。
            ├── MailThunderArgparseException
            ├── ExecuteActionException
            ├── AddCommandException
-           └── JsonActionException
+           ├── JsonActionException
+           ├── MailThunderAuthenticationException
+           │     └── MailThunderOAuth2Exception
+           ├── MailThunderMessageException
+           ├── MailThunderProviderException
+           │     ├── MailThunderConnectionException
+           │     └── MailThunderSendException
+           ├── MailThunderTemplateException
+           │     ├── TemplateNotFound
+           │     ├── TemplateSyntaxError
+           │     ├── TemplateContextError
+           │     └── TemplateRenderError
+           ├── MailThunderTriggerException
+           ├── MailThunderProjectException
+           ├── MailThunderStudioException
+           └── MailThunderAttachmentException
+                 ├── AttachmentNotFound
+                 ├── AttachmentTooLarge
+                 ├── AttachmentTypeNotAllowed
+                 ├── AttachmentCountExceeded
+                 └── TotalAttachmentSizeExceeded
 
 ----
 
@@ -45,6 +65,48 @@ MailThunder 為不同的錯誤情境定義了一組自訂例外類別。
      - ``add_command_to_executor()`` 收到非可呼叫值（非函式/方法）
    * - ``JsonActionException``
      - 找不到 JSON 動作檔或無法儲存
+   * - ``MailThunderAuthenticationException``
+     - 沒有可用來登入的認證資訊、伺服器拒絕登入，或該機制做不到被要求的事情（要求密碼提供 HTTP 授權、
+       要求單純的 OAuth2 登入郵件伺服器）
+   * - ``MailThunderOAuth2Exception``
+     - OAuth2 設定不完整或無效，或權杖端點拒絕、無法連線
+   * - ``MailThunderMessageException``
+     - 郵件無法照現在的樣子寄出：沒有收件者、沒有寄件者、位址無效，或主旨、標頭不是單行
+   * - ``MailThunderProviderException``
+     - 郵件供應商沒有設定好該項操作（未知的供應商名稱、沒有伺服器、沒有該資料夾或郵件），
+       或伺服器回應了錯誤
+   * - ``MailThunderConnectionException``
+     - 無法連上供應商的伺服器，或連線中斷
+   * - ``MailThunderSendException``
+     - 伺服器拒絕這封郵件，或拒絕其中部分收件者（``refused``）
+   * - ``MailThunderTemplateException``
+     - 郵件模板錯誤的基底；模板檔格式不正確時也會引發
+   * - ``TemplateNotFound``
+     - 沒有任何目錄包含該模板（``name``、``searched``）
+   * - ``TemplateSyntaxError``
+     - 模板的某個部分不是有效的模板語法（``line``）
+   * - ``TemplateContextError``
+     - context 缺少模板需要的變數（``missing``、``template``）
+   * - ``TemplateRenderError``
+     - 某個值不適用於模板對它做的事，或輸出過大
+   * - ``MailThunderTriggerException``
+     - 事件名稱、過濾規則或觸發器後端無法照給定的方式使用
+   * - ``MailThunderProjectException``
+     - 專案沒有郵件層，或其中的檔案無法使用
+   * - ``MailThunderStudioException``
+     - 送給 MailThunder Studio 的請求不是它能回應的內容
+   * - ``MailThunderAttachmentException``
+     - 附件錯誤的基底；``AttachmentPolicy`` 或 ``Attachment`` 無效時也會引發
+   * - ``AttachmentNotFound``
+     - 要附加的檔案不存在或無法讀取（``path``）
+   * - ``AttachmentTooLarge``
+     - 單一附件超過政策的 ``max_file_size``\ （``filename``、``size``、``limit``）
+   * - ``AttachmentTypeNotAllowed``
+     - 副檔名或 MIME 類型不在允許範圍內（``filename``、``kind``、``value``）
+   * - ``AttachmentCountExceeded``
+     - 附件數量超過政策的 ``max_count``\ （``count``、``limit``）
+   * - ``TotalAttachmentSizeExceeded``
+     - 附件合計超過 ``max_total_size``\ （``size``、``limit``）
 
 ----
 

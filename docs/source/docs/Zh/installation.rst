@@ -7,7 +7,8 @@
 --------
 
 - **Python 3.10** 以上
-- 無需額外相依套件 (僅使用 Python 標準函式庫)
+- ``je_action_core``，安裝時會一併裝上：與 APITestka、LoadDensity、FileAutomation 共用的 action 執行器
+  (它只用 Python 標準函式庫)
 - ``pip`` 套件管理工具
 
 從 PyPI 安裝
@@ -24,6 +25,8 @@
 .. code-block:: bash
 
    pip install je_mail_thunder_dev
+
+``je_mail_thunder_dev`` 跟著 ``dev`` 分支走：每次推送到 ``dev`` 通過測試、而且套件內容有變動時，CI 就會發佈一個新版本。
 
 從原始碼安裝
 ------------

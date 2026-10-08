@@ -1,22 +1,32 @@
 import os
-import re
 from email import message_from_bytes
 from email import policy
 from email.header import decode_header
 from imaplib import IMAP4_SSL
-from typing import List, Dict, Union
+from typing import Dict, List
 
+from je_mail_thunder.attachments.mime import safe_filename
 from je_mail_thunder.utils.exception.exception_tags import mail_thunder_content_login_failed
+from je_mail_thunder.utils.exception.exceptions import MailThunderOAuth2Exception
 from je_mail_thunder.utils.lazy_instance.lazy_instance import LazyInstance
 from je_mail_thunder.utils.logging.loggin_instance import mail_thunder_logger
-from je_mail_thunder.utils.save_mail_user_content.mail_thunder_content_save import read_output_content
-from je_mail_thunder.utils.save_mail_user_content.save_on_env import get_mail_thunder_os_environ
+from je_mail_thunder.utils.oauth2.oauth2 import oauth2_token_cache, xoauth2_string
+from je_mail_thunder.utils.save_mail_user_content.credentials import (
+    configured_oauth2_provider,
+    resolve_login_credentials,
+    resolve_oauth2_settings,
+)
+from je_mail_thunder.utils.tls.tls_context import verified_client_context
 
 
 class IMAPWrapper(IMAP4_SSL):
+    """
+    IMAP over TLS (``imaplib.IMAP4_SSL``); Gmail's ``imap.gmail.com`` by default. The server's certificate and
+    host name are verified: ``IMAP4_SSL`` checks neither unless it is given a context.
+    """
 
     def __init__(self, host: str = 'imap.gmail.com'):
-        super().__init__(host)
+        super().__init__(host, ssl_context=verified_client_context())
 
     def __enter__(self):
         return self
@@ -36,28 +46,33 @@ class IMAPWrapper(IMAP4_SSL):
         except Exception as error:
             mail_thunder_logger.error(f"imap_later_init, failed: {repr(error)}")
 
-    @staticmethod
-    def _resolve_credentials():
-        user_info = read_output_content()
-        if isinstance(user_info, dict):
-            user = user_info.get("user")
-            password = user_info.get("password")
-            if user is not None and password is not None:
-                return user, password
-        env_info = get_mail_thunder_os_environ()
-        user = env_info.get("mail_thunder_user")
-        password = env_info.get("mail_thunder_user_password")
-        if user is not None and password is not None:
-            return user, password
-        return None
+    _resolve_credentials = staticmethod(resolve_login_credentials)
+
+    def oauth2_login(self, user: str, access_token: str):
+        """
+        Log in with SASL ``XOAUTH2`` (OAuth2) instead of a password.
+
+        :raises imaplib.IMAP4.error: the server refused the token.
+        """
+        mail_thunder_logger.info("imap_oauth2_login")
+        # The first continuation gets the token; a second one carries the server's error, and the empty
+        # answer to it ends the exchange.
+        answers = iter([xoauth2_string(user, access_token).encode("utf-8")])
+        return self.authenticate("XOAUTH2", lambda _challenge: next(answers, b""))
 
     def try_to_login_with_env_or_content(self):
         """
-        Try to find user and password on cwd /mail_thunder_content.json or env var
+        Log in with the OAuth2 settings when there are any, else with the user and password
+        (``mail_thunder_content.json`` in the current directory first, then the environment).
+        A refused login raises ``imaplib.IMAP4.error``; network and OAuth2 setting errors are logged.
         :return: None
         """
         mail_thunder_logger.info("imap_try_to_login_with_env_or_content")
         try:
+            oauth2 = resolve_oauth2_settings()
+            if oauth2 is not None:
+                self.oauth2_login(oauth2.user, oauth2_token_cache.access_token(oauth2))
+                return
             credentials = self._resolve_credentials()
             if credentials is not None:
                 self.login(*credentials)
@@ -65,6 +80,8 @@ class IMAPWrapper(IMAP4_SSL):
             mail_thunder_logger.info(
                 f"imap_try_to_login_with_env_or_content, "
                 f"failed: {repr(error) + ' ' + mail_thunder_content_login_failed}")
+        except MailThunderOAuth2Exception as error:
+            mail_thunder_logger.error(f"imap_try_to_login_with_env_or_content, failed: {repr(error)}")
 
     def select_mailbox(self, mailbox: str = "INBOX", readonly: bool = False):
         """
@@ -103,7 +120,7 @@ class IMAPWrapper(IMAP4_SSL):
                 f"imap_search_mailbox, search_str: {search_str}, charset: {charset}, failed: {repr(error)}")
 
     def mail_content_list(
-            self, search_str: [str, list] = "ALL", charset: str = None) -> List[Dict[str, Union[str, bytes]]]:
+            self, search_str: [str, list] = "ALL", charset: str = None) -> List[Dict[str, str | bytes]]:
         """
         Get all mail content as list
         :param search_str: Search pattern
@@ -139,21 +156,14 @@ class IMAPWrapper(IMAP4_SSL):
     def _sanitize_subject_as_filename(subject) -> str:
         """
         Derive a safe filename from a mail SUBJECT header.
-        Strips directory components and any separator / traversal token.
+        Strips directory components, traversal tokens, control characters and what Windows refuses in a
+        file name (a ``:`` there sends the content to an alternate data stream and leaves the file empty).
         Falls back to "mail" when the sanitized result is empty.
         """
-        if subject is None:
-            return "mail"
-        name = os.path.basename(str(subject))
-        name = name.replace("\x00", "")
-        name = re.sub(r"[\\/\r\n\t]", "_", name)
-        while ".." in name:
-            name = name.replace("..", "_")
-        name = name.strip(" .")
-        return name if name else "mail"
+        return safe_filename(subject, fallback="mail")
 
     def output_all_mail_as_file(
-            self, search_str: [str, list] = "ALL", charset: str = None) -> List[Dict[str, Union[str, bytes]]]:
+            self, search_str: [str, list] = "ALL", charset: str = None) -> List[Dict[str, str | bytes]]:
         """
         Get all mail content data and output as file
         :param search_str: Search pattern
@@ -197,5 +207,11 @@ class IMAPWrapper(IMAP4_SSL):
             mail_thunder_logger.error(f"imap_quit, failed: {repr(error)}")
 
 
+def default_imap_client() -> IMAPWrapper:
+    """The client ``imap_instance`` builds: the IMAP server of the provider the OAuth2 settings name, else Gmail."""
+    provider = configured_oauth2_provider()
+    return IMAPWrapper() if provider is None else IMAPWrapper(provider.imap_host)
+
+
 # Connects to the IMAP server on first use, not at import (see utils/lazy_instance).
-imap_instance = LazyInstance(IMAPWrapper, "imap_instance")
+imap_instance = LazyInstance(default_imap_client, "imap_instance")

@@ -10,28 +10,43 @@ version = "0.0.29"
 authors = [
     { name = "JE-Chen", email = "jechenmailman@gmail.com" },
 ]
-description = ""
+maintainers = [
+    { name = "JE-Chen", email = "jechenmailman@gmail.com" },
+]
+description = "Provider-agnostic email automation framework for Python: SMTP, IMAP, Microsoft Graph, OAuth2, templates, triggers, attachment policies and JSON-scripted workflows"
+keywords = [
+    "email", "mail", "smtp", "imap", "oauth2", "xoauth2", "gmail", "microsoft-365", "microsoft-graph",
+    "templates", "triggers", "attachments", "automation",
+]
 requires-python = ">=3.10"
-dependencies = []
+license = "MIT"
+license-files = ["LICENSE"]
+dependencies = ["je_action_core>=0.0.1"]
 classifiers = [
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Development Status :: 2 - Pre-Alpha",
-    "Environment :: Win32 (MS Windows)",
-    "Environment :: MacOS X",
-    "Environment :: X11 Applications",
-    "License :: OSI Approved :: MIT License",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
     "Operating System :: OS Independent",
+    "Topic :: Communications :: Email",
+    "Topic :: Communications :: Email :: Post-Office :: IMAP",
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
 [project.readme]
 file = "README.md"
 content-type = "text/markdown"
 
-[project.license]
-text = "MIT"
-
 [project.urls]
 Homepage = "https://github.com/Integration-Automation/MailThunder"
+Documentation = "https://mailthunder.readthedocs.io/"
+Repository = "https://github.com/Integration-Automation/MailThunder"
+Issues = "https://github.com/Integration-Automation/MailThunder/issues"
+Changelog = "https://github.com/Integration-Automation/MailThunder/releases"
 
 [tool.setuptools.packages.find]
 namespaces = false

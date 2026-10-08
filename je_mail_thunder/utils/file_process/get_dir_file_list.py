@@ -1,23 +1,4 @@
-from os import getcwd
-from os import walk
-from os.path import abspath
-from os.path import join
-from typing import List
+"""Action-file discovery: je_action_core's ``get_dir_files_as_list``."""
+from je_action_core import get_dir_files_as_list
 
-
-def get_dir_files_as_list(
-        dir_path: str = None,
-        default_search_file_extension: str = ".json") -> List[str]:
-    """
-    get dir file when end with default_search_file_extension
-    :param dir_path: which dir we want to walk and get file list
-    :param default_search_file_extension: which extension we want to search
-    :return: [] if nothing searched or [file1, file2.... files] file was searched
-    """
-    if dir_path is None:
-        dir_path = getcwd()
-    return [
-        abspath(join(root, file)) for root, _, files in walk(dir_path)
-        for file in files
-        if file.endswith(default_search_file_extension.lower())
-    ]
+__all__ = ["get_dir_files_as_list"]

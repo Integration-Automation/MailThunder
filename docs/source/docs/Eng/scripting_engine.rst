@@ -123,6 +123,32 @@ Built-in Commands
    * - ``MT_imap_quit``
      - Disconnect from IMAP server
 
+**Mail commands (the core API, see** :doc:`mail_api` **):**
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
+
+   * - Command
+     - Description
+   * - ``MT_mail_send``
+     - Send a message through the configured provider (``to``, ``subject``, ``text``, ``html``,
+       ``cc``, ``bcc``, ``attachments``, ``sender``, ``reply_to``, ``headers``)
+   * - ``MT_mail_create_draft``
+     - Store a message as a draft (the same arguments, plus ``folder``)
+   * - ``MT_mail_get_messages``
+     - Get the messages of a folder, newest first (``folder``, ``limit``, ``unread_only``, ``query``)
+   * - ``MT_mail_get_message``
+     - Get one message by its id (``message_id``, ``folder``)
+   * - ``MT_mail_delete_message``
+     - Delete one message by its id (``message_id``, ``folder``)
+   * - ``MT_mail_close``
+     - Close the provider connections
+   * - ``MT_mail_render_template``
+     - Render a mail template without sending (``template``, ``context``)
+   * - ``MT_mail_poll``
+     - Get the events for the mail that arrived since the last poll of a folder (``folder``)
+
 **Authentication commands:**
 
 .. list-table::

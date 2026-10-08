@@ -21,12 +21,22 @@ pytest                            # Run tests (testpaths = test/)
 
 ```
 je_mail_thunder/
-  smtp/smtp_wrapper.py      # SMTPWrapper (extends SMTP_SSL)
+  core/                     # Mail (provider-agnostic API), MailMessage, MailAccount, MT_mail_* actions
+  providers/                # MailSender / MailStore interfaces, SMTPProvider, IMAPProvider, registry
+  auth/                     # Authentication: PasswordAuth, AppPasswordAuth, OAuth2Auth, XOAUTH2Auth
+  attachments/              # Attachment, AttachmentPolicy, validate_attachments
+  templates/                # Mail templates: engine (Jinja2-style subset), MailTemplate, TemplateLoader
+  triggers/                 # Mail events: MailFilter, EventDispatcher, trigger backends (polling, IMAP IDLE)
+  monitoring/               # AuditLog, ProviderHealth: listeners of the mail events
+  studio/                   # MailThunder Studio: StudioApi (JSON-ready), StudioServer, the page
+  smtp/smtp_wrapper.py      # SMTPClientMixin; SMTPWrapper (SMTP_SSL), SMTPStartTLSWrapper (SMTP + STARTTLS)
   imap/imap_wrapper.py      # IMAPWrapper (extends IMAP4_SSL)
   utils/
     executor/                # Command pattern — JSON action executor
     socket_server/           # TCP socket server for remote command execution
-    save_mail_user_content/  # Credential storage (JSON file / env vars)
+    save_mail_user_content/  # Credential storage (JSON file / env vars) and the password / OAuth2 lookup
+    oauth2/                  # OAuth2 settings, token refresh and cache, XOAUTH2 (stdlib only)
+    tls/                     # The verifying TLS context every SMTP / IMAP connection is opened with
     project/template/        # Template method pattern for project scaffolding
     package_manager/         # Dynamic package loading
     json/                    # JSON file I/O
@@ -43,8 +53,9 @@ je_mail_thunder/
 - **Wrapper / Adapter Pattern**: `SMTPWrapper` and `IMAPWrapper` extend stdlib classes to add logging, auto-login, and context manager support. New protocol wrappers must follow this pattern.
 - **Command Pattern**: The `Executor` class maps string command names to callable actions. All new executable features must register through `event_dict`.
 - **Template Method Pattern**: Project scaffolding uses `template_executor.py` / `template_keyword.py`. Extend templates by adding keyword handlers, not by modifying the base flow.
-- **Singleton-like Module Instances**: `smtp_instance`, `imap_instance`, `executor`, `package_manager` are module-level singletons. Do not create duplicate global instances.
+- **Singleton-like Module Instances**: `smtp_instance`, `imap_instance`, `mail_instance`, `executor`, `package_manager` are module-level singletons. Do not create duplicate global instances.
 - **Context Manager Protocol**: All wrappers implement `__enter__` / `__exit__`. New resource-holding classes must do the same.
+- **Provider Interface**: `Mail` (`core/mail.py`) only talks to `MailSender` / `MailStore` (`providers/base.py`). A new backend implements them and registers through `register_provider`; do not branch on the provider inside `Mail`. `Mail` and the providers log a failure and raise it as a `MailThunderException` subclass.
 
 ### Engineering Principles
 
@@ -81,18 +92,24 @@ je_mail_thunder/
 - **Limit socket recv buffer** and validate JSON payloads before execution to prevent injection or denial-of-service.
 
 ### Command Execution Safety
-- The `Executor` registers all Python builtins into `event_dict`. Be aware that this allows arbitrary builtin calls via JSON commands. Any new command registration via `add_command_to_executor` must validate that only `types.MethodType` or `types.FunctionType` are accepted (already enforced).
+- The `Executor` registers only the `SAFE_BUILTINS` allowlist (je_action_core) into `event_dict`; do not register other builtins. Any new command registration via `add_command_to_executor` must validate that only `types.MethodType` or `types.FunctionType` are accepted (already enforced).
 - **Never use `eval()` or `exec()`** on untrusted input.
 - **Never use `subprocess.shell=True`** with user-provided strings.
+- `project_mail()` runs a project's `mail/config.py` and `mail/triggers.py`. It is Python-only: never register it, or anything else that runs a file, as an action command.
 
 ### Network Security
-- SMTP uses `SMTP_SSL` (port 465) — always use SSL/TLS. Do not downgrade to plain SMTP.
+- SMTP uses `SMTP_SSL` (port 465), or `SMTPStartTLSWrapper` (port 587), which upgrades with `STARTTLS` before anything else is sent and refuses a server that does not offer it — always use SSL/TLS. Do not downgrade to plain SMTP or send credentials before TLS.
+- OAuth2 token endpoints must be `https`; client secrets, refresh tokens and access tokens never go into logs, exception messages or a `repr`.
 - IMAP uses `IMAP4_SSL` — always use SSL/TLS. Do not downgrade to plain IMAP.
+- Every `SMTP_SSL`, `starttls` and `IMAP4_SSL` is given `verified_client_context()` (`utils/tls/`): without a context the standard library verifies neither the certificate nor the host name. Never pass a context that turns verification off; a private CA goes in `SSL_CERT_FILE`.
+- Web API providers (`providers/http.py`, Microsoft Graph) request `https` URLs only, and a provider's token goes only to its own API host. The Graph webhook listener binds `localhost` by default and ignores notifications without its `clientState`.
 - Socket server binds to `localhost` by default. Do not change the default bind address to `0.0.0.0` without explicit user configuration.
+- MailThunder Studio (`studio/`) speaks plain HTTP, so it binds loopback addresses only (`localhost`, `127.x.x.x`) and refuses any other; it checks its per-run token and the `Host` header on every API request, serves no third-party script, writes page content as text only (`textContent`, never `innerHTML`), and never returns a credential. It consumes the core API (`Mail`, `StudioApi`), never a provider directly.
 
 ### Dependency Security
 - Keep dependencies minimal (`requirements.txt` is intentionally small).
 - Audit new dependencies before adding. Prefer stdlib solutions.
+- `pylock.toml` (PEP 751) pins what `[project] dependencies` resolve to, with hashes. Regenerate it with `python -m pip lock "<each dependency>" -o pylock.toml` when a dependency or its range changes; `test_dev_toml_parity.py` fails when the lock falls outside the declared range.
 
 ## Documentation
 
@@ -108,6 +125,7 @@ Workspace rule shared by every repository under `D:\Codes` (full text: `D:\Codes
   - Stage only the files that stage touched (`git add <path>`, never `git add -A`), follow this file's commit-message rules, and never add AI attribution.
   - Committing is not pushing: push or open a PR only as this project's branch flow says or when asked.
   - **Commit and push frequently.** After each big feature — a self-contained stage that passes this project's checks — commit and push to the remote; do not pile up a large batch of work before committing or pushing. Smaller batches collide less with other sessions, let CI catch problems earlier, and are easier to revert. Follow this project's normal branch flow (usually `dev`).
+  - **SonarCloud / Codacy findings.** When a PR or commit fails a SonarCloud or Codacy check, look the findings up through their APIs instead of guessing. The keys are in environment variables: `SonarCloudToken` (SonarCloud, e.g. `curl -s -u "$SonarCloudToken:" "https://sonarcloud.io/api/issues/search?componentKeys=<key>&pullRequest=<n>&resolved=false"`) and `CODACY_PROJECT_TOKEN` (a Codacy project token, valid only for its own project: any other repository answers "Bad credentials", so for a public repository query `https://app.codacy.com/api/v3/analysis/organizations/gh/<org>/repositories/<repo>/pull-requests/<n>/issues?status=new` without a key). **Never reveal a key or any personal credential while doing so**: refer to the variables by name only, never echo or print their values, and never put them in files, commit messages, PR or issue text, logs, or any output that leaves the machine.
 - **`progress.md`** (repository root, tracked) holds outstanding work only: no finished items, no history, no rules.
 - **`docs/updates/`** records finished work: one batch file per month (`YYYY-MM.md`), one entry per piece of work headed `## U-YYYYMMDD-NN · date · title · #tags`, and an index with query commands in `docs/updates/README.md`. When a `progress.md` item is done, delete it and add a `#done` entry plus its index row in the same commit.
 - **`architecture.md`** (repository root) is the short architecture overview: layers, entry points, main flows, extension points, cross-project boundaries. Update it in the same commit whenever a change alters any of those.
@@ -118,13 +136,14 @@ Workspace rule shared by every repository under `D:\Codes` (full text: `D:\Codes
 - Write concise commit messages that describe the "why", not just the "what".
 - **Do not mention any AI assistant, model name, or tool name** (including but not limited to Claude, GPT, Copilot, etc.) in commit messages, PR descriptions, or code comments.
 - **Do not include `Co-Authored-By` headers referencing AI tools.**
+- Both branches publish to PyPI from CI: a push to `main` releases `je_mail_thunder` (`publish_stable.yml`), and a push to `dev` that passes the tests and changes what the package ships releases `je_mail_thunder_dev` (the `publish-dev` job of `test_dev.yml`, `scripts/dev_release.py`). Never bump a version by hand; the version in `dev.toml` is only a floor.
 - Format: `<type>: <description>` (e.g., `fix: prevent path traversal in mail export`, `feat: add OAuth2 support for IMAP login`).
 - Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `perf`, `security`.
 
 ## Code Style
 
 - Follow existing project conventions — no type annotations on code you didn't write unless fixing a bug there.
-- Use `mail_thunder_logger` for all logging. No `print()` in library code (only in CLI/socket server output).
+- Use `mail_thunder_logger` for all logging. No `print()` in library code (only in CLI/socket server output, which includes `studio/__main__.py`).
 - Exception hierarchy rooted at `MailThunderException`. New exceptions must subclass it.
 - All public methods need docstrings following the existing `:param` / `:return:` style.
 
@@ -197,6 +216,18 @@ All code must pass static analysis from SonarQube, Codacy, Pylint, and Flake8. T
 - Every public module, class, and function has a docstring (Pylint `C0111` / `missing-docstring`). Use `:param` / `:return:` / `:raises:` style already in use.
 - No misleading docstrings — update them when behavior changes.
 
+### What Only SonarCloud / Codacy Report
+flake8, pylint and bandit pass on all of these; the pull request's analysis does not.
+
+- **One condition per `assert`** — never join two with `and` (SonarQube `python:S9073`).
+- **One call inside `with pytest.raises(...)`**: the call expected to raise. Build what it needs on the line before (SonarQube `python:S5778`).
+- `@pytest.fixture`, not `@pytest.fixture()` (SonarQube `python:S9083`).
+- `A | B` in type hints, not `typing.Union[A, B]` (SonarQube `python:S6546`).
+- Regular expressions: `\d` / `\w` instead of `[0-9]` / `[A-Za-z0-9_]`, with `re.ASCII` when only ASCII is meant (SonarQube `python:S6353`); complexity ≤ 20 (`python:S5843`); no repeated group inside a repeated group (Codacy Semgrep `regex_dos`). Split a large pattern into small ones.
+- No string literal that begins with `http://` (SonarQube `python:S5332`), and no string literal passed as a `token_*` / `password` keyword argument: give it a name first (Codacy Bandit `B106`).
+- **Made-up credentials in tests**: use `mail_fakes.MADE_UP_PASSPHRASE`. Never assign a string literal to an UPPERCASE `*_PASSWORD` / `*_SECRET` constant, and never write a token that starts with `ya29.` (Codacy: Prospector dodgy, Semgrep secrets).
+- A string literal used three times gets a constant (SonarQube `python:S1192`); one `with` instead of two nested ones (`python:S9154`); no conditional expression inside another (`python:S3358`).
+
 ### Enforcement Workflow
 - Before committing: run `pip install pylint flake8 bandit` and locally execute `pylint je_mail_thunder`, `flake8 je_mail_thunder`, `bandit -r je_mail_thunder`.
-- Treat any new SonarQube / Codacy finding on changed lines as a blocker. Do not suppress rules (`# noqa`, `# pylint: disable=`) without a comment explaining why and which specific rule is being suppressed.
+- Treat any new SonarQube / Codacy finding on changed lines as a blocker. After pushing to a pull request, read its SonarCloud and Codacy results before calling the work done. Do not suppress rules (`# noqa`, `# pylint: disable=`) without a comment explaining why and which specific rule is being suppressed.

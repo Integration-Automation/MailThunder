@@ -4,7 +4,8 @@ SMTPWrapper API
 **Module:** ``je_mail_thunder.smtp.smtp_wrapper``
 
 ``SMTPWrapper`` extends ``smtplib.SMTP_SSL`` to provide a high-level interface for
-sending emails with support for plain text, HTML, and attachments.
+sending emails with support for plain text, HTML, and attachments. Its methods come from
+``SMTPClientMixin``, which ``SMTPStartTLSWrapper`` (STARTTLS, below) shares.
 
 ----
 
@@ -13,7 +14,7 @@ Class Definition
 
 .. code-block:: python
 
-   class SMTPWrapper(smtplib.SMTP_SSL):
+   class SMTPWrapper(SMTPClientMixin, smtplib.SMTP_SSL):
        """
        SMTP wrapper with auto-login and message creation utilities.
 
@@ -249,6 +250,10 @@ Create a ``MIMEMultipart`` message with attachment and immediately send it.
 
 **Parameters:** Same as ``create_message_with_attach()``.
 
+The file is first checked against the class attribute ``attachment_policy``
+(``DEFAULT_ATTACHMENT_POLICY``; assign another ``AttachmentPolicy``, or ``None`` for no check).
+A refused file is logged and nothing is sent.
+
 ----
 
 try_to_login_with_env_or_content()
@@ -262,14 +267,30 @@ Attempt to log in using credentials from the config file or environment variable
 
 **Authentication flow:**
 
-1. Read ``mail_thunder_content.json`` from ``Path.cwd()``
-2. If valid ``user`` + ``password`` keys found → ``self.login(user, password)``
-3. Else read ``mail_thunder_user`` + ``mail_thunder_user_password`` env vars
-4. If env vars set → ``self.login(user, password)``
-5. On ``SMTPAuthenticationError`` → log error, return ``False``
+1. OAuth2 settings (``"oauth2"`` in ``mail_thunder_content.json``, else the ``mail_thunder_oauth2_*`` env vars)
+   → ``self.oauth2_login(user, oauth2_token_cache.access_token(settings))``
+2. Else read ``mail_thunder_content.json`` from ``Path.cwd()``
+3. If valid ``user`` + ``password`` keys found → ``self.login(user, password)``
+4. Else read ``mail_thunder_user`` + ``mail_thunder_user_password`` env vars
+5. If env vars set → ``self.login(user, password)``
+6. On ``SMTPAuthenticationError``, an ``OSError`` or invalid OAuth2 settings (``MailThunderOAuth2Exception``)
+   → log error, return ``False``
 
 **Returns:** ``True`` if login succeeded, ``False`` otherwise.
 Sets ``self.login_state`` accordingly.
+
+----
+
+oauth2_login()
+~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+   def oauth2_login(self, user: str, access_token: str) -> None
+
+Log in with SASL ``XOAUTH2`` (OAuth2) instead of a password. A refused token answers the server's error
+challenge with an empty line and raises ``smtplib.SMTPAuthenticationError``. See
+:doc:`../Eng/authentication` for getting the access token.
 
 ----
 
@@ -296,6 +317,25 @@ Context Manager
        smtp.later_init()
        smtp.create_message_and_send(...)
    # smtp.quit() called automatically
+
+----
+
+SMTPStartTLSWrapper
+-------------------
+
+.. code-block:: python
+
+   class SMTPStartTLSWrapper(SMTPClientMixin, smtplib.SMTP):
+       def __init__(self, host: str = "smtp.office365.com", port: int = 587):
+           ...
+
+The same methods as ``SMTPWrapper``, over a connection that is upgraded with ``STARTTLS``
+(``ssl.create_default_context()``: certificate and host name verified) before anything else is sent.
+A server that does not offer ``STARTTLS`` is refused: the connection is closed and
+``smtplib.SMTPNotSupportedError`` raised. Microsoft 365 accepts SMTP only this way.
+
+``smtp_instance`` builds an ``SMTPStartTLSWrapper`` for ``smtp.office365.com:587`` when the OAuth2 settings name
+the ``microsoft`` provider, and an ``SMTPWrapper`` otherwise (``default_smtp_client()``).
 
 ----
 

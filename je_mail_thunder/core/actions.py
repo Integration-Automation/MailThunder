@@ -1,0 +1,86 @@
+"""
+The ``MT_mail_*`` actions: the :class:`~je_mail_thunder.core.mail.Mail` API on ``mail_instance``, taking and
+returning JSON-ready values so an action file or the socket server can use it.
+"""
+from typing import Any, List, Mapping, Optional
+
+from je_mail_thunder.core.events import ANY_EVENT
+from je_mail_thunder.core.mail import mail_instance
+from je_mail_thunder.providers.base import DEFAULT_FOLDER
+
+
+def mail_send(**message_fields) -> dict:
+    """
+    ``MT_mail_send``: send a message through the configured provider.
+
+    :param message_fields: ``to``, ``cc``, ``bcc``, ``subject``, ``text``, ``html``, ``attachments`` (paths),
+        ``sender``, ``reply_to``, ``headers``; or ``template`` (a template name) with ``context``
+    :return: the message as it was sent
+    """
+    return mail_instance.send(**message_fields).to_dict()
+
+
+def mail_render_template(template: str, context: Optional[Mapping[str, Any]] = None) -> dict:
+    """
+    ``MT_mail_render_template``: what a template gives for a context, without sending anything.
+
+    :param template: a template's name
+    :param context: the values for this mail
+    :return: ``{"subject": ..., "text": ..., "html": ...}``
+    """
+    return mail_instance.render(template, context).to_dict()
+
+
+def mail_create_draft(folder: Optional[str] = None, **message_fields) -> Optional[str]:
+    """
+    ``MT_mail_create_draft``: store a message as a draft.
+
+    :param folder: the drafts folder; the account's own by default
+    :param message_fields: the message, as ``MT_mail_send`` takes it
+    :return: the draft's id when the provider reports it, else ``None``
+    """
+    return mail_instance.create_draft(folder=folder, **message_fields)
+
+
+def mail_get_messages(folder: str = DEFAULT_FOLDER, limit: Optional[int] = None, unread_only: bool = False,
+                      query: Optional[str] = None) -> List[dict]:
+    """
+    ``MT_mail_get_messages``: the messages of a folder, newest first.
+
+    :param folder: the folder to read
+    :param limit: stop after this many messages; give one for a large folder, since the answer is one list
+    :param unread_only: skip messages that were already read
+    :param query: a search in the provider's own syntax (IMAP ``SEARCH`` criteria)
+    :return: the messages; attachments are described by name, type and size
+    """
+    return [message.to_dict() for message in mail_instance.get_messages(folder, limit, unread_only, query)]
+
+
+def mail_get_message(message_id: str, folder: str = DEFAULT_FOLDER) -> dict:
+    """
+    ``MT_mail_get_message``: one message by its id.
+
+    :param message_id: the ``message_id`` of a message ``MT_mail_get_messages`` returned
+    :param folder: the folder it is in
+    :return: the message
+    """
+    return mail_instance.get_message(message_id, folder).to_dict()
+
+
+def mail_poll(folder: str = DEFAULT_FOLDER) -> List[dict]:
+    """
+    ``MT_mail_poll``: what arrived in a folder since the last ``MT_mail_poll`` of it. The first one only notes
+    what is already there and answers with an empty list.
+
+    :param folder: the folder to look at
+    :return: the events (``message_received``, ``attachment_received``), oldest first
+    """
+    watching = [backend for backend in mail_instance.triggers.backends if getattr(backend, "folder", None) == folder]
+    backend = watching[0] if watching else mail_instance.watch(folder, start=False)
+    collected: List[dict] = []
+    subscription = mail_instance.events.on(ANY_EVENT, lambda event: collected.append(event.to_dict()))
+    try:
+        backend.poll()
+    finally:
+        mail_instance.events.off(subscription)
+    return collected

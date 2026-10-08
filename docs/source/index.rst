@@ -25,9 +25,11 @@ managing email content effortless.
 Key Features
 ------------
 
+- **Provider-agnostic Mail API** — One object sends, reads, drafts and deletes mail, behind a provider interface new backends plug into
 - **SMTP support** — Send emails via SSL with Gmail (default) or any SMTP provider
 - **IMAP4 support** — Read, search, and export emails via IMAP4 SSL
 - **Attachment handling** — Automatically detect MIME types for text, image, audio, and binary files
+- **Attachment policy** — Check the count, size, extension and MIME type of attachments before a message is sent
 - **HTML email** — Send HTML-formatted emails with attachments
 - **JSON scripting engine** — Automate email workflows using JSON action files
 - **Project templates** — Scaffold projects with pre-built keyword and executor templates
@@ -42,6 +44,19 @@ Key Features
 
 Quick Example
 -------------
+
+**Send and read mail with the core API:**
+
+.. code-block:: python
+
+   from je_mail_thunder import Mail
+
+   with Mail() as mail:
+       mail.send(to="receiver@example.com", subject="Report", text="42 passed.", attachments=["report.html"])
+       for message in mail.get_messages(limit=5, unread_only=True):
+           print(message.sender, message.subject)
+
+The wrappers below keep working as before.
 
 **Send an email:**
 
@@ -81,8 +96,16 @@ Quick Example
    docs/Eng/eng_index
    docs/Eng/installation
    docs/Eng/authentication
+   docs/Eng/mail_api
    docs/Eng/send_google_mail
    docs/Eng/read_google_mail
+   docs/Eng/attachment_policy
+   docs/Eng/mail_templates
+   docs/Eng/mail_triggers
+   docs/Eng/microsoft_graph
+   docs/Eng/monitoring
+   docs/Eng/project_mail_layer
+   docs/Eng/studio
    docs/Eng/scripting_engine
    docs/Eng/project_templates
    docs/Eng/cli
@@ -98,8 +121,16 @@ Quick Example
    docs/Zh/zh_index
    docs/Zh/installation
    docs/Zh/authentication
+   docs/Zh/mail_api
    docs/Zh/send_google_mail
    docs/Zh/read_google_mail
+   docs/Zh/attachment_policy
+   docs/Zh/mail_templates
+   docs/Zh/mail_triggers
+   docs/Zh/microsoft_graph
+   docs/Zh/monitoring
+   docs/Zh/project_mail_layer
+   docs/Zh/studio
    docs/Zh/scripting_engine
    docs/Zh/project_templates
    docs/Zh/cli
@@ -113,6 +144,7 @@ Quick Example
    :caption: API Reference
 
    docs/API/api_index
+   docs/API/core_api
    docs/API/smtp_api
    docs/API/imap_api
    docs/API/executor_api

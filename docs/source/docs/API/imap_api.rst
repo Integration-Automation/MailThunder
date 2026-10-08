@@ -54,6 +54,20 @@ internally. Catches and logs all exceptions without raising.
 
 ----
 
+oauth2_login()
+~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+   def oauth2_login(self, user: str, access_token: str)
+
+Log in with SASL ``XOAUTH2`` (OAuth2) instead of a password; ``try_to_login_with_env_or_content()`` uses it when
+OAuth2 settings are configured. A refused token raises ``imaplib.IMAP4.error``. ``imap_instance`` connects to the
+IMAP server of the provider the OAuth2 settings name (``outlook.office365.com`` for ``microsoft``), else to
+``imap.gmail.com`` (``default_imap_client()``).
+
+----
+
 try_to_login_with_env_or_content()
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -201,6 +215,8 @@ Export all matching emails to local files.
 **File naming logic:**
 
 - Filename = ``{subject}{counter}`` (e.g., ``My Subject0``, ``My Subject1``)
+- The subject is made safe first (``attachments.mime.safe_filename``): path separators, ``..``, control
+  characters and ``: * ? " < > |`` become ``_``; an empty result becomes ``mail``
 - Counter starts at 0 and increments for duplicate subjects
 - Files are created in the current working directory
 - Body is written as UTF-8 text (decoded from bytes if necessary)

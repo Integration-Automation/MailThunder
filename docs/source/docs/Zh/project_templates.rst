@@ -59,6 +59,10 @@ MailThunder 可以建立一個新的專案目錄，包含預建模板檔案，
        executor_one_file.py   # 執行單一動作檔
        executor_folder.py     # 執行目錄中所有動作檔
        executor_bad_file.py   # 不良做法範例（安全性警告）
+     mail/
+       config.py              # 供應商、附件政策與稽核日誌（見 project_mail_layer）
+       triggers.py            # register(mail)：事件處理函式與要監看的資料夾
+       templates/test_report/ # subject.txt、body.txt、body.html、template.json
 
 ----
 

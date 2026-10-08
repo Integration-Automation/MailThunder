@@ -55,6 +55,22 @@ Executor Class
      - ``imap_instance.output_all_mail_as_file``
    * - ``MT_imap_quit``
      - ``imap_instance.quit``
+   * - ``MT_mail_send``
+     - ``core.actions.mail_send`` (``mail_instance.send``, answering with ``to_dict()``)
+   * - ``MT_mail_create_draft``
+     - ``core.actions.mail_create_draft`` (``mail_instance.create_draft``)
+   * - ``MT_mail_get_messages``
+     - ``core.actions.mail_get_messages`` (``mail_instance.get_messages`` as a list of dicts)
+   * - ``MT_mail_get_message``
+     - ``core.actions.mail_get_message`` (``mail_instance.get_message`` as a dict)
+   * - ``MT_mail_delete_message``
+     - ``mail_instance.delete_message``
+   * - ``MT_mail_close``
+     - ``mail_instance.close``
+   * - ``MT_mail_render_template``
+     - ``core.actions.mail_render_template`` (``mail_instance.render`` as a dict)
+   * - ``MT_mail_poll``
+     - ``core.actions.mail_poll`` (one look of the folder's trigger backend, as event dicts)
    * - ``MT_set_mail_thunder_os_environ``
      - ``set_mail_thunder_os_environ``
    * - ``MT_get_mail_thunder_os_environ``

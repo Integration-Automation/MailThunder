@@ -7,7 +7,8 @@ Requirements
 ------------
 
 - **Python 3.10** or later
-- No additional dependencies beyond the Python standard library
+- ``je_action_core``, installed with it: the action executor shared with APITestka, LoadDensity and
+  FileAutomation, which itself uses only the Python standard library
 - ``pip`` for package installation
 
 Install from PyPI
@@ -24,6 +25,9 @@ Install from PyPI
 .. code-block:: bash
 
    pip install je_mail_thunder_dev
+
+``je_mail_thunder_dev`` follows the ``dev`` branch: CI publishes a new version each time a push to ``dev``
+passes the tests and changes what the package ships.
 
 Install from Source
 -------------------

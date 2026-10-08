@@ -128,6 +128,9 @@ Set ``use_html=True`` to send HTML-formatted email content:
 When ``use_html=True``, the body is wrapped in ``MIMEText(content, "html")``
 instead of ``MIMEText(content)`` (which defaults to ``"plain"``).
 
+Before sending, the file is checked against the wrapper's ``attachment_policy`` (25 MiB of any type
+by default, see :doc:`attachment_policy`). A file it refuses is logged and the message is not sent.
+
 ----
 
 Two-Step: Create Then Send
@@ -199,9 +202,9 @@ Pass custom ``host`` and ``port`` to the constructor:
 
 .. note::
 
-   MailThunder uses ``SMTP_SSL`` (implicit SSL on connect). If your provider
-   requires STARTTLS on port 587, you may need to use the underlying
-   ``smtplib`` directly or subclass ``SMTPWrapper``.
+   ``SMTPWrapper`` uses ``SMTP_SSL`` (implicit SSL on connect). If your provider
+   requires STARTTLS on port 587 (Microsoft 365 does), use ``SMTPStartTLSWrapper``,
+   which has the same methods and refuses a server that does not offer STARTTLS.
 
 ----
 

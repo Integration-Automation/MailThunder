@@ -1,21 +1,56 @@
-import builtins
-import types
-import warnings
-from typing import Optional, Union
+"""
+The ``MT_*`` action executor: je_action_core's executor with MailThunder's commands, document key and messages.
+"""
+from typing import Optional
 
+from je_action_core import (
+    SAFE_BUILTINS,
+    ActionExecutor,
+    ActionListRules,
+    CommandPolicy,
+    CommandRegistry,
+    EmptyListPolicy,
+    ExecutorSettings,
+    LegacyActionParser,
+    LoggingReporter,
+    safe_builtin_commands,
+)
+
+from je_mail_thunder.core.actions import (
+    mail_create_draft,
+    mail_get_message,
+    mail_get_messages,
+    mail_poll,
+    mail_render_template,
+    mail_send,
+)
+from je_mail_thunder.core.mail import mail_instance
 from je_mail_thunder.imap.imap_wrapper import imap_instance
 from je_mail_thunder.smtp.smtp_wrapper import smtp_instance
-from je_mail_thunder.utils.lazy_instance.lazy_instance import deferred
-from je_mail_thunder.utils.exception.exception_tags import cant_execute_action_error, executor_list_error, \
-    action_is_null_error, add_command_exception
-from je_mail_thunder.utils.exception.exceptions import ExecuteActionException, AddCommandException
+from je_mail_thunder.utils.exception.exception_tags import (
+    action_is_null_error,
+    add_command_exception,
+    cant_execute_action_error,
+    executor_list_error,
+)
+from je_mail_thunder.utils.exception.exceptions import AddCommandException, ExecuteActionException
 from je_mail_thunder.utils.json.json_file import read_action_json
+from je_mail_thunder.utils.lazy_instance.lazy_instance import deferred
 from je_mail_thunder.utils.logging.loggin_instance import mail_thunder_logger
+from je_mail_thunder.utils.package_manager.package_manager_class import package_manager
+from je_mail_thunder.utils.save_mail_user_content.save_on_env import (
+    get_mail_thunder_os_environ,
+    set_mail_thunder_os_environ,
+)
 
 # The key under which an action document holds its action list.
 ACTION_LIST_KEY = "mail_thunder"
 # The key copied from AutoControl; still read, with a DeprecationWarning, for existing files.
 LEGACY_ACTION_LIST_KEY = "auto_control"
+_RULES = ActionListRules(ACTION_LIST_KEY, legacy_keys=(LEGACY_ACTION_LIST_KEY,), error=ExecuteActionException,
+                         missing_message=executor_list_error, empty=EmptyListPolicy.RETURN_EMPTY)
+# warnings.warn -> from_document -> action_list_from_mapping -> its caller -> that caller's caller
+_LEGACY_KEY_STACKLEVEL = 3
 
 
 def action_list_from_mapping(document: dict) -> Optional[object]:
@@ -24,33 +59,29 @@ def action_list_from_mapping(document: dict) -> Optional[object]:
     ``{"mail_thunder": [...]}`` is the current form. ``{"auto_control": [...]}`` still works for
     at least two further releases and raises a ``DeprecationWarning``.
     """
-    if ACTION_LIST_KEY in document:
-        return document[ACTION_LIST_KEY]
-    if LEGACY_ACTION_LIST_KEY in document:
-        warnings.warn(
-            f'the "{LEGACY_ACTION_LIST_KEY}" key is deprecated; use "{ACTION_LIST_KEY}"',
-            DeprecationWarning, stacklevel=3)
-        return document[LEGACY_ACTION_LIST_KEY]
-    return None
-from je_mail_thunder.utils.package_manager.package_manager_class import package_manager
-from je_mail_thunder.utils.save_mail_user_content.save_on_env import set_mail_thunder_os_environ, \
-    get_mail_thunder_os_environ
-
-# Builtins a JSON action script may call. Anything that can run code, reach
-# attributes or namespaces, or touch files and stdin (eval, exec, compile,
-# __import__, open, input, getattr, globals, ...) is deliberately left out,
-# because action lists also arrive over the socket server.
-SAFE_BUILTINS = frozenset({
-    "abs", "all", "any", "ascii", "bin", "callable", "chr", "divmod",
-    "format", "hash", "hex", "len", "max", "min", "oct", "ord", "pow",
-    "print", "repr", "round", "sorted", "sum",
-})
+    return _RULES.from_document(document, stacklevel=_LEGACY_KEY_STACKLEVEL)
 
 
-class Executor:
+# Builtins a JSON action script may call: je_action_core's SAFE_BUILTINS (the workspace's shared allowlist),
+# because action lists also arrive over the socket server. The name stays exported here.
+__all__ = ["ACTION_LIST_KEY", "LEGACY_ACTION_LIST_KEY", "SAFE_BUILTINS", "Executor", "action_list_from_mapping",
+           "add_command_to_executor", "execute_action", "execute_files", "executor"]
+_SETTINGS = ExecutorSettings(
+    rules=_RULES,
+    parser=LegacyActionParser(error=ExecuteActionException, message=cant_execute_action_error),
+    # An empty or non-list action list runs nothing and is logged with action_is_null_error.
+    reporter=LoggingReporter(mail_thunder_logger, empty_message=action_is_null_error),
+    read_json=read_action_json,
+)
 
-    def __init__(self):
-        self.event_dict: dict = {
+
+class Executor(ActionExecutor):
+    """The ``MT_*`` commands and the safe builtins over je_action_core's executor."""
+
+    def __init__(self) -> None:
+        super().__init__(_SETTINGS, CommandRegistry(
+            policy=CommandPolicy.FUNCTIONS_ONLY, rejection=lambda _name: AddCommandException(add_command_exception)))
+        self.event_dict = {
             # SMTP
             "MT_smtp_later_init": deferred(smtp_instance, "later_init"),
             "MT_smtp_create_message_with_attach_and_send": deferred(
@@ -66,97 +97,58 @@ class Executor:
             "MT_imap_mail_content_list": deferred(imap_instance, "mail_content_list"),
             "MT_imap_output_all_mail_as_file": deferred(imap_instance, "output_all_mail_as_file"),
             "MT_imap_quit": deferred(imap_instance, "quit"),
+            # Mail: the provider-agnostic API, on mail_instance (it connects on first use)
+            "MT_mail_send": mail_send,
+            "MT_mail_render_template": mail_render_template,
+            "MT_mail_create_draft": mail_create_draft,
+            "MT_mail_get_messages": mail_get_messages,
+            "MT_mail_get_message": mail_get_message,
+            "MT_mail_poll": mail_poll,
+            "MT_mail_delete_message": mail_instance.delete_message,
+            "MT_mail_close": mail_instance.close,
             # Content
             "MT_set_mail_thunder_os_environ": set_mail_thunder_os_environ,
             "MT_get_mail_thunder_os_environ": get_mail_thunder_os_environ,
             # Package Manager
             "MT_add_package_to_executor": package_manager.add_package_to_executor,
         }
-        for name in sorted(SAFE_BUILTINS):
-            self.event_dict[name] = getattr(builtins, name)
+        self.event_dict.update(safe_builtin_commands())
 
-    def _execute_event(self, action: list):
-        event = self.event_dict.get(action[0])
-        if event is None:
-            raise ExecuteActionException(cant_execute_action_error + " " + str(action))
-        if len(action) == 2:
-            if isinstance(action[1], dict):
-                return event(**action[1])
-            else:
-                return event(*action[1])
-        elif len(action) == 1:
-            return event()
-        else:
-            raise ExecuteActionException(cant_execute_action_error + " " + str(action))
+    @staticmethod
+    def set_allow_arbitrary_packages(enabled: bool) -> None:
+        """
+        Allow (True) or refuse (False) ``MT_add_package_to_executor`` for packages outside the allowlist.
+        Python only, never an action command, so an action file cannot open its own gate. Until it is
+        called, any package loads with a ``DeprecationWarning``.
+        """
+        package_manager.set_allow_arbitrary_packages(enabled)
 
-    def execute_action(self, action_list: Union[list, dict]) -> dict:
-        """
-        use to execute all action on action list(action file or program list)
-        :param action_list the list include action
-        for loop the list and execute action
-        """
-        if isinstance(action_list, dict):
-            actions = action_list_from_mapping(action_list)
-            if actions is None:
-                raise ExecuteActionException(executor_list_error)
-        else:
-            actions = action_list
-        execute_record_dict = {}
-        if not isinstance(actions, list) or len(actions) == 0:
-            mail_thunder_logger.error(
-                f"Execute {action_list} failed. {action_is_null_error}"
-            )
-            return execute_record_dict
-        for action in actions:
-            try:
-                event_response = self._execute_event(action)
-                execute_record = "execute: " + str(action)
-                mail_thunder_logger.info(
-                    f"Execute {action}"
-                )
-                execute_record_dict.update({execute_record: event_response})
-            except Exception as error:
-                mail_thunder_logger.error(
-                    f"Execute {action} failed. {repr(error)}"
-                )
-                execute_record = "execute: " + str(action)
-                execute_record_dict.update({execute_record: repr(error)})
-        for key, value in execute_record_dict.items():
-            mail_thunder_logger.info(f"{key} -> {value}")
-        return execute_record_dict
-
-    def execute_files(self, execute_files_list: list) -> list:
-        """
-        :param execute_files_list: list include execute files path
-        :return: every execute detail as list
-        """
-        execute_detail_list: list = []
-        for file in execute_files_list:
-            execute_detail_list.append(self.execute_action(read_action_json(file)))
-        return execute_detail_list
+    @staticmethod
+    def allow_packages(*packages: str) -> None:
+        """Add packages, and their submodules, to the allowlist of ``MT_add_package_to_executor``."""
+        package_manager.allow_packages(*packages)
 
 
 executor = Executor()
 package_manager.executor = executor
 
 
-def add_command_to_executor(command_dict: dict):
+def add_command_to_executor(command_dict: dict) -> None:
     """
-    :param command_dict: dict include command we want to add to event_dict
+    Add functions or methods to the executor.
+
+    :param command_dict: name -> function or method
+    :raises AddCommandException: a value is neither (the ones before it stay added)
     """
-    mail_thunder_logger.info(
-        f"Add command to executor {command_dict}"
-    )
-    for command_name, command in command_dict.items():
-        if isinstance(command, (types.MethodType, types.FunctionType)):
-            executor.event_dict.update({command_name: command})
-        else:
-            raise AddCommandException(add_command_exception)
+    mail_thunder_logger.info(f"Add command to executor {command_dict}")
+    executor.add_command_to_executor(command_dict)
 
 
-def execute_action(action_list: Union[list, dict]) -> dict:
+def execute_action(action_list: list | dict) -> dict:
+    """Run an action list (or a ``{"mail_thunder": [...]}`` document) and return the records."""
     return executor.execute_action(action_list)
 
 
 def execute_files(execute_files_list: list) -> list:
+    """Run every action file in order and return their records."""
     return executor.execute_files(execute_files_list)

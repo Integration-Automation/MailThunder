@@ -29,8 +29,16 @@ docs/
         eng_index.rst                    #   Overview & architecture
         installation.rst                 #   Installation guide
         authentication.rst               #   Authentication setup
+        mail_api.rst                     #   Core mail API (Mail)
         send_google_mail.rst             #   Sending emails (SMTP)
         read_google_mail.rst             #   Reading emails (IMAP)
+        attachment_policy.rst            #   Attachment policy & validation
+        mail_templates.rst               #   Reusable mail templates
+        mail_triggers.rst                #   Mail events and triggers
+        microsoft_graph.rst              #   Microsoft 365 mail over Microsoft Graph
+        monitoring.rst                   #   Audit log, provider health and webhooks
+        project_mail_layer.rst           #   A project's own mail layer
+        studio.rst                       #   MailThunder Studio, the local page
         scripting_engine.rst             #   JSON scripting engine
         project_templates.rst            #   Project template scaffolding
         cli.rst                          #   Command-line interface
@@ -42,8 +50,16 @@ docs/
         zh_index.rst                     #   總覽與架構
         installation.rst                 #   安裝指南
         authentication.rst               #   認證設定
+        mail_api.rst                     #   核心郵件 API (Mail)
         send_google_mail.rst             #   寄送郵件 (SMTP)
         read_google_mail.rst             #   讀取郵件 (IMAP)
+        attachment_policy.rst            #   附件政策與驗證
+        mail_templates.rst               #   可重複使用的郵件模板
+        mail_triggers.rst                #   郵件事件與觸發器
+        microsoft_graph.rst              #   透過 Microsoft Graph 存取 Microsoft 365 郵件
+        monitoring.rst                   #   稽核日誌、供應商健康狀態與 webhook
+        project_mail_layer.rst           #   專案自己的郵件層
+        studio.rst                       #   MailThunder Studio 本機頁面
         scripting_engine.rst             #   JSON 腳本引擎
         project_templates.rst            #   專案模板
         cli.rst                          #   命令列介面
@@ -53,6 +69,7 @@ docs/
         exceptions.rst                   #   例外處理
       API/                               # API reference
         api_index.rst                    #   Public exports & module map
+        core_api.rst                     #   Core mail API reference
         smtp_api.rst                     #   SMTPWrapper API
         imap_api.rst                     #   IMAPWrapper API
         executor_api.rst                 #   Executor API

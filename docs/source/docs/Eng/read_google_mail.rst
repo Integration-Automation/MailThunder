@@ -162,6 +162,8 @@ Export every email in the selected mailbox to local files:
 - First occurrence: ``My Subject0``
 - Duplicate subjects: ``My Subject1``, ``My Subject2``, ...
 - File content = decoded email body text
+- Path separators, control characters and the characters Windows refuses (``: * ? " < > |``) in a
+  subject become ``_``, so ``Re: hello`` is saved as ``Re_ hello0``
 
 ----
 

@@ -10,6 +10,7 @@ What is MailThunder?
 MailThunder wraps Python's ``smtplib.SMTP_SSL`` and ``imaplib.IMAP4_SSL`` to provide
 a higher-level interface for common email tasks:
 
+- **Sending and reading** through one provider-agnostic ``Mail`` API (:doc:`mail_api`)
 - **Sending** plain-text and HTML emails with file attachments via SMTP
 - **Reading**, searching, and exporting emails via IMAP4
 - **Automating** email workflows using a JSON-based scripting engine
@@ -26,6 +27,14 @@ MailThunder is organized into the following core modules:
    je_mail_thunder/
      __init__.py              # Public API exports
      __main__.py              # CLI entry point (argparse)
+     attachments/             # Attachment model, AttachmentPolicy and its validator
+     auth/                    # Authentication: password, app password, OAuth2, XOAUTH2
+     core/                    # Mail (provider-agnostic API), MailMessage, MailAccount
+     providers/               # MailSender / MailStore interfaces, SMTPProvider, IMAPProvider
+     templates/               # Mail templates: template language, MailTemplate, TemplateLoader
+     triggers/                # Mail events: filters, dispatcher, polling and IDLE backends
+     monitoring/              # AuditLog and ProviderHealth, fed by the mail events
+     studio/                  # MailThunder Studio: the local page, its API and HTTP server
      smtp/
        smtp_wrapper.py        # SMTPWrapper — extends smtplib.SMTP_SSL
      imap/
@@ -71,13 +80,21 @@ Supported Platforms
 
 - **Python**: 3.10 or later
 - **OS**: Windows, macOS, Linux
-- **Dependencies**: None beyond the Python standard library
+- **Dependencies**: ``je_action_core`` only (the shared action executor; standard library only)
 
 Next Steps
 ----------
 
 - :doc:`installation` — Install MailThunder
 - :doc:`authentication` — Configure email credentials
+- :doc:`mail_api` — Send and read mail with the provider-agnostic API
 - :doc:`send_google_mail` — Send your first email
 - :doc:`read_google_mail` — Read emails from your inbox
+- :doc:`attachment_policy` — Check attachments before they are sent
+- :doc:`mail_templates` — Reusable mail templates
+- :doc:`mail_triggers` — Mail events and triggers
+- :doc:`microsoft_graph` — Microsoft 365 mail over Microsoft Graph
+- :doc:`monitoring` — Audit log, provider health and webhooks
+- :doc:`project_mail_layer` — A project's own mail layer
+- :doc:`studio` — MailThunder Studio, the local page
 - :doc:`scripting_engine` — Automate workflows with JSON scripts

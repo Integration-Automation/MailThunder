@@ -14,6 +14,7 @@ permissions:
 jobs:
   test:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30  # about 3x the slowest recent run, at least 15
     strategy:
       fail-fast: false
       matrix:
@@ -31,7 +32,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       # Hash-locked, wheels-only; regenerate with
-      #   uv pip compile .github/requirements/test.in --universal --python-version 3.10       #     --generate-hashes --only-binary :all: -o .github/requirements/test.txt
+      #   uv pip compile .github/requirements/test.in --universal --python-version 3.10 \
+      #     --generate-hashes --only-binary :all: -o .github/requirements/test.txt
       - name: Install dependencies
         run: |
           pip install --require-hashes --only-binary :all: -r .github/requirements/test.txt

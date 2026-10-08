@@ -58,6 +58,36 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | ID | Date | Title | Tags | Batch |
 |---|---|---|---|---|
+| U-20261008-18 | 2026-10-08 | PR #46 is clean on SonarCloud and Codacy; the rules that caught it are in CLAUDE.md | #docs #sonarcloud #codacy | [2026-10](2026-10.md) |
+| U-20261008-17 | 2026-10-08 | The tests' findings on PR #46: one fact per assertion, one call per expected exception | #tests #refactor #sonarcloud #codacy | [2026-10](2026-10.md) |
+| U-20261008-16 | 2026-10-08 | The package's maintainability findings on PR #46, and three of Codacy's | #refactor #sonarcloud #codacy #templates | [2026-10](2026-10.md) |
+| U-20261008-15 | 2026-10-08 | SMTP and IMAP verify the server's certificate; Studio serves loopback only; a lock file | #security #bugfix #tls #studio #sonarcloud | [2026-10](2026-10.md) |
+| U-20261008-14 | 2026-10-08 | Roadmap status, the import name stays, PyPI description names what was added | #decision #roadmap-2.0 #packaging | [2026-10](2026-10.md) |
+| U-20261008-13 | 2026-10-08 | A script that runs the core mail API against a real mailbox | #tests #manual | [2026-10](2026-10.md) |
+| U-20261008-12 | 2026-10-08 | MailThunder Studio: a local page over the core API | #done #studio #ui #roadmap-2.0 | [2026-10](2026-10.md) |
+| U-20261008-11 | 2026-10-08 | The file provider orders messages stored in the same clock tick | #bugfix #providers #windows | [2026-10](2026-10.md) |
+| U-20261008-10 | 2026-10-08 | Project mail layer: a project's mail/ directory and project_mail() | #done #project-layer #roadmap-2.0 | [2026-10](2026-10.md) |
+| U-20261008-09 | 2026-10-08 | Audit log, provider health, event webhooks, and more providers | #done #monitoring #providers #roadmap-2.0 | [2026-10](2026-10.md) |
+| U-20261008-08 | 2026-10-08 | Microsoft Graph provider with polling and webhook trigger backends | #done #providers #graph #triggers #roadmap-2.0 | [2026-10](2026-10.md) |
+| U-20261008-07 | 2026-10-08 | Mail events and triggers: mail.on, filters, polling and IMAP IDLE backends | #done #triggers #events #roadmap-2.0 | [2026-10](2026-10.md) |
+| U-20261008-06 | 2026-10-08 | Mail templates with a Jinja2-style language in the standard library | #done #templates #roadmap-2.0 | [2026-10](2026-10.md) |
+| U-20261008-05 | 2026-10-08 | SMTP wrappers check attachments; exported mail keeps its body on Windows | #done #bugfix #attachments #windows | [2026-10](2026-10.md) |
+| U-20261008-04 | 2026-10-08 | PyPI metadata: description, keywords, classifiers and project URLs | #done #packaging #roadmap-2.0 | [2026-10](2026-10.md) |
+| U-20261008-03 | 2026-10-08 | Core mail API: Mail over a provider interface, with SMTP and IMAP providers | #done #api #providers #roadmap-2.0 | [2026-10](2026-10.md) |
+| U-20261008-02 | 2026-10-08 | Authentication abstraction: one interface for password and OAuth2 logins | #done #auth #oauth2 #roadmap-2.0 | [2026-10](2026-10.md) |
+| U-20261008-01 | 2026-10-08 | Attachment policy checks attachments before a message is sent | #feature #attachments #security #roadmap-2.0 | [2026-10](2026-10.md) |
+| U-20261001-09 | 2026-10-01 | The publish jobs build with the locked setuptools instead of downloading the newest | #ci #security #X-13 | [2026-10](2026-10.md) |
+| U-20261001-08 | 2026-10-01 | Dependabot watches the hash-locked requirements; a guard keeps the publish jobs on them | #ci #security #X-13 | [2026-10](2026-10.md) |
+| U-20261001-07 | 2026-10-01 | CI publishes je_mail_thunder_dev from the dev branch | #release #ci #X-13 | [2026-10](2026-10.md) |
+| U-20261001-06 | 2026-10-01 | OAuth2 (XOAUTH2) login for Google and Microsoft, and SMTP over STARTTLS | #done #security #oauth2 #L-8 | [2026-10](2026-10.md) |
+| U-20261001-05 | 2026-10-01 | je_action_core comes from PyPI | #done #build #L-6 | [2026-10](2026-10.md) |
+| U-20261001-04 | 2026-10-01 | Package gate in front of MT_add_package_to_executor | #done #security #X-12 | [2026-10](2026-10.md) |
+| U-20261001-03 | 2026-10-01 | je_action_core pin moves to 19bfe0a | #build #L-6 | [2026-10](2026-10.md) |
+| U-20261001-02 | 2026-10-01 | Executor and its helpers move to je_action_core | #migration #executor #L-6 | [2026-10](2026-10.md) |
+| U-20261001-01 | 2026-10-01 | Every workflow job has a timeout | #ci #tests | [2026-10](2026-10.md) |
+| U-20260925-03 | 2026-09-25 | Python classifiers list every version CI tests | #packaging #tests | [2026-09](2026-09.md) |
+| U-20260925-02 | 2026-09-25 | License metadata uses the SPDX expression | #packaging | [2026-09](2026-09.md) |
+| U-20260925-01 | 2026-09-25 | Dependabot waits 7 days before proposing a new release | #ci #security #deps | [2026-09](2026-09.md) |
 | U-20260924-02 | 2026-09-24 | Keep checkout credentials only in the job that pushes | #ci #security | [2026-09](2026-09.md) |
 | U-20260924-01 | 2026-09-24 | Move CI to Node 24 actions pinned by commit | #ci #security #deps | [2026-09](2026-09.md) |
 | U-20260923-11 | 2026-09-23 | main merged into dev; CI hash-locked; dev merged into main | #done #ci #release | [2026-09](2026-09.md) |
@@ -81,4 +111,5 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | File | Period | Entries |
 |---|---|---:|
-| [2026-09.md](2026-09.md) | 2026-09 | 18 |
+| [2026-10.md](2026-10.md) | 2026-10 | 27 |
+| [2026-09.md](2026-09.md) | 2026-09 | 21 |

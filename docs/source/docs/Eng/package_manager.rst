@@ -141,13 +141,34 @@ Three categories of members are extracted from each package:
 
 ----
 
+Package Gate
+------------
+
+The host program decides which packages ``MT_add_package_to_executor`` may load:
+
+.. code-block:: python
+
+   from je_mail_thunder.utils.executor.action_executor import executor
+
+   executor.allow_packages("json")                # these, and their submodules
+   executor.set_allow_arbitrary_packages(False)   # refuse everything else before importing it
+
+Neither switch is an action command, so an action file (or a socket client) cannot open its own gate.
+A refused package is never imported; the action's result is an ``ExecuteActionException``.
+``set_allow_arbitrary_packages(True)`` loads any package without a warning. Until the host calls either
+switch, any package still loads but raises a ``DeprecationWarning``; a future release will refuse packages
+outside the allowlist by default.
+
+----
+
 Error Handling
 --------------
 
-- If the package is not installed, a ``ModuleNotFoundError`` message is printed
-  to ``stderr`` (not raised as an exception)
-- If the executor is not available (``None``), an error message is printed
-- Import errors during module loading are caught and printed to ``stderr``
+- If the package is not installed, a ``ModuleNotFoundError`` message is logged through
+  ``mail_thunder_logger`` (not raised as an exception)
+- If the executor is not available (``None``), an error message is logged
+- ``AttributeError`` and ``ImportError`` while loading members are caught and logged
+- A package refused by the gate raises ``ExecuteActionException``
 
 ----
 

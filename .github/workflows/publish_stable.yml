@@ -17,6 +17,7 @@ jobs:
     permissions:
       contents: read
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30  # about 3x the slowest recent run, at least 15
     strategy:
       fail-fast: true
       matrix:
@@ -34,7 +35,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       # Hash-locked, wheels-only; regenerate with
-      #   uv pip compile .github/requirements/test.in --universal --python-version 3.10       #     --generate-hashes --only-binary :all: -o .github/requirements/test.txt
+      #   uv pip compile .github/requirements/test.in --universal --python-version 3.10 \
+      #     --generate-hashes --only-binary :all: -o .github/requirements/test.txt
       - name: Install dependencies
         run: |
           pip install --require-hashes --only-binary :all: -r .github/requirements/test.txt
@@ -48,6 +50,7 @@ jobs:
   publish:
     needs: test
     runs-on: ubuntu-latest
+    timeout-minutes: 15  # about 3x the slowest recent run, at least 15
     permissions:
       contents: write
     steps:
@@ -63,8 +66,8 @@ jobs:
         with:
           python-version: "3.12"
 
-      # Hash-locked, wheels-only; regenerate with
-      #   uv pip compile .github/requirements/publish.in --generate-hashes --python-version 3.12       #     --python-platform x86_64-manylinux_2_28 --only-binary :all: -o .github/requirements/publish.txt
+      # Hash-locked, wheels-only; the command that regenerates it is at the top of
+      # .github/requirements/publish.in.
       - name: Install build tooling
         run: |
           pip install --require-hashes --only-binary :all: -r .github/requirements/publish.txt
@@ -97,8 +100,9 @@ jobs:
           print(f"Bumped version: {current} -> {new_version}")
           PY
 
+      # --no-isolation: the backend is the setuptools locked in publish.txt, not a fresh download.
       - name: Build distributions
-        run: python -m build
+        run: python -m build --no-isolation
 
       - name: Publish to PyPI
         env:
