@@ -279,16 +279,20 @@ Do not perform a breaking rewrite in a single PR.
 
 ## Implementation Priority
 
+Status: the P0 items ticked below are implemented (`docs/updates` U-20261008-01 to U-20261008-04, in the
+`je_mail_thunder` package rather than a new `mailthunder` one). What is still open, with its dependencies and
+decisions, is tracked in `progress.md` (#14 to #24).
+
 ### P0 — Foundation
-- [ ] New Core Mail API
-- [ ] Provider interface
-- [ ] Authentication interface
-- [ ] OAuth2
-- [ ] XOAUTH2
-- [ ] AttachmentPolicy
-- [ ] PyPI metadata
-- [ ] README / documentation
-- [ ] Backward compatibility layer
+- [x] New Core Mail API
+- [x] Provider interface
+- [x] Authentication interface
+- [x] OAuth2
+- [x] XOAUTH2
+- [x] AttachmentPolicy
+- [x] PyPI metadata
+- [x] README / documentation
+- [ ] Backward compatibility layer (the legacy API is unchanged and `legacy_message` / `mail_from_wrappers` bridge to the core; routing the wrappers' own sends through the core is `progress.md` #21)
 
 ### P1 — Email Platform
 - [ ] Template Engine
@@ -341,21 +345,21 @@ Implement this roadmap through focused, independently reviewable PRs:
 
 ## Acceptance Criteria
 
-- [ ] Existing MailThunder users can continue using the legacy API
-- [ ] SMTP remains supported
-- [ ] IMAP remains supported
-- [ ] OAuth2 is available
-- [ ] XOAUTH2 is available
+- [x] Existing MailThunder users can continue using the legacy API
+- [x] SMTP remains supported
+- [x] IMAP remains supported
+- [x] OAuth2 is available
+- [x] XOAUTH2 is available
 - [ ] Microsoft Graph can send/retrieve mail
 - [ ] Templates generate subject/text/HTML
-- [ ] Attachment validation occurs before sending
+- [x] Attachment validation occurs before sending (through `Mail`; the wrapper methods do not validate: `progress.md` #21)
 - [ ] Mail events can be registered independently of provider
 - [ ] Trigger backends are pluggable
 - [ ] Automation projects can use MailThunder as their mail layer
-- [ ] PyPI metadata reflects the new product direction
+- [x] PyPI metadata reflects the new product direction
 - [ ] UI consumes the Core API
 - [ ] Unit/integration tests cover new abstractions
-- [ ] Documentation includes migration guidance
+- [x] Documentation includes migration guidance
 
 ## Product Direction
 
