@@ -14,6 +14,7 @@ from je_mail_thunder.utils.exception.exceptions import (
 )
 from je_mail_thunder.utils.oauth2.oauth2 import OAUTH2_PROVIDERS
 from je_mail_thunder.utils.save_mail_user_content.credentials import (
+    configured_mail_provider,
     configured_oauth2_provider,
     resolve_authentication,
 )
@@ -110,10 +111,15 @@ class MailAccount:
 
 def default_account() -> MailAccount:
     """
-    The account of the content file or the environment, on the servers the ``smtp_instance`` and
-    ``imap_instance`` of the same settings use: the OAuth2 provider's when one is named, else Gmail's.
+    The account of the content file or the environment. Its provider is the one ``"mail_provider"`` in the
+    content file or ``mail_thunder_mail_provider`` in the environment names; without either, the servers the
+    ``smtp_instance`` and ``imap_instance`` of the same settings use: the OAuth2 provider's when one is named,
+    else Gmail's.
 
     :return: the account; its login is looked up when it first connects
     """
+    named = configured_mail_provider()
+    if named is not None:
+        return MailAccount(provider=named)
     preset = configured_oauth2_provider()
     return MailAccount(provider=preset.name if preset is not None else DEFAULT_PROVIDER)

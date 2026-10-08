@@ -7,6 +7,7 @@ from typing import Callable, Dict, Sequence, Tuple
 from je_mail_thunder.core.account import SERVER_PRESETS, MailAccount
 from je_mail_thunder.providers.base import MailProvider
 from je_mail_thunder.providers.imap import IMAPProvider
+from je_mail_thunder.providers.microsoft_graph import PROVIDER_NAME as GRAPH_PROVIDER, MicrosoftGraphProvider
 from je_mail_thunder.providers.smtp import SMTPProvider
 from je_mail_thunder.utils.exception.exceptions import MailThunderProviderException
 
@@ -23,8 +24,17 @@ def smtp_and_imap_providers(account: MailAccount) -> Tuple[MailProvider, ...]:
     return SMTPProvider(account), IMAPProvider(account)
 
 
+def graph_provider(account: MailAccount) -> Tuple[MailProvider, ...]:
+    """
+    :param account: a Microsoft 365 account that logs in with OAuth2
+    :return: the one provider that both sends and reads over Microsoft Graph
+    """
+    return (MicrosoftGraphProvider(account),)
+
+
 _factories: Dict[str, ProviderFactory] = {name: smtp_and_imap_providers for name in SERVER_PRESETS}
 _factories[GENERIC_PROVIDER] = smtp_and_imap_providers
+_factories[GRAPH_PROVIDER] = graph_provider
 
 
 def register_provider(name: str, factory: ProviderFactory) -> None:

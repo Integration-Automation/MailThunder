@@ -6,11 +6,15 @@ from typing import Dict, Optional, Type
 
 from je_mail_thunder.providers.base import DEFAULT_FOLDER, MailStore
 from je_mail_thunder.providers.imap import IMAPProvider
+from je_mail_thunder.providers.microsoft_graph import MicrosoftGraphProvider
+from je_mail_thunder.triggers.graph import GraphPollingBackend
 from je_mail_thunder.triggers.imap import IMAPIdleBackend, IMAPPollingBackend
 from je_mail_thunder.triggers.polling import PollingBackend
 from je_mail_thunder.utils.exception.exceptions import MailThunderTriggerException
 
-_polling_backends: Dict[Type[MailStore], Type[PollingBackend]] = {IMAPProvider: IMAPPollingBackend}
+_polling_backends: Dict[Type[MailStore], Type[PollingBackend]] = {
+    IMAPProvider: IMAPPollingBackend, MicrosoftGraphProvider: GraphPollingBackend,
+}
 _push_backends: Dict[Type[MailStore], Type[PollingBackend]] = {IMAPProvider: IMAPIdleBackend}
 
 

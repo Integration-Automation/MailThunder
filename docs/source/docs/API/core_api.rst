@@ -501,3 +501,41 @@ Events and Triggers
 
 **Raises:** ``MailThunderTriggerException`` for an unknown event, filter rule or option, and for a backend
 that cannot work with what it was given.
+
+----
+
+Microsoft Graph
+---------------
+
+**Modules:** ``je_mail_thunder.providers.microsoft_graph``, ``je_mail_thunder.providers.http``,
+``je_mail_thunder.triggers.graph``
+
+.. list-table::
+   :header-rows: 1
+   :widths: 45 55
+
+   * - Name
+     - Description
+   * - ``MicrosoftGraphProvider(account, transport=https_request)``
+     - A ``MailSender`` and ``MailStore`` over ``https://graph.microsoft.com/v1.0``, registered as
+       ``microsoft_graph``. ``call(method, path, payload=None, refusal=...)`` sends one Graph request;
+       ``folder_path(folder)`` resolves a folder name
+   * - ``graph_message(message, sender_is_account=True, attachments=True)``
+     - A ``MailMessage`` as the Graph ``message`` resource
+   * - ``mail_message(resource, attachments=None)``
+     - A Graph ``message`` resource as a ``MailMessage``
+   * - ``GRAPH_SCOPE``
+     - The scopes a token is asked for when the OAuth2 settings name none
+   * - ``https_request(method, url, headers, body=None)``
+     - One HTTPS request with the standard library; returns ``(status, body)`` also for an error status
+   * - ``GraphPollingBackend(store, ...)``
+     - Polling that asks only for mail received since the last look
+   * - ``GraphWebhookBackend(store, notification_url, folder="INBOX", host="localhost", port=9946, lifetime_minutes=60)``
+     - Change notifications: ``subscribe()``, ``unsubscribe()``, ``poll()`` (creates or renews the
+       subscription), ``handle_notification(payload)``, ``start()``, ``stop()``
+   * - ``configured_mail_provider()``
+     - ``je_mail_thunder.utils.save_mail_user_content.credentials``: ``"mail_provider"`` of the content
+       file, else ``mail_thunder_mail_provider``, else ``None``
+
+**Raises:** ``MailThunderAuthenticationException`` (HTTP 401 / 403, or a login that is not OAuth2),
+``MailThunderConnectionException``, ``MailThunderSendException``, ``MailThunderProviderException``.

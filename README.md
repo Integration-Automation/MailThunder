@@ -35,6 +35,7 @@
 - [Attachment Policy](#attachment-policy)
 - [Mail Templates](#mail-templates)
 - [Mail Events and Triggers](#mail-events-and-triggers)
+- [Microsoft Graph](#microsoft-graph)
 - [Scripting Engine](#scripting-engine)
   - [Action JSON Format](#action-json-format)
   - [Available Script Commands](#available-script-commands)
@@ -60,6 +61,7 @@
 - **Provider-agnostic `Mail` API** — One object sends, reads, drafts and deletes mail, behind a provider interface new backends plug into (SMTP and IMAP today)
 - **Mail templates** — Subject, text and HTML templates with Jinja2-style `{{ }}`, `{% if %}` and `{% for %}`, rendered with the standard library: `mail.send(template=..., context=...)`
 - **Mail events and triggers** — `mail.on("message_received", handler, filter={...})` with provider-independent events, and `mail.watch()` to notice new mail by polling or IMAP IDLE
+- **Microsoft Graph provider** — Send, draft, read and delete Microsoft 365 mail over the Graph API with OAuth2, with polling and webhook triggers
 - **SMTP support** — Send emails over implicit TLS with Gmail (default) or any SMTP provider, or over STARTTLS (Microsoft 365)
 - **IMAP4 support** — Read, search, and export emails via IMAP4 SSL
 - **Attachment handling** — Automatically detect MIME types for text, image, audio, and binary files
@@ -250,6 +252,7 @@ Mail(account=MailAccount(                   # any other SMTP / IMAP server
 |---|---|---|
 | `google` (or `gmail`) | SMTP, `smtp.gmail.com:465`, implicit TLS | IMAP, `imap.gmail.com` |
 | `microsoft` | SMTP, `smtp.office365.com:587`, STARTTLS | IMAP, `outlook.office365.com` |
+| `microsoft_graph` | Microsoft Graph, `https://graph.microsoft.com/v1.0` (OAuth2 only) | Microsoft Graph |
 | `smtp` | SMTP on the account's `MailServers` (implicit TLS on 465, or `smtp_starttls=True` on 587) | IMAP on the account's `MailServers` |
 
 Without a provider name, `Mail()` uses the provider the OAuth2 settings name, else Gmail: the same servers
@@ -553,6 +556,43 @@ anything else.
 `MailStore`. The watcher uses a connection of its own, the first look only notes the mail that is already there, and
 `mail.triggers.poll()` looks once instead of running a thread. In an action file, `MT_mail_poll` answers with the
 events since the previous `MT_mail_poll`.
+
+---
+
+## Microsoft Graph
+
+The `microsoft_graph` provider reaches a Microsoft 365 mailbox through the Microsoft Graph API instead of SMTP and
+IMAP. The `Mail` calls stay the same; only the provider name changes:
+
+```python
+from je_mail_thunder import Mail, OAuth2Auth, OAuth2Settings
+
+auth = OAuth2Auth(OAuth2Settings(
+    user="you@contoso.com", provider="microsoft", tenant="contoso.onmicrosoft.com",
+    client_id="...", client_secret="...", refresh_token="...",
+))
+with Mail(provider="microsoft_graph", auth=auth) as mail:
+    mail.send(to="qa@example.com", subject="Report", html="<b>42 passed</b>", attachments=["report.pdf"])
+    for message in mail.get_messages(limit=10, unread_only=True):
+        print(message.sender, message.subject)
+```
+
+- **Choosing it**: `Mail(provider="microsoft_graph")` in code. For `Mail()` and the `MT_mail_*` commands, set
+  `"mail_provider": "microsoft_graph"` in `mail_thunder_content.json` or the environment variable
+  `mail_thunder_mail_provider` (it names any registered provider). `microsoft` keeps meaning SMTP and IMAP.
+- **Signing in**: OAuth2 only. The app registration needs the delegated permissions `Mail.Send` and `Mail.ReadWrite`.
+  When the OAuth2 settings name no `scope`, the token is asked for with the Graph scopes.
+- **Sending**: one `sendMail` request when the attachments are small; otherwise a draft gets each attachment (through
+  an upload session above 3 MiB) and is then sent.
+- **Reading**: folders are `INBOX`, `Drafts`, `Sent`, `Deleted Items`, `Junk`, `Archive` or a display name, and
+  `query=` is an OData `$filter` expression such as `from/emailAddress/address eq 'ci@example.com'`.
+- **Differences from SMTP**: a message has one body (the HTML when both are given), custom headers must start with
+  `X-`, and a `sender` other than the account needs the *send as* permission.
+- **Triggers**: `mail.watch()` uses `GraphPollingBackend`. `GraphWebhookBackend(provider, "https://your.host/hook")`
+  lets Graph announce new mail: its listener binds `localhost:9946` behind your HTTPS proxy, answers Graph's
+  validation, and ignores notifications without its secret.
+
+Requests go only to `https://graph.microsoft.com`, and a refused token is a `MailThunderAuthenticationException`.
 
 ---
 

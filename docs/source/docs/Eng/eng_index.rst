@@ -91,4 +91,5 @@ Next Steps
 - :doc:`attachment_policy` — Check attachments before they are sent
 - :doc:`mail_templates` — Reusable mail templates
 - :doc:`mail_triggers` — Mail events and triggers
+- :doc:`microsoft_graph` — Microsoft 365 mail over Microsoft Graph
 - :doc:`scripting_engine` — Automate workflows with JSON scripts

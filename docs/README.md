@@ -35,6 +35,7 @@ docs/
         attachment_policy.rst            #   Attachment policy & validation
         mail_templates.rst               #   Reusable mail templates
         mail_triggers.rst                #   Mail events and triggers
+        microsoft_graph.rst              #   Microsoft 365 mail over Microsoft Graph
         scripting_engine.rst             #   JSON scripting engine
         project_templates.rst            #   Project template scaffolding
         cli.rst                          #   Command-line interface
@@ -52,6 +53,7 @@ docs/
         attachment_policy.rst            #   附件政策與驗證
         mail_templates.rst               #   可重複使用的郵件模板
         mail_triggers.rst                #   郵件事件與觸發器
+        microsoft_graph.rst              #   透過 Microsoft Graph 存取 Microsoft 365 郵件
         scripting_engine.rst             #   JSON 腳本引擎
         project_templates.rst            #   專案模板
         cli.rst                          #   命令列介面

@@ -97,6 +97,7 @@ je_mail_thunder/
 - SMTP uses `SMTP_SSL` (port 465), or `SMTPStartTLSWrapper` (port 587), which upgrades with `STARTTLS` and a verifying `ssl.create_default_context()` before anything else is sent and refuses a server that does not offer it — always use SSL/TLS. Do not downgrade to plain SMTP or send credentials before TLS.
 - OAuth2 token endpoints must be `https`; client secrets, refresh tokens and access tokens never go into logs, exception messages or a `repr`.
 - IMAP uses `IMAP4_SSL` — always use SSL/TLS. Do not downgrade to plain IMAP.
+- Web API providers (`providers/http.py`, Microsoft Graph) request `https` URLs only, and a provider's token goes only to its own API host. The Graph webhook listener binds `localhost` by default and ignores notifications without its `clientState`.
 - Socket server binds to `localhost` by default. Do not change the default bind address to `0.0.0.0` without explicit user configuration.
 
 ### Dependency Security

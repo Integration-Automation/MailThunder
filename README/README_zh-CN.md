@@ -35,6 +35,7 @@
 - [附件策略](#附件策略)
 - [邮件模板](#邮件模板)
 - [邮件事件与触发器](#邮件事件与触发器)
+- [Microsoft Graph](#microsoft-graph)
 - [脚本引擎](#脚本引擎)
   - [Action JSON 格式](#action-json-格式)
   - [可用的脚本指令](#可用的脚本指令)
@@ -60,6 +61,7 @@
 - **与提供商无关的 `Mail` API** — 一个对象就能发送、读取、创建草稿与删除邮件；背后是可以接上新后端的提供商接口（目前为 SMTP 与 IMAP）
 - **邮件模板** — 主题、纯文本与 HTML 模板，支持 Jinja2 风格的 `{{ }}`、`{% if %}` 与 `{% for %}`，以标准库实现：`mail.send(template=..., context=...)`
 - **邮件事件与触发器** — `mail.on("message_received", handler, filter={...})` 提供与提供商无关的事件，`mail.watch()` 以轮询或 IMAP IDLE 监看新邮件
+- **Microsoft Graph 提供商** — 以 OAuth2 通过 Graph API 发送、创建草稿、读取与删除 Microsoft 365 邮件，并提供轮询与 webhook 触发器
 - **SMTP 支持** — 通过隐式 TLS 发送邮件，默认使用 Gmail，也可自定义其他 SMTP 服务；或通过 STARTTLS（Microsoft 365）
 - **IMAP4 支持** — 通过 IMAP4 SSL 读取、搜索和导出邮件
 - **附件处理** — 自动检测文本、图片、音频和二进制文件的 MIME 类型
@@ -248,6 +250,7 @@ Mail(account=MailAccount(                   # 其他任何 SMTP / IMAP 服务器
 |---|---|---|
 | `google`（或 `gmail`） | SMTP，`smtp.gmail.com:465`，隐式 TLS | IMAP，`imap.gmail.com` |
 | `microsoft` | SMTP，`smtp.office365.com:587`，STARTTLS | IMAP，`outlook.office365.com` |
+| `microsoft_graph` | Microsoft Graph，`https://graph.microsoft.com/v1.0`（只能用 OAuth2） | Microsoft Graph |
 | `smtp` | 账号 `MailServers` 指定的 SMTP（465 端口的隐式 TLS，或 `smtp_starttls=True` 的 587 端口） | 账号 `MailServers` 指定的 IMAP |
 
 没有指定提供商名称时，`Mail()` 使用 OAuth2 配置指定的提供商，否则使用 Gmail：与 `smtp_instance`、`imap_instance`
@@ -540,6 +543,43 @@ def alert(event):
 `IMAPPollingBackend`（只搜索比上次看到的更大的 UID）、`IMAPIdleBackend`，或是适用于其他 `MailStore` 的 `PollingBackend`。
 监看使用自己的连接，第一次查看只会记下已经存在的邮件；`mail.triggers.poll()` 则是只查看一次，不启动线程。
 在动作文件中，`MT_mail_poll` 会返回上一次 `MT_mail_poll` 以来的事件。
+
+---
+
+## Microsoft Graph
+
+`microsoft_graph` 提供商通过 Microsoft Graph API 访问 Microsoft 365 邮箱，而不是 SMTP 与 IMAP。`Mail` 的调用方式完全相同，
+只有提供商名称不同：
+
+```python
+from je_mail_thunder import Mail, OAuth2Auth, OAuth2Settings
+
+auth = OAuth2Auth(OAuth2Settings(
+    user="you@contoso.com", provider="microsoft", tenant="contoso.onmicrosoft.com",
+    client_id="...", client_secret="...", refresh_token="...",
+))
+with Mail(provider="microsoft_graph", auth=auth) as mail:
+    mail.send(to="qa@example.com", subject="Report", html="<b>42 passed</b>", attachments=["report.pdf"])
+    for message in mail.get_messages(limit=10, unread_only=True):
+        print(message.sender, message.subject)
+```
+
+- **如何可选**：在程序中使用 `Mail(provider="microsoft_graph")`。对 `Mail()` 与 `MT_mail_*` 指令，则在
+  `mail_thunder_content.json` 设置 `"mail_provider": "microsoft_graph"`，或设置环境变量 `mail_thunder_mail_provider`
+  （它可以是任何已注册的提供商）。`microsoft` 仍然代表 SMTP 与 IMAP。
+- **登录**：只能用 OAuth2。应用程序注册需要委派权限 `Mail.Send` 与 `Mail.ReadWrite`。OAuth2 设置没有指定 `scope` 时，
+  会以 Graph 的 scope 取得令牌。
+- **发送**：附件不大时是一次 `sendMail` 请求；否则先创建草稿，把每个附件加上去（超过 3 MiB 的走 upload session），
+  再把草稿发出。
+- **读取**：文件夹可以是 `INBOX`、`Drafts`、`Sent`、`Deleted Items`、`Junk`、`Archive` 或显示名称；`query=` 是 OData 的
+  `$filter` 表达式，例如 `from/emailAddress/address eq 'ci@example.com'`。
+- **与 SMTP 的差异**：邮件只有一个正文（两者都给时使用 HTML）、自订标头必须以 `X-` 开头、`sender` 若不是帐号本人
+  需要「以…身分发送」权限。
+- **触发器**：`mail.watch()` 会使用 `GraphPollingBackend`。`GraphWebhookBackend(provider, "https://your.host/hook")`
+  让 Graph 主动通知新邮件：它的监听器绑定 `localhost:9946`，放在你的 HTTPS 代理之后，会回应 Graph 的验证，
+  并忽略没有带着密钥的通知。
+
+请求只会送往 `https://graph.microsoft.com`；令牌被拒绝时会抛出 `MailThunderAuthenticationException`。
 
 ---
 

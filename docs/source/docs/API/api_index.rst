@@ -52,6 +52,11 @@ All public APIs are accessible from the top-level ``je_mail_thunder`` package:
        IMAPPollingBackend,       # IMAP polling by UID
        IMAPIdleBackend,          # IMAP IDLE
 
+       # Microsoft Graph
+       MicrosoftGraphProvider,   # Microsoft 365 mail over the Graph API
+       GraphPollingBackend,      # Graph polling by received time
+       GraphWebhookBackend,      # Graph change notifications
+
        # Authentication objects
        Authentication,           # Interface of the login mechanisms
        PasswordAuth,             # The account's password
@@ -148,6 +153,12 @@ Module Map
      - ``IMAPPollingBackend``, ``IMAPIdleBackend``
    * - ``je_mail_thunder.triggers.factory``
      - ``create_backend()``, ``register_backends()``
+   * - ``je_mail_thunder.providers.microsoft_graph``
+     - ``MicrosoftGraphProvider``, ``graph_message()``, ``mail_message()``, ``GRAPH_SCOPE``
+   * - ``je_mail_thunder.providers.http``
+     - ``https_request()``, ``decode_json()``
+   * - ``je_mail_thunder.triggers.graph``
+     - ``GraphPollingBackend``, ``GraphWebhookBackend``
    * - ``je_mail_thunder.auth.base``
      - ``Authentication`` class
    * - ``je_mail_thunder.auth.password``

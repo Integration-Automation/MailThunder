@@ -154,6 +154,9 @@
    * - ``microsoft``
      - SMTP，``smtp.office365.com:587``，STARTTLS
      - IMAP，``outlook.office365.com``
+   * - ``microsoft_graph``
+     - Microsoft Graph（只能用 OAuth2），見 :doc:`microsoft_graph`
+     - Microsoft Graph
    * - ``smtp``
      - 帳號 ``MailServers`` 指定的 SMTP：465 埠的隱含式 TLS，或 ``smtp_starttls=True`` 的 587 埠
      - 帳號 ``MailServers`` 指定的 IMAP

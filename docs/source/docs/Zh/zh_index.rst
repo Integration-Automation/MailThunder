@@ -89,4 +89,5 @@ MailThunder 核心模組架構：
 - :doc:`attachment_policy` — 寄送前檢查附件
 - :doc:`mail_templates` — 可重複使用的郵件模板
 - :doc:`mail_triggers` — 郵件事件與觸發器
+- :doc:`microsoft_graph` — 透過 Microsoft Graph 存取 Microsoft 365 郵件
 - :doc:`scripting_engine` — 使用 JSON 腳本自動化工作流程

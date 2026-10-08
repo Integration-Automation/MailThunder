@@ -19,6 +19,9 @@ from je_mail_thunder.utils.save_mail_user_content.mail_thunder_content_save impo
 from je_mail_thunder.utils.save_mail_user_content.save_on_env import get_mail_thunder_os_environ
 
 OAUTH2_ENVIRONMENT_PREFIX = "mail_thunder_oauth2_"
+#: The key of ``mail_thunder_content.json`` and the environment variable that name the core mail API's provider.
+MAIL_PROVIDER_KEY = "mail_provider"
+MAIL_PROVIDER_VARIABLE = "mail_thunder_mail_provider"
 _USER_VARIABLE = "mail_thunder_user"
 
 
@@ -86,6 +89,18 @@ def resolve_authentication() -> Optional[Authentication]:
         return XOAUTH2Auth(oauth2_settings)
     credentials = resolve_login_credentials()
     return None if credentials is None else PasswordAuth(*credentials)
+
+
+def configured_mail_provider() -> Optional[str]:
+    """
+    The provider the core mail API uses when code names none: ``"mail_provider"`` in ``mail_thunder_content.json``,
+    else the ``mail_thunder_mail_provider`` environment variable, else ``None``.
+    """
+    content = read_output_content()
+    chosen = content.get(MAIL_PROVIDER_KEY) if isinstance(content, dict) else None
+    if not isinstance(chosen, str) or not chosen.strip():
+        chosen = os.environ.get(MAIL_PROVIDER_VARIABLE, "")
+    return chosen.strip() or None
 
 
 def configured_oauth2_provider() -> Optional[OAuth2Provider]:

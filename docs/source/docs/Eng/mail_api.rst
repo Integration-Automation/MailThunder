@@ -159,6 +159,9 @@ Accounts and Providers
    * - ``microsoft``
      - SMTP, ``smtp.office365.com:587``, STARTTLS
      - IMAP, ``outlook.office365.com``
+   * - ``microsoft_graph``
+     - Microsoft Graph (OAuth2 only), see :doc:`microsoft_graph`
+     - Microsoft Graph
    * - ``smtp``
      - SMTP on the account's ``MailServers``: implicit TLS on 465, or ``smtp_starttls=True`` on 587
      - IMAP on the account's ``MailServers``

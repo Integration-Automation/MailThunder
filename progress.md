@@ -16,20 +16,16 @@ Cross-repo and workspace items live in `D:\Codes\progress.md` (relevant here: X-
 
 From `docs/MAILTHUNDER-2.0-ROADMAP.md` (PR #45), in its priority order. One item is one focused change. P0 is done except for #24: the attachment policy (`docs/updates` U-20261008-01), the authentication abstraction (U-20261008-02), the core mail API with its provider interface (U-20261008-03) and the PyPI metadata (U-20261008-04).
 
-- **#15** [P1] `MicrosoftGraphProvider` (`je_mail_thunder/providers/microsoft_graph.py`).
-  - What: send, drafts, message retrieval and attachments over Microsoft Graph with an OAuth2 bearer token; Graph errors mapped to MailThunder exceptions.
-  - How: one class that is a `MailSender` and a `MailStore`, registered with `register_provider`; `OAuth2Auth.authorization()` is the bearer header; HTTP with `urllib`, as `utils/oauth2/oauth2.py` does.
-  - Needs: the Graph scopes (`Mail.Send`, `Mail.ReadWrite`) beside the SMTP / IMAP ones in `OAUTH2_PROVIDERS`.
-  - Decide first: whether the provider name `microsoft` moves from SMTP / IMAP to Graph, or Graph gets its own name.
-- **#17** [P2] The Graph trigger backends: `GraphPollingBackend`, `GraphWebhookBackend` (the IMAP ones are done: U-20261008-07). Needs #15; register them with `triggers.factory.register_backends`.
 - **#18** [P2] Project Mail Layer.
   - What: a `mail/` package per automation project (`config.py`, `triggers.py`, `templates/`), scaffolded by `create_project_dir`. Needs #14 and #16.
   - Cross-repo: using it from APITestka, WebRunner and LoadDensity belongs in `D:\Codes\progress.md`.
 - **#19** [P3] [DECIDE] MailThunder Studio: a UI over the core API (Dashboard, Accounts, Templates, Triggers, Policies, Projects, Logs, Settings).
   - Decide first: the UI toolkit, and whether it ships in this package or in its own.
 - **#20** [P4] Webhook / event extensions, provider health monitoring, audit logging, further providers.
+- **#25** Microsoft Graph reaches only the signed-in user's mailbox (`/me`, a delegated token). A shared mailbox or an app-only token (client credentials, `/users/{id}`) needs a mailbox setting on `MailAccount` and a client-credentials grant in `utils/oauth2/oauth2.py`.
 - **#24** [UNVERIFIED] The core mail API has not been run against a real mailbox.
   - Tested so far: fake SMTP / IMAP clients, and a fake SMTP server on localhost for what reaches the wire (`test/unit_test/test_mail_providers.py`).
   - To check on Gmail and Microsoft 365: `send` with attachments and both bodies; `get_messages` (newest first, `unread_only`, a non-ASCII `query`, which is sent as UTF-8 in a quoted string with `CHARSET UTF-8`); `create_draft` finding the folder flagged `\Drafts`; `delete_message` with `UID EXPUNGE`; a non-ASCII folder name; a connection left idle past the server's timeout; `mail.watch()` and `mail.watch(idle=True)` (`IMAPProvider.idle` writes `IDLE` / `DONE` itself and has only been run against a scripted client).
+  - To check on Microsoft Graph (`provider="microsoft_graph"`): the token asked for with the Graph scopes; `send` inline and through a draft with an upload session (an attachment over 3 MiB); `get_messages` with `unread_only` and a `query` (the filter starts with `receivedDateTime` so Graph accepts the ordering); a folder by display name; `GraphWebhookBackend` behind a public HTTPS address (validation, a notification, renewal, removal).
   - Where: a script under `test/unit_test/manual_test/`, which the test run does not collect.
 - **#22** [DECIDE] The roadmap's examples import `mailthunder`; the package is `je_mail_thunder`, which PyBreeze imports (`architecture.md` §6). Keep the name, or also ship a `mailthunder` import name (check first that the name is free on PyPI).
