@@ -1,12 +1,12 @@
 # MailThunder Architecture
 
 > Short overview for people and agents.
-> Last verified: 2026-10-08 against `3f5053f` on `feat/mailthunder-2.0-foundation`.
+> Last verified: 2026-10-08 against `cb23fb1` on `feat/mailthunder-2.0`.
 
 ## 1. Purpose
 
 MailThunder (`je_mail_thunder`, PyPI `je-mail-thunder`) is a small email automation library that
-uses only the standard library. `pyproject.toml` builds `je_mail_thunder` and `dev.toml` builds
+uses only the standard library and `je_action_core`. `pyproject.toml` builds `je_mail_thunder` and `dev.toml` builds
 `je_mail_thunder_dev`. `SMTPWrapper` and `IMAPWrapper` extend `smtplib.SMTP_SSL` and
 `imaplib.IMAP4_SSL` (and `SMTPStartTLSWrapper` extends `smtplib.SMTP`, upgraded with STARTTLS) with credential
 lookup, password or OAuth2 (`XOAUTH2`) login, logging and context-manager support. A JSON action

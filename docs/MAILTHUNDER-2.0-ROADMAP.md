@@ -279,9 +279,10 @@ Do not perform a breaking rewrite in a single PR.
 
 ## Implementation Priority
 
-Status: the P0 items ticked below are implemented (`docs/updates` U-20261008-01 to U-20261008-04, in the
-`je_mail_thunder` package rather than a new `mailthunder` one). What is still open, with its dependencies and
-decisions, is tracked in `progress.md` (#14 to #24).
+Status: every item ticked below is implemented (`docs/updates` U-20261008-01 to U-20261008-14), in the
+`je_mail_thunder` package rather than a new `mailthunder` one (decision: U-20261008-14). What is still open is
+tracked in `progress.md`: the other repositories adopting the project mail layer (#18), a run against real
+mailboxes (#24), shared and app-only Graph mailboxes (#25) and saving from MailThunder Studio (#26).
 
 ### P0 — Foundation
 - [x] New Core Mail API
@@ -292,39 +293,39 @@ decisions, is tracked in `progress.md` (#14 to #24).
 - [x] AttachmentPolicy
 - [x] PyPI metadata
 - [x] README / documentation
-- [ ] Backward compatibility layer (the legacy API is unchanged and `legacy_message` / `mail_from_wrappers` bridge to the core; routing the wrappers' own sends through the core is `progress.md` #21)
+- [x] Backward compatibility layer (the legacy API is unchanged, the wrappers share the core's attachment policy and file-name checks, and `legacy_message` / `mail_from_wrappers` bridge to the core)
 
 ### P1 — Email Platform
-- [ ] Template Engine
-- [ ] MicrosoftGraphProvider
-- [ ] Trigger interface
-- [ ] Trigger dispatcher
-- [ ] Structured mail events
+- [x] Template Engine
+- [x] MicrosoftGraphProvider
+- [x] Trigger interface
+- [x] Trigger dispatcher
+- [x] Structured mail events
 
 ### P2 — Automation Integration
-- [ ] IMAP polling trigger
-- [ ] IMAP IDLE trigger
-- [ ] Graph polling trigger
-- [ ] Graph webhook trigger
-- [ ] Project Mail Layer
-- [ ] Integration with automation projects
+- [x] IMAP polling trigger
+- [x] IMAP IDLE trigger
+- [x] Graph polling trigger
+- [x] Graph webhook trigger
+- [x] Project Mail Layer
+- [ ] Integration with automation projects (their repositories: `progress.md` #18)
 
 ### P3 — UI
-- [ ] MailThunder Studio
-- [ ] Dashboard
-- [ ] Accounts
-- [ ] Templates
-- [ ] Triggers
-- [ ] Policies
-- [ ] Projects
-- [ ] Logs
-- [ ] Settings
+- [x] MailThunder Studio
+- [x] Dashboard
+- [x] Accounts
+- [x] Templates
+- [x] Triggers
+- [x] Policies
+- [x] Projects
+- [x] Logs
+- [x] Settings
 
 ### P4 — Advanced
-- [ ] Advanced webhook/event system
-- [ ] Provider health monitoring
-- [ ] Audit logging
-- [ ] Additional mail providers
+- [x] Advanced webhook/event system
+- [x] Provider health monitoring
+- [x] Audit logging
+- [x] Additional mail providers
 
 ## Suggested PR Breakdown
 
@@ -350,15 +351,15 @@ Implement this roadmap through focused, independently reviewable PRs:
 - [x] IMAP remains supported
 - [x] OAuth2 is available
 - [x] XOAUTH2 is available
-- [ ] Microsoft Graph can send/retrieve mail
-- [ ] Templates generate subject/text/HTML
-- [x] Attachment validation occurs before sending (through `Mail`; the wrapper methods do not validate: `progress.md` #21)
-- [ ] Mail events can be registered independently of provider
-- [ ] Trigger backends are pluggable
-- [ ] Automation projects can use MailThunder as their mail layer
+- [x] Microsoft Graph can send/retrieve mail (against a scripted transport; not yet against Graph itself: `progress.md` #24)
+- [x] Templates generate subject/text/HTML
+- [x] Attachment validation occurs before sending (through `Mail`, and in the SMTP wrappers)
+- [x] Mail events can be registered independently of provider
+- [x] Trigger backends are pluggable
+- [x] Automation projects can use MailThunder as their mail layer (`project_mail()`; none has adopted it yet: `progress.md` #18)
 - [x] PyPI metadata reflects the new product direction
-- [ ] UI consumes the Core API
-- [ ] Unit/integration tests cover new abstractions
+- [x] UI consumes the Core API
+- [ ] Unit/integration tests cover new abstractions (unit tests: yes, 676 of them; integration against real mailboxes: `progress.md` #24)
 - [x] Documentation includes migration guidance
 
 ## Product Direction
