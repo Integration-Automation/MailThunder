@@ -70,10 +70,12 @@ def test_an_event_is_json_ready():
     event = MailEvent(MESSAGE_RECEIVED, message=_MESSAGE, attachment=_REPORT, error=ValueError("x"),
                       provider="imap", folder="INBOX", metadata={"run": 42})
     described = json.loads(json.dumps(event.to_dict()))
-    assert described["name"] == "message_received" and described["message"]["subject"] == "[TEST] Nightly run"
+    assert described["name"] == "message_received"
+    assert described["message"]["subject"] == "[TEST] Nightly run"
     assert described["attachment"] == {"filename": "report.pdf", "content_type": "application/pdf", "size": 4}
     assert (described["error"], described["provider"], described["folder"]) == ("ValueError('x')", "imap", "INBOX")
-    assert described["metadata"] == {"run": 42} and described["timestamp"].endswith("+00:00")
+    assert described["metadata"] == {"run": 42}
+    assert described["timestamp"].endswith("+00:00")
     assert MailEvent(MESSAGE_SENT).to_dict()["message"] is None
     assert len(EVENT_NAMES) == 7
 
@@ -187,7 +189,8 @@ def test_a_handler_that_fails_stops_nothing(caplog):
     after = _collector(dispatcher, MESSAGE_SENT)
     assert dispatcher.emit(MailEvent(MESSAGE_SENT)) == 2
     assert len(after) == 1
-    assert "handler bug" in caplog.text and "ZeroDivisionError" in caplog.text
+    assert "handler bug" in caplog.text
+    assert "ZeroDivisionError" in caplog.text
 
 
 def test_subscriptions_can_be_listed_and_ended():
@@ -199,9 +202,12 @@ def test_subscriptions_can_be_listed_and_ended():
     subscription = dispatcher.on(MESSAGE_FAILED, handle, {"subject": "x"})
     assert dispatcher.subscriptions == (subscription,)
     described = subscription.describe()
-    assert described["event"] == "message_failed" and described["filter"] == {"subject": "x"}
-    assert described["handler"].endswith("handle") and isinstance(described["id"], int)
-    assert dispatcher.off(subscription) is True and dispatcher.off(subscription) is False
+    assert described["event"] == "message_failed"
+    assert described["filter"] == {"subject": "x"}
+    assert described["handler"].endswith("handle")
+    assert isinstance(described["id"], int)
+    assert dispatcher.off(subscription) is True
+    assert dispatcher.off(subscription) is False
     assert dispatcher.emit(MailEvent(MESSAGE_FAILED)) == 0
     with pytest.raises(MailThunderTriggerException, match="unknown event 'message_recieved'"):
         dispatcher.on("message_recieved", handle)
@@ -224,7 +230,8 @@ def test_a_sent_message_is_an_event():
     mail.send(to="qa@example.com", subject="Other", text="x")
     assert [(event.name, event.message, event.provider) for event in events] == [
         ("message_sent", sent, "recording-sender")]
-    assert mail.events.off(subscription) and len(sender.sent) == 2
+    assert mail.events.off(subscription)
+    assert len(sender.sent) == 2
 
 
 def test_on_is_also_a_decorator():
@@ -243,7 +250,8 @@ def test_on_is_also_a_decorator():
     with pytest.raises(MailThunderMessageException):
         mail.send(subject="nobody")
     assert seen == ["Hello", "MailThunderMessageException"]
-    assert callable(remember) and callable(failed)
+    assert callable(remember)
+    assert callable(failed)
     with pytest.raises(MailThunderTriggerException, match="unknown options \\['when'\\]"):
         mail.on("message_sent", remember, when="always")
     with pytest.raises(MailThunderTriggerException, match="unknown event"):
@@ -258,7 +266,8 @@ def test_a_failed_send_says_why(tmp_path, monkeypatch):
     with pytest.raises(AttachmentTooLarge):
         mail.send(to="qa@example.com", subject="Big", attachments=[big])
     assert [event.name for event in events] == [ATTACHMENT_REJECTED, MESSAGE_FAILED]
-    assert events[0].message is None and isinstance(events[0].error, AttachmentTooLarge)
+    assert events[0].message is None
+    assert isinstance(events[0].error, AttachmentTooLarge)
 
     events.clear()
     sender.send = lambda message: (_ for _ in ()).throw(MailThunderConnectionException("smtp down"))
@@ -317,7 +326,8 @@ def test_polling_reports_only_what_arrived_after_the_first_look():
     backend = PollingBackend(store, folder="Reports")
     events = []
     backend.bind(events.append)
-    assert backend.poll() == 0 and events == []
+    assert backend.poll() == 0
+    assert events == []
     assert backend.poll() == 0
     _arrive(store, stored_message("3", "Mail 3"))
     with_file = MailMessage(subject="Mail 4", to="a@example.com", attachments=[_REPORT], message_id="4")
@@ -366,7 +376,8 @@ def test_polling_holds_the_lock_it_is_given_and_closes_only_its_own_store():
     backend = PollingBackend(store, lock=lock)
     backend.poll()
     backend.close()
-    assert held == [True] and store.closed == 0
+    assert held == [True]
+    assert store.closed == 0
     backend.owns_store = True
     backend.close()
     assert store.closed == 1
@@ -407,7 +418,8 @@ def test_imap_polling_asks_only_for_uids_above_the_last_one():
         ("4", "Report 4"), ("5", "Report 5")]
     searches = [call[3] for call in client.calls if call[:2] == ("uid", "SEARCH")]
     assert searches == ["ALL", "UID 4:*", "UID 4:*"]
-    assert backend.poll() == 0 and backend.name == "imap-polling"
+    assert backend.poll() == 0
+    assert backend.name == "imap-polling"
 
 
 def test_imap_polling_starts_from_an_empty_mailbox():
@@ -418,7 +430,8 @@ def test_imap_polling_starts_from_an_empty_mailbox():
     backend.bind(events.append)
     assert backend.poll() == 0
     client.mailbox[1] = RAW_MESSAGE % (1, 1, 1)
-    assert backend.poll() == 1 and events[0].message.message_id == "1"
+    assert backend.poll() == 1
+    assert events[0].message.message_id == "1"
 
 
 def test_idle_waits_for_the_server_and_ends_with_done(monkeypatch):
@@ -491,7 +504,8 @@ def test_the_readable_check_sees_buffered_and_arriving_data(monkeypatch):
 def test_the_idle_backend_idles_between_looks_and_falls_back_to_sleeping(monkeypatch):
     provider, client = _imap()
     backend = IMAPIdleBackend(provider)
-    assert backend.interval == 300.0 and backend.name == "imap-idle"
+    assert backend.interval == 300.0
+    assert backend.name == "imap-idle"
     idled = []
     monkeypatch.setattr(provider, "idle", lambda folder, timeout, should_stop: idled.append((folder, timeout)))
     backend.wait(12)
@@ -548,9 +562,11 @@ def test_a_running_backend_survives_failures_and_reports_them():
     assert backend.running is False
     backend.start()
     backend.start()
-    assert backend.looked.wait(5) and backend.running
+    assert backend.looked.wait(5)
+    assert backend.running
     backend.stop()
-    assert backend.running is False and backend.closed == 1
+    assert backend.running is False
+    assert backend.closed == 1
     assert [event.name for event in events] == [AUTHENTICATION_FAILED, CONNECTION_FAILED, MESSAGE_RECEIVED]
     assert events[0].provider == "scripted"
     assert backend.waits[:4] == [0.01, 0.01, 0.01, 0.01]
@@ -563,13 +579,16 @@ def test_the_manager_runs_the_backends_it_is_given():
     manager = TriggerManager(dispatcher.emit)
     first, second = manager.add(_Scripted([2])), manager.add(_Scripted([3, 1]))
     assert manager.backends == (first, second)
-    assert manager.poll() == 5 and len(seen) == 2
+    assert manager.poll() == 5
+    assert len(seen) == 2
     manager.start()
-    assert first.looked.wait(5) and second.looked.wait(5)
+    assert first.looked.wait(5)
+    assert second.looked.wait(5)
     manager.stop()
     manager.remove(first)
     manager.remove(first)
-    assert manager.backends == (second,) and (first.closed, second.closed) == (2, 1)
+    assert manager.backends == (second,)
+    assert (first.closed, second.closed) == (2, 1)
     with pytest.raises(MailThunderTriggerException, match="expected a MailTriggerBackend"):
         manager.add(object())
 
@@ -586,11 +605,17 @@ def test_watch_gives_the_watcher_its_own_store_when_the_account_can(monkeypatch)
     mail = Mail(provider="google", auth=_AUTH)
     events = _collector(mail.events, MESSAGE_RECEIVED)
     backend = mail.watch("Reports", start=False, interval=5, batch_limit=10)
-    assert isinstance(backend, PollingBackend) and backend.owns_store and backend.interval == 5.0
-    assert mail.triggers.backends == (backend,) and backend.store is built[0] and not backend.running
+    assert isinstance(backend, PollingBackend)
+    assert backend.owns_store
+    assert backend.interval == 5.0
+    assert mail.triggers.backends == (backend,)
+    assert backend.store is built[0]
+    assert not backend.running
     assert mail.triggers.poll() == 0
     _arrive(backend.store, stored_message("2", "New"))
-    assert mail.triggers.poll() == 1 and events[0].message.subject == "New" and events[0].folder == "Reports"
+    assert mail.triggers.poll() == 1
+    assert events[0].message.subject == "New"
+    assert events[0].folder == "Reports"
     mail.close()
     assert backend.store.closed == 1
 
@@ -599,11 +624,14 @@ def test_watch_shares_the_store_of_a_mail_built_from_providers():
     store = _store(1)
     mail, _sender = _mail(providers=[store])
     backend = mail.watch(start=False)
-    assert backend.store is store and backend.owns_store is False and backend._lock is mail._lock
+    assert backend.store is store
+    assert backend.owns_store is False
+    assert backend._lock is mail._lock
     with pytest.raises(MailThunderTriggerException, match="idle needs a connection of its own"):
         mail.watch(idle=True, start=False)
+    sender_only = Mail(account=MailAccount(auth=_AUTH), providers=[RecordingSender()])
     with pytest.raises(MailThunderProviderException, match="no configured provider can read mail"):
-        Mail(account=MailAccount(auth=_AUTH), providers=[RecordingSender()]).watch(start=False)
+        sender_only.watch(start=False)
 
 
 def test_watch_starts_a_thread_that_close_stops():
@@ -624,8 +652,9 @@ def test_the_backend_follows_the_kind_of_store():
     assert type(create_backend(provider)) is IMAPPollingBackend
     assert type(create_backend(provider, "Archive", idle=True)) is IMAPIdleBackend
     assert type(create_backend(_store(), interval=5)) is PollingBackend
+    plain_store = _store()
     with pytest.raises(MailThunderTriggerException, match="cannot wait for the server"):
-        create_backend(_store(), idle=True)
+        create_backend(plain_store, idle=True)
 
     class _Push(PollingBackend):
         name = "push"
@@ -655,4 +684,5 @@ def test_the_poll_action_answers_with_what_arrived(monkeypatch):
     (events,) = second.values()
     assert [(event["name"], event["message"]["subject"]) for event in json.loads(json.dumps(events))] == [
         ("message_received", "New")]
-    assert len(mail_instance.triggers.backends) == 1 and mail_instance.events.subscriptions == ()
+    assert len(mail_instance.triggers.backends) == 1
+    assert mail_instance.events.subscriptions == ()

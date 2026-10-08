@@ -36,7 +36,7 @@ _ENV_NAMES = ("mail_thunder_user", "mail_thunder_user_password", "mail_thunder_o
               "mail_thunder_oauth2_token_url")
 
 
-@pytest.fixture()
+@pytest.fixture
 def clean_place(tmp_path, monkeypatch):
     """An empty cwd (no mail_thunder_content.json) and no credential variables."""
     monkeypatch.chdir(tmp_path)
@@ -72,7 +72,8 @@ def test_the_default_account_is_gmail_or_the_oauth2_provider(clean_place, monkey
     assert mail.account.provider == "microsoft"
     assert isinstance(mail.account.authentication(), XOAUTH2Auth)
     sender, store = mail.providers
-    assert isinstance(sender, SMTPProvider) and isinstance(store, IMAPProvider)
+    assert isinstance(sender, SMTPProvider)
+    assert isinstance(store, IMAPProvider)
     assert mail.providers is mail.providers
 
 
@@ -113,7 +114,8 @@ def test_a_registered_provider_is_what_mail_uses(monkeypatch):
                      lambda: mail.create_draft(to="reader@example.com")):
             with pytest.raises(MailThunderProviderException, match="no configured provider can"):
                 call()
-    assert len(sender.sent) == 1 and sender.closed == 1
+    assert len(sender.sent) == 1
+    assert sender.closed == 1
 
 
 def test_a_mail_that_can_only_read_cannot_send():
@@ -172,7 +174,8 @@ def test_attachments_are_checked_before_the_provider_sees_the_message(tmp_path):
         mail.send(to="reader@example.com", attachments=[program])
     with pytest.raises(AttachmentTypeNotAllowed):
         mail.create_draft(to="reader@example.com", attachments=[program])
-    assert sender.sent == [] and store.drafts == []
+    assert sender.sent == []
+    assert store.drafts == []
     mail.policy = AttachmentPolicy()
     mail.send(to="reader@example.com", attachments=[big, program])
     assert len(sender.sent) == 1
@@ -225,13 +228,15 @@ def test_a_draft_is_checked_like_a_message_to_send():
     assert mail.create_draft(MailMessage(to="reader@example.com", sender=_USER)) == "draft-1"
     with pytest.raises(MailThunderMessageException, match="at least one recipient"):
         mail.create_draft(subject="nobody")
-    assert sender.sent == [] and len(store.drafts) == 2
+    assert sender.sent == []
+    assert len(store.drafts) == 2
 
 
 def test_delete_and_close():
     mail, sender, store = _mail(messages=[stored_message("1"), stored_message("2")])
     assert mail.delete_message("1", folder="Archive") is None
-    assert store.calls == [("delete_message", "1", "Archive")] and list(store.messages) == ["2"]
+    assert store.calls == [("delete_message", "1", "Archive")]
+    assert list(store.messages) == ["2"]
     with mail as entered:
         assert entered is mail
     assert (sender.closed, store.closed) == (1, 1)
@@ -240,7 +245,7 @@ def test_delete_and_close():
 
 # --- the MT_mail_* actions --------------------------------------------------------------------------------------
 
-@pytest.fixture()
+@pytest.fixture
 def action_mail(monkeypatch):
     """``mail_instance`` on recording providers for the length of a test."""
     sender = RecordingSender()
@@ -299,7 +304,8 @@ def test_the_reading_actions_answer_with_json_ready_messages(action_mail):
     assert [message["subject"] for message in json.loads(json.dumps(listed))] == ["Second"]
     assert (one["message_id"], one["subject"]) == ("1", "First")
     assert (draft, deleted, closed) == ("draft-1", None, None)
-    assert list(store.messages) == ["2"] and store.closed == 1
+    assert list(store.messages) == ["2"]
+    assert store.closed == 1
 
 
 # --- from the wrapper API ---------------------------------------------------------------------------------------
@@ -324,14 +330,17 @@ def test_wrapper_arguments_become_a_message(tmp_path):
 def test_a_mail_on_connected_wrappers_leaves_them_to_their_owner():
     smtp, imap = FakeSMTPClient(), FakeIMAPClient()
     with mail_from_wrappers(smtp=smtp, imap=imap, policy=AttachmentPolicy(max_count=0)) as mail:
-        assert mail.account is None and mail.policy.max_count == 0
+        assert mail.account is None
+        assert mail.policy.max_count == 0
         mail.send(legacy_message("hello", {"Subject": "s", "To": "a@example.com", "From": "me@example.com"}))
         assert [message.message_id for message in mail.get_messages(limit=1)] == ["3"]
         with pytest.raises(MailThunderMessageException, match="needs a sender"):
             mail.send(to="a@example.com", text="no sender")
     assert smtp.calls == [("send_message",)]
     assert smtp.sent[0]["From"] == "me@example.com"
-    assert imap.named("login") == [] and imap.named("logout") == []
+    assert imap.named("login") == []
+    assert imap.named("logout") == []
     assert mail_from_wrappers(smtp=smtp).providers[0].name == "smtp"
+    without_wrappers = mail_from_wrappers()
     with pytest.raises(MailThunderProviderException, match="no configured provider can send mail"):
-        mail_from_wrappers().send(to="a@example.com", sender="me@example.com")
+        without_wrappers.send(to="a@example.com", sender="me@example.com")

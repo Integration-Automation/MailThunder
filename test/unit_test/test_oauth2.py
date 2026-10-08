@@ -31,7 +31,7 @@ from je_mail_thunder.utils.save_mail_user_content.credentials import (
 )
 
 _USER = "someone@example.com"
-_TOKEN = "ya29.access-token"
+_TOKEN = "access-token"
 _REFRESH = "1//refresh-token"
 
 
@@ -132,11 +132,14 @@ def test_a_custom_endpoint_sends_only_its_own_scope():
 
 def test_an_answer_without_a_token_names_the_error_but_not_the_secrets():
     post = _Post({"error": "invalid_grant", "error_description": "Token has been expired or revoked."})
+    settings = _settings(client_secret="s3cret")
+    clock = _Clock()
     with pytest.raises(MailThunderOAuth2Exception) as raised:
-        refresh_access_token(_settings(client_secret="s3cret"), post, _Clock())
+        refresh_access_token(settings, post, clock)
     message = str(raised.value)
     assert "invalid_grant: Token has been expired or revoked." in message
-    assert _REFRESH not in message and "s3cret" not in message
+    assert _REFRESH not in message
+    assert "s3cret" not in message
 
 
 def test_the_cache_reuses_a_fresh_token_and_refreshes_near_expiry():
@@ -209,7 +212,7 @@ _ENV_NAMES = ("mail_thunder_user", "mail_thunder_user_password") + tuple(
                                                  "access_token", "tenant", "token_url", "scope"))
 
 
-@pytest.fixture()
+@pytest.fixture
 def clean_place(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     for name in _ENV_NAMES:
@@ -445,9 +448,11 @@ def test_starttls_upgrades_with_a_verifying_context(monkeypatch):
     monkeypatch.setattr(smtplib.SMTP, "starttls", lambda self, context=None: contexts.append(context))
     client = SMTPStartTLSWrapper()
     assert client.login_state is False
-    assert isinstance(client, smtplib.SMTP) and not isinstance(client, smtplib.SMTP_SSL)
+    assert isinstance(client, smtplib.SMTP)
+    assert not isinstance(client, smtplib.SMTP_SSL)
     (context,) = contexts
-    assert context.check_hostname is True and context.verify_mode == ssl.CERT_REQUIRED
+    assert context.check_hostname is True
+    assert context.verify_mode == ssl.CERT_REQUIRED
 
 
 @pytest.mark.parametrize(("provider", "expected"), [

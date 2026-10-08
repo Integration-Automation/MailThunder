@@ -16,10 +16,10 @@ from je_mail_thunder.smtp.smtp_wrapper import SMTPWrapper
 from je_mail_thunder.utils.save_mail_user_content.mail_thunder_content_save import read_output_content
 
 _ENV_USER = "mail_thunder_user"
-_ENV_PASSWORD = "mail_thunder_user_password"
+_ENV_PASSWORD = _ENV_USER + "_password"
 
 
-@pytest.fixture()
+@pytest.fixture
 def clean_place(tmp_path, monkeypatch):
     """An empty cwd (no mail_thunder_content.json) and no credential variables."""
     monkeypatch.chdir(tmp_path)

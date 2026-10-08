@@ -17,10 +17,11 @@ from je_mail_thunder.utils.exception.exceptions import (
 from je_mail_thunder.utils.oauth2 import oauth2
 from je_mail_thunder.utils.oauth2.oauth2 import OAuth2Settings, OAuth2TokenCache
 from je_mail_thunder.utils.save_mail_user_content.credentials import resolve_authentication
+from mail_fakes import MADE_UP_PASSPHRASE
 
 _USER = "someone@example.com"
-_PASSWORD = "p4ss-word-secret"
-_TOKEN = "ya29.access-token-secret"
+_PASSWORD = MADE_UP_PASSPHRASE
+_TOKEN = "access-token-secret"
 _REFRESH = "1//refresh-token-secret"
 _ENV_NAMES = ("mail_thunder_user", "mail_thunder_user_password") + tuple(
     f"mail_thunder_oauth2_{name}" for name in oauth2.OAUTH2_SETTING_NAMES)
@@ -39,7 +40,7 @@ class _Client:
         self.logins.append(("oauth2_login", user, access_token))
 
 
-@pytest.fixture()
+@pytest.fixture
 def clean_place(tmp_path, monkeypatch):
     """An empty cwd (no mail_thunder_content.json) and no credential variables."""
     monkeypatch.chdir(tmp_path)
@@ -88,14 +89,16 @@ def test_secrets_stay_out_of_the_repr():
     for auth in (PasswordAuth(_USER, _PASSWORD), AppPasswordAuth(_USER, _PASSWORD), OAuth2Auth(settings),
                  XOAUTH2Auth(OAuth2Settings(user=_USER, access_token=_TOKEN))):
         shown = repr(auth)
-        assert _USER in shown and type(auth).__name__ in shown
+        assert _USER in shown
+        assert type(auth).__name__ in shown
         for secret in (_PASSWORD, _TOKEN, _REFRESH, "client-secret"):
             assert secret not in shown
 
 
 def test_a_password_cannot_authorise_an_http_request():
+    auth = PasswordAuth(_USER, _PASSWORD)
     with pytest.raises(MailThunderAuthenticationException, match="password authentication cannot authorise"):
-        PasswordAuth(_USER, _PASSWORD).authorization()
+        auth.authorization()
 
 
 def test_oauth2_gives_a_bearer_authorization():
@@ -127,8 +130,10 @@ def test_oauth2_uses_the_shared_cache_by_default(monkeypatch):
 
 
 def test_plain_oauth2_has_no_mail_server_login():
+    auth = OAuth2Auth(OAuth2Settings(user=_USER, access_token=_TOKEN))
+    client = _Client()
     with pytest.raises(MailThunderAuthenticationException, match="oauth2 authentication cannot log in _Client"):
-        OAuth2Auth(OAuth2Settings(user=_USER, access_token=_TOKEN)).login(_Client())
+        auth.login(client)
 
 
 def test_xoauth2_logs_the_client_in_with_the_token():

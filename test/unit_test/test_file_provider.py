@@ -30,7 +30,8 @@ def test_the_app_password_providers(name, smtp_host, port, starttls, imap_host):
     assert (servers.smtp_host, servers.port, servers.smtp_starttls, servers.imap_host) == (
         smtp_host, port, starttls, imap_host)
     sender, store = create_providers(account)
-    assert isinstance(sender, SMTPProvider) and isinstance(store, IMAPProvider)
+    assert isinstance(sender, SMTPProvider)
+    assert isinstance(store, IMAPProvider)
     assert name in registered_providers()
 
 
@@ -54,7 +55,8 @@ def test_the_file_provider_keeps_what_would_be_sent(tmp_path):
     assert mail.get_message(draft_id, folder="Drafts").subject == "Later"
     assert sorted(path.name for path in (tmp_path / "outbox").iterdir()) == ["Drafts", "Sent"]
     assert (tmp_path / "outbox" / "Sent" / f"{sent.message_id}.eml").is_file()
-    assert provider.close() is None and provider.check() is None
+    assert provider.close() is None
+    assert provider.check() is None
 
 
 def test_the_file_provider_reads_newest_first_and_deletes(tmp_path):
@@ -91,16 +93,18 @@ def test_a_folder_stays_inside_the_directory_and_failures_are_provider_errors(tm
     provider = FileProvider(tmp_path / "outbox")
     message = MailMessage(to="a@example.com", sender="b@example.com", subject="x")
     provider.create_draft(message, folder="../../escape")
-    assert (tmp_path / "outbox" / "escape").is_dir() and not (tmp_path / "escape").exists()
+    assert (tmp_path / "outbox" / "escape").is_dir()
+    assert not (tmp_path / "escape").exists()
     for folder in ("", "  ", None):
         with pytest.raises(MailThunderProviderException, match="invalid folder name"):
             provider.get_message("x", folder)
     blocker = tmp_path / "a-file"
     blocker.write_bytes(b"")
+    blocked = FileProvider(blocker)
     with pytest.raises(MailThunderProviderException, match="cannot be created"):
-        FileProvider(blocker).check()
+        blocked.check()
     with pytest.raises(MailThunderProviderException, match="cannot be created"):
-        FileProvider(blocker).send(message)
+        blocked.send(message)
 
 
 def test_the_registered_file_provider_takes_its_directory_from_the_environment(tmp_path, monkeypatch):
@@ -108,7 +112,8 @@ def test_the_registered_file_provider_takes_its_directory_from_the_environment(t
     monkeypatch.delenv("MAIL_THUNDER_FILE_PROVIDER_DIR", raising=False)
     assert "file" in registered_providers()
     (provider,) = create_providers(MailAccount(provider="file"))
-    assert isinstance(provider, FileProvider) and str(provider.directory) == "mail_outbox"
+    assert isinstance(provider, FileProvider)
+    assert str(provider.directory) == "mail_outbox"
     monkeypatch.setenv("MAIL_THUNDER_FILE_PROVIDER_DIR", str(tmp_path / "dry-run"))
     with Mail(provider="file", auth=_AUTH) as mail:
         mail.send(to="qa@example.com", subject="Dry run", text="x")

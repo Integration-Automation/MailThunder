@@ -41,10 +41,10 @@ from je_mail_thunder.utils.exception.exceptions import (
 )
 from mail_fakes import FakeSMTPClient, RecordingSender, RecordingStore
 
-_SECRET_BODY = "the quarterly numbers are confidential"
+_CONFIDENTIAL_BODY = "the quarterly numbers are confidential"
 _MESSAGE = MailMessage(
     subject="Q3 report", to="qa@example.com", cc="lead@example.com", bcc="audit@example.com",
-    sender="ci@example.com", text=_SECRET_BODY, html=f"<p>{_SECRET_BODY}</p>",
+    sender="ci@example.com", text=_CONFIDENTIAL_BODY, html=f"<p>{_CONFIDENTIAL_BODY}</p>",
     attachments=[Attachment(filename="q3.pdf", content_type="application/pdf", content=b"%PDF-secret-bytes")],
     headers={"Message-ID": "<1@example.com>"}, message_id="42")
 _WHEN = datetime(2026, 10, 8, 9, 30, tzinfo=timezone.utc)
@@ -68,12 +68,14 @@ def test_an_audit_entry_holds_the_facts_and_never_the_content():
         "subject": "Q3 report", "metadata": {"run": "7"},
     }
     serialised = json.dumps(entry)
-    assert _SECRET_BODY not in serialised and "secret-bytes" not in serialised
+    assert _CONFIDENTIAL_BODY not in serialised
+    assert "secret-bytes" not in serialised
     assert "subject" not in audit_entry(_event(), subjects=False)
     failed = audit_entry(_event(MESSAGE_FAILED, message=None, error=MailThunderSendException("refused by server"),
                                 attachment=_MESSAGE.attachments[0]))
     assert failed["error"] == {"type": "MailThunderSendException", "message": "refused by server"}
-    assert failed["attachment"]["filename"] == "q3.pdf" and "sender" not in failed
+    assert failed["attachment"]["filename"] == "q3.pdf"
+    assert "sender" not in failed
 
 
 def test_the_audit_log_appends_one_line_per_event(tmp_path):
@@ -83,7 +85,8 @@ def test_the_audit_log_appends_one_line_per_event(tmp_path):
     log.record(_event(MESSAGE_FAILED, error=MailThunderConnectionException("down"),
                       message=MailMessage(subject="報表\nwith a line break", to="a@example.com")))
     lines = log.path.read_text(encoding="utf-8").splitlines()
-    assert len(lines) == 2 and all(json.loads(line) for line in lines)
+    assert len(lines) == 2
+    assert all(json.loads(line) for line in lines)
     assert [entry["event"] for entry in log.entries()] == ["message_sent", "message_failed"]
     assert log.entries()[1]["subject"] == "報表\nwith a line break"
     assert [entry["event"] for entry in log.entries(limit=1)] == ["message_failed"]
@@ -97,12 +100,13 @@ def test_the_audit_log_follows_a_mail_and_survives_a_file_it_cannot_write(tmp_pa
     mail = Mail(account=MailAccount(auth=PasswordAuth("ci@example.com", "p4ss-word-secret")),
                 providers=[RecordingSender()])
     subscription = log.attach(mail.events)
-    mail.send(to="qa@example.com", subject="Confidential", text=_SECRET_BODY)
+    mail.send(to="qa@example.com", subject="Confidential", text=_CONFIDENTIAL_BODY)
     with pytest.raises(MailThunderMessageException):
         mail.send(subject="nobody")
     entries = log.entries()
     assert [entry["event"] for entry in entries] == ["message_sent", "message_failed"]
-    assert "subject" not in entries[0] and entries[1]["error"]["type"] == "MailThunderMessageException"
+    assert "subject" not in entries[0]
+    assert entries[1]["error"]["type"] == "MailThunderMessageException"
     assert "p4ss-word-secret" not in log.path.read_text(encoding="utf-8")
     assert mail.events.off(subscription)
     blocked = AuditLog(tmp_path / "mail.jsonl" / "below-a-file.jsonl")
@@ -115,9 +119,11 @@ def test_the_audit_log_rotates_and_has_a_default_place(tmp_path, monkeypatch):
     log = AuditLog(tmp_path / "mail.jsonl")
     for _ in range(3):
         log.record(_event())
-    assert (tmp_path / "mail.jsonl.1").is_file() and len(log.entries()) == 1
+    assert (tmp_path / "mail.jsonl.1").is_file()
+    assert len(log.entries()) == 1
     monkeypatch.setenv("MAIL_THUNDER_AUDIT_FILE", str(tmp_path / "elsewhere.jsonl"))
-    assert default_audit_file() == tmp_path / "elsewhere.jsonl" and AuditLog().path == tmp_path / "elsewhere.jsonl"
+    assert default_audit_file() == tmp_path / "elsewhere.jsonl"
+    assert AuditLog().path == tmp_path / "elsewhere.jsonl"
     monkeypatch.delenv("MAIL_THUNDER_AUDIT_FILE")
     assert default_audit_file().parts[-3:] == (".je_mail_thunder", "audit", "mail_audit.jsonl")
 
@@ -126,7 +132,8 @@ def test_the_audit_log_rotates_and_has_a_default_place(tmp_path, monkeypatch):
 
 def test_health_follows_successes_and_failures():
     health = ProviderHealth(failure_threshold=2)
-    assert health.status("smtp")["state"] == "unknown" and health.report() == []
+    assert health.status("smtp")["state"] == "unknown"
+    assert health.report() == []
     health.record(_event(MESSAGE_SENT))
     health.record(_event(MESSAGE_RECEIVED, provider="imap"))
     assert health.status("smtp")["state"] == "healthy"
@@ -134,7 +141,8 @@ def test_health_follows_successes_and_failures():
     status = health.status("smtp")
     assert (status["state"], status["failures"], status["consecutive_failures"]) == ("degraded", 1, 1)
     assert status["last_error"] == "MailThunderConnectionException: smtp down"
-    assert status["last_failure"] == "2026-10-08T09:30:00+00:00" and status["last_success"] is not None
+    assert status["last_failure"] == "2026-10-08T09:30:00+00:00"
+    assert status["last_success"] is not None
     health.record(_event(AUTHENTICATION_FAILED, error=MailThunderAuthenticationException("refused")))
     assert health.status("smtp")["state"] == "down"
     health.record(_event(MESSAGE_SENT))
@@ -184,8 +192,10 @@ def test_a_provider_check_connects_and_logs_in_without_sending(monkeypatch):
     client = FakeSMTPClient()
     monkeypatch.setattr(smtp_provider, "SMTPWrapper", lambda host, port: client)
     provider = SMTPProvider(MailAccount(auth=PasswordAuth("ci@example.com", "p4ss-word-secret")))
-    assert provider.check() is None and provider.check() is None
-    assert client.calls == [("login", "ci@example.com", "p4ss-word-secret")] and client.sent == []
+    assert provider.check() is None
+    assert provider.check() is None
+    assert client.calls == [("login", "ci@example.com", "p4ss-word-secret")]
+    assert client.sent == []
     assert RecordingSender().check() is None
 
 
@@ -207,11 +217,13 @@ class _Receiver:
 
 def test_a_webhook_payload_describes_the_event_without_bodies():
     payload = webhook_payload(_event())
-    assert payload["name"] == "message_sent" and payload["message"]["subject"] == "Q3 report"
-    assert "text" not in payload["message"] and "html" not in payload["message"]
+    assert payload["name"] == "message_sent"
+    assert payload["message"]["subject"] == "Q3 report"
+    assert "text" not in payload["message"]
+    assert "html" not in payload["message"]
     assert payload["message"]["attachments"] == [{"filename": "q3.pdf", "content_type": "application/pdf", "size": 17}]
-    assert _SECRET_BODY not in json.dumps(payload)
-    assert webhook_payload(_event(), bodies=True)["message"]["text"] == _SECRET_BODY
+    assert _CONFIDENTIAL_BODY not in json.dumps(payload)
+    assert webhook_payload(_event(), bodies=True)["message"]["text"] == _CONFIDENTIAL_BODY
     assert webhook_payload(MailEvent(CONNECTION_FAILED))["message"] is None
 
 
@@ -231,16 +243,19 @@ def test_an_event_is_posted_signed_and_in_order():
         "POST", "https://hooks.example.com/mail", "application/json; charset=utf-8")
     expected = "sha256=" + hmac.new(b"shared-secret", body, hashlib.sha256).hexdigest()
     assert headers["X-MailThunder-Signature"] == expected == sign("shared-secret", body)
-    assert json.loads(body)["message"]["subject"] == "Q3 report" and _SECRET_BODY.encode() not in body
+    assert json.loads(body)["message"]["subject"] == "Q3 report"
+    assert _CONFIDENTIAL_BODY.encode() not in body
     assert dispatcher.subscriptions[0].describe()["handler"] == "WebhookForwarder"
 
 
 def test_a_webhook_without_a_secret_is_not_signed_and_a_failure_is_logged(caplog):
     refusing = _Receiver(status=500)
     forwarder = WebhookForwarder("https://hooks.example.com/mail", bodies=True, transport=refusing)
+    event = _event()
     with pytest.raises(MailThunderTriggerException, match="answered HTTP 500 to the event 'message_sent'"):
-        forwarder.deliver(_event())
-    assert "X-MailThunder-Signature" not in refusing.posts[0][2] and _SECRET_BODY.encode() in refusing.posts[0][3]
+        forwarder.deliver(event)
+    assert "X-MailThunder-Signature" not in refusing.posts[0][2]
+    assert _CONFIDENTIAL_BODY.encode() in refusing.posts[0][3]
     forwarder(_event())
     forwarder.flush()
     forwarder.close()

@@ -33,10 +33,10 @@ from je_mail_thunder.utils.exception.exceptions import (
     MailThunderSendException,
 )
 from je_mail_thunder.utils.oauth2.oauth2 import OAuth2Settings
-from mail_fakes import IMAP_ABORT, IMAP_ERROR, FakeIMAPClient, FakeSMTPClient
+from mail_fakes import IMAP_ABORT, IMAP_ERROR, MADE_UP_PASSPHRASE, FakeIMAPClient, FakeSMTPClient
 
 _USER = "someone@example.com"
-_PASSWORD = "p4ss-word-secret"
+_PASSWORD = MADE_UP_PASSPHRASE
 _AUTH = PasswordAuth(_USER, _PASSWORD)
 _ACCOUNT = MailAccount(provider="google", auth=_AUTH)
 _MESSAGE = MailMessage(to="reader@example.com", sender=_USER, subject="Hello", text="body")
@@ -50,7 +50,7 @@ class _Clock:
         return self.now
 
 
-@pytest.fixture()
+@pytest.fixture
 def smtp_clients(monkeypatch):
     """Every SMTP wrapper the provider builds, in order, as ``(wrapper name, client)``."""
     built = []
@@ -67,7 +67,7 @@ def smtp_clients(monkeypatch):
     return built
 
 
-@pytest.fixture()
+@pytest.fixture
 def imap_clients(monkeypatch):
     """Every IMAP wrapper the provider builds, in order."""
     built = []
@@ -81,7 +81,7 @@ def imap_clients(monkeypatch):
     return built
 
 
-@pytest.fixture()
+@pytest.fixture
 def no_credentials(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     for name in ("mail_thunder_user", "mail_thunder_user_password", "mail_thunder_oauth2_refresh_token",
@@ -92,9 +92,12 @@ def no_credentials(tmp_path, monkeypatch):
 # --- the interfaces and the registry ----------------------------------------------------------------------------
 
 def test_the_providers_fill_their_roles():
-    assert issubclass(SMTPProvider, MailSender) and not issubclass(SMTPProvider, MailStore)
-    assert issubclass(IMAPProvider, MailStore) and not issubclass(IMAPProvider, MailSender)
-    assert issubclass(MailSender, MailProvider) and issubclass(MailStore, MailProvider)
+    assert issubclass(SMTPProvider, MailSender)
+    assert not issubclass(SMTPProvider, MailStore)
+    assert issubclass(IMAPProvider, MailStore)
+    assert not issubclass(IMAPProvider, MailSender)
+    assert issubclass(MailSender, MailProvider)
+    assert issubclass(MailStore, MailProvider)
     with pytest.raises(TypeError):
         MailSender()  # pylint: disable=abstract-class-instantiated  # reason: the point of the test
 
@@ -103,12 +106,14 @@ def test_the_known_accounts_get_an_smtp_sender_and_an_imap_store():
     assert set(registered_providers()) >= {"google", "microsoft", "smtp"}
     for name in ("google", "gmail", "microsoft", "smtp"):
         sender, store = create_providers(MailAccount(provider=name, auth=_AUTH))
-        assert isinstance(sender, SMTPProvider) and isinstance(store, IMAPProvider)
+        assert isinstance(sender, SMTPProvider)
+        assert isinstance(store, IMAPProvider)
 
 
 def test_an_unknown_provider_names_the_known_ones():
+    account = MailAccount(provider="nowhere")
     with pytest.raises(MailThunderProviderException, match="unknown mail provider 'nowhere'.*google"):
-        create_providers(MailAccount(provider="nowhere"))
+        create_providers(account)
 
 
 def test_a_registered_factory_serves_its_name(monkeypatch):
@@ -123,7 +128,8 @@ def test_a_registered_factory_serves_its_name(monkeypatch):
     register_provider(" Example ", factory)
     account = MailAccount(provider="EXAMPLE", auth=_AUTH)
     (sender,) = create_providers(account)
-    assert isinstance(sender, SMTPProvider) and seen == [account]
+    assert isinstance(sender, SMTPProvider)
+    assert seen == [account]
     assert "example" in registered_providers()
     for name, bad_factory in (("", factory), (None, factory), ("x", "not callable")):
         with pytest.raises(MailThunderProviderException):
@@ -162,8 +168,9 @@ def test_a_generic_account_needs_its_servers():
 
 
 def test_an_account_without_credentials_says_where_to_put_them(no_credentials):
+    account = MailAccount()
     with pytest.raises(MailThunderAuthenticationException, match="mail_thunder_content.json"):
-        MailAccount().authentication()
+        account.authentication()
     assert MailAccount(auth=_AUTH).authentication() is _AUTH
 
 
@@ -207,7 +214,8 @@ def test_smtp_asks_an_idle_connection_for_a_sign_of_life(smtp_clients):
     assert ("noop",) not in first.calls
     clock.now += IDLE_CHECK_SECONDS + 1
     provider.send(_MESSAGE)
-    assert first.calls[-2:] == [("noop",), ("send_message",)] and len(smtp_clients) == 1
+    assert first.calls[-2:] == [("noop",), ("send_message",)]
+    assert len(smtp_clients) == 1
 
 
 @pytest.mark.parametrize("dead", ["raises", "bad status"])
@@ -223,12 +231,14 @@ def test_smtp_replaces_a_connection_the_server_dropped_while_idle(dead, smtp_cli
     clock.now += IDLE_CHECK_SECONDS + 1
     provider.send(_MESSAGE)
     assert first.calls[-1] == ("close",)
-    assert len(first.sent) == 1 and len(smtp_clients[1][1].sent) == 1
+    assert len(first.sent) == 1
+    assert len(smtp_clients[1][1].sent) == 1
 
 
 def test_smtp_does_not_connect_without_credentials(smtp_clients, no_credentials):
+    provider = SMTPProvider(MailAccount())
     with pytest.raises(MailThunderAuthenticationException, match="no credentials"):
-        SMTPProvider(MailAccount()).send(_MESSAGE)
+        provider.send(_MESSAGE)
     assert smtp_clients == []
 
 
@@ -237,14 +247,16 @@ def test_smtp_cannot_connect(monkeypatch):
         raise OSError("network is unreachable")
 
     monkeypatch.setattr(smtp_provider, "SMTPWrapper", unreachable)
+    provider = SMTPProvider(_ACCOUNT)
     with pytest.raises(MailThunderConnectionException, match="cannot connect to the smtp server"):
-        SMTPProvider(_ACCOUNT).send(_MESSAGE)
+        provider.send(_MESSAGE)
 
 
 def test_smtp_without_a_host_is_a_provider_error():
     account = MailAccount(provider="smtp", auth=_AUTH, servers=MailServers(imap_host="imap.example.com"))
+    provider = SMTPProvider(account)
     with pytest.raises(MailThunderProviderException, match="no SMTP server"):
-        SMTPProvider(account).send(_MESSAGE)
+        provider.send(_MESSAGE)
 
 
 def test_smtp_a_refused_login_is_an_authentication_error_and_hangs_up(monkeypatch):
@@ -255,15 +267,17 @@ def test_smtp_a_refused_login_is_an_authentication_error_and_hangs_up(monkeypatc
     with pytest.raises(MailThunderAuthenticationException, match="the smtp server refused the login") as raised:
         provider.send(_MESSAGE)
     assert _PASSWORD not in str(raised.value)
-    assert client.calls[-1] == ("quit",) and client.sent == []
+    assert client.calls[-1] == ("quit",)
+    assert client.sent == []
 
 
 def test_smtp_a_connection_lost_during_the_login_is_a_connection_error(monkeypatch):
     client = FakeSMTPClient()
     client.fail["login"] = smtplib.SMTPServerDisconnected("Connection unexpectedly closed")
     monkeypatch.setattr(smtp_provider, "SMTPWrapper", lambda host, port: client)
+    provider = SMTPProvider(_ACCOUNT)
     with pytest.raises(MailThunderConnectionException, match="lost while the login"):
-        SMTPProvider(_ACCOUNT).send(_MESSAGE)
+        provider.send(_MESSAGE)
     assert client.calls[-1] == ("close",)
 
 
@@ -281,7 +295,8 @@ def test_smtp_a_login_that_fails_for_any_reason_does_not_keep_the_connection(smt
         provider.send(_MESSAGE)
     assert smtp_clients[0][1].calls == [("quit",)]
     provider.send(_MESSAGE)
-    assert len(smtp_clients) == 2 and len(smtp_clients[1][1].sent) == 1
+    assert len(smtp_clients) == 2
+    assert len(smtp_clients[1][1].sent) == 1
 
 
 def test_smtp_every_recipient_refused(smtp_clients):
@@ -327,7 +342,8 @@ def test_smtp_a_connection_lost_while_sending_is_not_sent_again(error, smtp_clie
     first.fail["send_message"] = error
     with pytest.raises(MailThunderConnectionException, match="lost while the message"):
         provider.send(_MESSAGE)
-    assert len(smtp_clients) == 1 and first.calls[-1] == ("close",)
+    assert len(smtp_clients) == 1
+    assert first.calls[-1] == ("close",)
     provider.send(_MESSAGE)
     assert len(smtp_clients) == 2
 
@@ -340,11 +356,13 @@ def test_smtp_a_given_client_is_used_as_it_is_and_never_closed(smtp_clients):
     provider.send(_MESSAGE)
     provider.close()
     provider.send(_MESSAGE)
-    assert client.calls == [("send_message",), ("send_message",)] and smtp_clients == []
+    assert client.calls == [("send_message",), ("send_message",)]
+    assert smtp_clients == []
     client.fail["send_message"] = smtplib.SMTPServerDisconnected("gone")
     with pytest.raises(MailThunderConnectionException):
         provider.send(_MESSAGE)
-    assert ("close",) not in client.calls and ("quit",) not in client.calls
+    assert ("close",) not in client.calls
+    assert ("quit",) not in client.calls
 
 
 class _SMTPServer(socketserver.ThreadingTCPServer):
@@ -424,8 +442,10 @@ def test_smtp_what_reaches_the_server(tmp_path):
     assert sender == _USER
     assert sorted(recipients) == ["copy@example.com", "hidden@example.com", "reader@example.com"]
     assert b"hidden@example.com" not in data
-    assert b"To: reader@example.com" in data and b"Cc: copy@example.com" in data
-    assert b'filename="report.txt"' in data and b"multipart/alternative" in data
+    assert b"To: reader@example.com" in data
+    assert b"Cc: copy@example.com" in data
+    assert b'filename="report.txt"' in data
+    assert b"multipart/alternative" in data
 
 
 def test_a_new_connection_gets_a_socket_timeout(monkeypatch):
@@ -528,7 +548,8 @@ def test_imap_a_draft_goes_to_the_folder_flagged_drafts(imap_clients):
     assert provider.create_draft(_MESSAGE) == "42"
     client = imap_clients[0]
     assert client.named("append") == [("append", '"[Gmail]/Drafts"', "\\Draft")]
-    assert b"Subject: Hello\r\n" in client.appended[0] and b"\r\nbody\r\n" in client.appended[0]
+    assert b"Subject: Hello\r\n" in client.appended[0]
+    assert b"\r\nbody\r\n" in client.appended[0]
 
 
 def test_imap_the_drafts_folder_can_be_named(imap_clients):
@@ -630,7 +651,8 @@ def test_imap_an_idle_connection_that_died_is_replaced(imap_clients):
     provider.get_message("1")
     clock.now += IDLE_CHECK_SECONDS + 1
     provider.get_message("1")
-    assert imap_clients[0].named("noop") == [("noop",)] and len(imap_clients) == 1
+    assert imap_clients[0].named("noop") == [("noop",)]
+    assert len(imap_clients) == 1
     imap_clients[0].refuse.add("noop")
     clock.now += IDLE_CHECK_SECONDS + 1
     provider.get_message("1")
@@ -641,8 +663,9 @@ def test_imap_a_refused_login_is_an_authentication_error(monkeypatch):
     client = FakeIMAPClient()
     client.fail["login"] = IMAP_ERROR("[AUTHENTICATIONFAILED] Invalid credentials (Failure)")
     monkeypatch.setattr(imap_provider, "IMAPWrapper", lambda host: client)
+    provider = IMAPProvider(_ACCOUNT)
     with pytest.raises(MailThunderAuthenticationException, match="the imap server refused the login") as raised:
-        IMAPProvider(_ACCOUNT).get_message("1")
+        provider.get_message("1")
     assert _PASSWORD not in str(raised.value)
     assert client.calls[-1] == ("logout",)
 
@@ -652,11 +675,13 @@ def test_imap_cannot_connect_and_missing_host(monkeypatch):
         raise imaplib.IMAP4.error("could not connect")
 
     monkeypatch.setattr(imap_provider, "IMAPWrapper", unreachable)
+    provider = IMAPProvider(_ACCOUNT)
     with pytest.raises(MailThunderConnectionException, match="cannot connect to the imap server"):
-        IMAPProvider(_ACCOUNT).get_message("1")
+        provider.get_message("1")
     account = MailAccount(provider="smtp", auth=_AUTH, servers=MailServers(smtp_host="mail.example.com"))
+    provider = IMAPProvider(account)
     with pytest.raises(MailThunderProviderException, match="no IMAP server"):
-        IMAPProvider(account).get_message("1")
+        provider.get_message("1")
 
 
 def test_imap_close_logs_out_and_a_given_client_stays_open(imap_clients):
@@ -668,6 +693,7 @@ def test_imap_close_logs_out_and_a_given_client_stays_open(imap_clients):
     adopted.get_message("1")
     adopted.get_message("2")
     adopted.close()
-    assert given.named("login") == [] and given.named("logout") == []
+    assert given.named("login") == []
+    assert given.named("logout") == []
     assert len(given.named("select")) == 2
     assert adopted.create_draft(_MESSAGE) == "42"

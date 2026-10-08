@@ -124,8 +124,9 @@ def test_a_complete_message_passes_the_check():
     ({"headers": {"bcc": "victim@example.com"}}, "set by the message's own fields"),
 ])
 def test_what_cannot_be_sent_is_refused(message_fields, reason):
+    message = _message(**message_fields)
     with pytest.raises(MailThunderMessageException, match=reason):
-        check_outgoing(_message(**message_fields))
+        check_outgoing(message)
 
 
 def test_text_only_is_a_plain_message():

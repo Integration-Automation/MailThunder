@@ -100,8 +100,9 @@ def test_a_missing_file_is_attachment_not_found(tmp_path):
     assert raised.value.path == str(tmp_path / "missing.txt")
     with pytest.raises(AttachmentNotFound):
         attachment.read()
+    directory = Attachment.from_path(tmp_path)
     with pytest.raises(AttachmentNotFound):
-        Attachment.from_path(tmp_path).read()
+        directory.read()
 
 
 def test_the_content_stays_out_of_the_repr():
@@ -158,26 +159,32 @@ def test_attachments_within_the_policy_pass_and_report_their_total(tmp_path):
 
 def test_too_many_attachments(tmp_path):
     attachments = [Attachment(filename=f"{number}.txt", content=b"x") for number in range(3)]
+    policy = AttachmentPolicy(max_count=2)
     with pytest.raises(AttachmentCountExceeded) as raised:
-        validate_attachments(attachments, AttachmentPolicy(max_count=2))
+        validate_attachments(attachments, policy)
     assert (raised.value.count, raised.value.limit) == (3, 2)
 
 
 def test_a_missing_file_fails_before_the_size_rules(tmp_path):
+    attachments = [Attachment.from_path(tmp_path / "missing.pdf")]
+    policy = AttachmentPolicy(max_file_size=1)
     with pytest.raises(AttachmentNotFound):
-        validate_attachments([Attachment.from_path(tmp_path / "missing.pdf")], AttachmentPolicy(max_file_size=1))
+        validate_attachments(attachments, policy)
 
 
 def test_one_attachment_too_large():
+    attachments = [Attachment(filename="big.bin", content=b"x" * 11)]
+    policy = AttachmentPolicy(max_file_size=10)
     with pytest.raises(AttachmentTooLarge) as raised:
-        validate_attachments([Attachment(filename="big.bin", content=b"x" * 11)], AttachmentPolicy(max_file_size=10))
+        validate_attachments(attachments, policy)
     assert (raised.value.filename, raised.value.size, raised.value.limit) == ("big.bin", 11, 10)
 
 
 def test_an_extension_that_is_not_allowed():
     policy = AttachmentPolicy(allowed_extensions={".pdf"})
+    attachments = [Attachment(filename="report.pdf.exe", content=b"x")]
     with pytest.raises(AttachmentTypeNotAllowed) as raised:
-        validate_attachments([Attachment(filename="report.pdf.exe", content=b"x")], policy)
+        validate_attachments(attachments, policy)
     assert (raised.value.kind, raised.value.value) == ("extension", ".exe")
 
 
@@ -191,8 +198,9 @@ def test_a_mime_type_that_is_not_allowed():
 
 def test_the_total_size_is_checked_after_each_file():
     attachments = [Attachment(filename="a.bin", content=b"x" * 6), Attachment(filename="b.bin", content=b"x" * 6)]
+    policy = AttachmentPolicy(max_file_size=10, max_total_size=10)
     with pytest.raises(TotalAttachmentSizeExceeded) as raised:
-        validate_attachments(attachments, AttachmentPolicy(max_file_size=10, max_total_size=10))
+        validate_attachments(attachments, policy)
     assert (raised.value.size, raised.value.limit) == (12, 10)
 
 

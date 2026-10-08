@@ -108,7 +108,8 @@ def test_an_undefined_name_is_named():
     with pytest.raises(TemplateContextError) as raised:
         render_string("{{ user.email }}", {"user": {}})
     assert raised.value.missing == ("user.email",)
-    assert isinstance(raised.value, MailThunderTemplateException) and isinstance(raised.value, MailThunderException)
+    assert isinstance(raised.value, MailThunderTemplateException)
+    assert isinstance(raised.value, MailThunderException)
     with pytest.raises(TemplateContextError):
         render_string("{% for x in missing %}{% endfor %}", {})
     assert render_string("{{ missing | upper | default('fallback') }}") == "fallback"
@@ -212,14 +213,16 @@ def test_declared_variables_are_checked_before_rendering():
 
 
 def test_an_undeclared_variable_is_reported_when_it_is_missing():
+    template = MailTemplate("loose", subject="{{ title }}", text="x")
     with pytest.raises(TemplateContextError) as raised:
-        MailTemplate("loose", subject="{{ title }}", text="x").render({})
+        template.render({})
     assert (raised.value.missing, raised.value.template) == (("title",), "loose")
 
 
 def test_a_template_describes_itself():
     described = json.loads(json.dumps(_report().to_dict()))
-    assert described["name"] == "test_report" and described["metadata"] == {"owner": "qa"}
+    assert described["name"] == "test_report"
+    assert described["metadata"] == {"owner": "qa"}
     assert described["referenced_variables"] == ["failed", "note", "passed", "project"]
     assert described["variables"][0] == {"name": "project", "description": "The project's name", "required": True}
     assert described["variables"][2] == {"name": "failed", "description": "", "required": False, "default": 0}
@@ -267,7 +270,8 @@ def test_a_template_is_one_json_file_or_a_directory(tmp_path):
     assert loader.load("welcome").render({"name": "je"}).subject == "Hi je"
     report = loader.load("report")
     assert report.render({"day": "Mon"}) == RenderedTemplate("報表 Mon", "text Mon", "<b>Mon</b>")
-    assert report.metadata["owner"] == "qa" and report.variables[0].name == "day"
+    assert report.metadata["owner"] == "qa"
+    assert report.variables[0].name == "day"
     assert loader.load("bare").text == "only text"
 
 
@@ -302,15 +306,17 @@ def test_a_template_name_is_never_a_path(name, tmp_path):
     (tmp_path / "secret.json").write_text(json.dumps({"text": "outside"}), encoding="utf-8")
     inside = tmp_path / "templates"
     inside.mkdir()
+    loader = TemplateLoader([inside])
     with pytest.raises(TemplateNotFound):
-        TemplateLoader([inside]).load(name)
+        loader.load(name)
 
 
 def test_what_cannot_be_loaded(tmp_path, monkeypatch):
     loader = TemplateLoader([tmp_path])
     with pytest.raises(TemplateNotFound) as raised:
         loader.load("absent")
-    assert raised.value.name == "absent" and raised.value.searched == (str(tmp_path),)
+    assert raised.value.name == "absent"
+    assert raised.value.searched == (str(tmp_path),)
     (tmp_path / "broken.json").write_text("{not json", encoding="utf-8")
     with pytest.raises(MailThunderTemplateException, match="not valid JSON"):
         loader.load("broken")
@@ -362,8 +368,9 @@ def test_a_template_that_cannot_be_rendered_sends_nothing():
         mail.send(to="qa@example.com", template="absent")
     with pytest.raises(MailThunderProviderException, match="a context needs the template"):
         mail.send(to="qa@example.com", text="x", context={"a": 1})
+    ready = MailMessage(to="qa@example.com", sender="a@example.com")
     with pytest.raises(MailThunderProviderException, match="not both"):
-        mail.send(MailMessage(to="qa@example.com", sender="a@example.com"), template="test_report")
+        mail.send(ready, template="test_report")
     with pytest.raises(MailThunderMessageException, match="subject must be one line"):
         mail.send(to="qa@example.com", template="test_report",
                   context={"project": "x\r\nBcc: victim@example.com", "passed": 1})
@@ -385,5 +392,6 @@ def test_the_template_actions(monkeypatch):
     rendered, sent, missing = record.values()
     assert rendered == {"subject": "[APITestka] 5 passed, 0 failed", "text": "Project APITestka: ",
                         "html": "<h1>APITestka</h1><p></p>"}
-    assert sent["subject"] == rendered["subject"] and sender.sent[0].html == rendered["html"]
+    assert sent["subject"] == rendered["subject"]
+    assert sender.sent[0].html == rendered["html"]
     assert "TemplateNotFound" in missing

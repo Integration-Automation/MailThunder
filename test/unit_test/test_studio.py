@@ -27,13 +27,13 @@ from je_mail_thunder.utils.exception.exceptions import (
     MailThunderStudioException,
     TemplateNotFound,
 )
-from mail_fakes import RecordingSender, RecordingStore, stored_message
+from mail_fakes import MADE_UP_PASSPHRASE, RecordingSender, RecordingStore, stored_message
 
 _USER = "someone@example.com"
-_PASSWORD = "p4ss-word-secret"
+_PASSWORD = MADE_UP_PASSPHRASE
 
 
-@pytest.fixture()
+@pytest.fixture
 def studio(tmp_path, monkeypatch):
     """A Studio API on recording providers, with its log and audit files in a temporary directory."""
     monkeypatch.chdir(tmp_path)
@@ -59,8 +59,11 @@ def _everything(api):
 def test_the_dashboard_and_accounts_describe_the_account_without_its_secret(studio):
     dashboard = studio.dashboard()
     assert dashboard["account"] == {"provider": "google", "user": _USER, "mechanism": "password", "problem": None}
-    assert dashboard["counts"]["templates"] == 1 and dashboard["counts"]["triggers"] == 0
-    assert dashboard["counts"]["subscriptions"] == 2 and dashboard["health"] == [] and dashboard["recent"] == []
+    assert dashboard["counts"]["templates"] == 1
+    assert dashboard["counts"]["triggers"] == 0
+    assert dashboard["counts"]["subscriptions"] == 2
+    assert dashboard["health"] == []
+    assert dashboard["recent"] == []
     accounts = studio.accounts()
     assert accounts["servers"] == {"smtp_host": "smtp.gmail.com", "smtp_port": 465, "smtp_starttls": False,
                                    "imap_host": "imap.gmail.com"}
@@ -77,7 +80,8 @@ def test_an_account_without_credentials_or_servers_is_shown_with_its_problem(tmp
     assert "no credentials" in api.dashboard()["account"]["problem"]
     assert api.accounts()["servers"] is None
     bare = StudioApi(Mail(providers=[RecordingSender()]), audit=AuditLog(tmp_path / "audit.jsonl"))
-    assert bare.accounts()["account"]["provider"] is None and bare.accounts()["servers"] is None
+    assert bare.accounts()["account"]["provider"] is None
+    assert bare.accounts()["servers"] is None
     assert StudioApi(audit=AuditLog(tmp_path / "audit.jsonl")).mail.account.provider == "google"
 
 
@@ -85,7 +89,8 @@ def test_sending_from_studio_goes_through_mail_and_into_the_audit_log(studio):
     sent = studio.send({"to": "qa@example.com", "subject": "Hello", "text": "body", "cc": "", "html": None})
     assert (sent["sender"], sent["to"], sent["subject"]) == (_USER, ["qa@example.com"], "Hello")
     templated = studio.send({"to": "qa@example.com", "template": "report", "context": {"project": "API"}})
-    assert templated["subject"] == "[API] done" and len(studio.sender.sent) == 2
+    assert templated["subject"] == "[API] done"
+    assert len(studio.sender.sent) == 2
     with pytest.raises(MailThunderMessageException):
         studio.send({"subject": "nobody"})
     with pytest.raises(MailThunderStudioException, match="unknown message fields \\['attachments'\\]"):
@@ -125,12 +130,14 @@ def test_triggers_are_shown_and_can_be_polled(studio):
     studio.mail.on("message_received", print, filter={"subject": "[TEST]"})
     studio.mail.watch("INBOX", start=False)
     shown = studio.triggers()
-    assert len(shown["events"]) == 7 and shown["backends"][0]["folder"] == "INBOX"
+    assert len(shown["events"]) == 7
+    assert shown["backends"][0]["folder"] == "INBOX"
     assert shown["subscriptions"][-1]["filter"] == {"subject": "[TEST]"}
     assert studio.poll_triggers() == {"emitted": 0, "events": []}
     studio.store.messages = {"2": stored_message("2", "[TEST] new"), **studio.store.messages}
     polled = studio.poll_triggers()
-    assert polled["emitted"] == 1 and polled["events"][0]["message"]["subject"] == "[TEST] new"
+    assert polled["emitted"] == 1
+    assert polled["events"][0]["message"]["subject"] == "[TEST] new"
     assert len(studio.mail.events.subscriptions) == 3
 
 
@@ -146,7 +153,8 @@ def test_the_policy_can_be_read_and_replaced(studio):
 
 
 def test_projects_logs_and_settings(studio, tmp_path):
-    assert studio.projects()["layer"] is None and "no mail layer" in studio.projects()["problem"]
+    assert studio.projects()["layer"] is None
+    assert "no mail layer" in studio.projects()["problem"]
     create_project_dir(project_path=str(tmp_path), parent_name="Demo")
     studio.project = str(tmp_path / "Demo")
     assert studio.projects() == {"problem": None, "layer": {
@@ -154,18 +162,22 @@ def test_projects_logs_and_settings(studio, tmp_path):
     (tmp_path / "mail.log").write_text("\n".join(f"line {number}" for number in range(300)), encoding="utf-8")
     studio.send({"to": "qa@example.com", "subject": "Logged", "text": "x"})
     logs = studio.logs({"lines": "2"})
-    assert logs["lines"] == ["line 298", "line 299"] and logs["log_file"] == str(tmp_path / "mail.log")
+    assert logs["lines"] == ["line 298", "line 299"]
+    assert logs["log_file"] == str(tmp_path / "mail.log")
     assert [entry["subject"] for entry in logs["audit"]] == ["Logged"]
-    assert len(studio.logs()["lines"]) == 200 and len(studio.logs({"lines": "many"})["lines"]) == 200
+    assert len(studio.logs()["lines"]) == 200
+    assert len(studio.logs({"lines": "many"})["lines"]) == 200
     assert len(studio.logs({"lines": 99999})["lines"]) == 300
     settings = studio.settings()
-    assert settings["audit_file"] == str(tmp_path / "audit.jsonl") and settings["project_directory"].endswith("Demo")
-    assert settings["working_directory"] == str(tmp_path) and settings["version"]
+    assert settings["audit_file"] == str(tmp_path / "audit.jsonl")
+    assert settings["project_directory"].endswith("Demo")
+    assert settings["working_directory"] == str(tmp_path)
+    assert settings["version"]
 
 
 # --- the server -------------------------------------------------------------------------------------------------
 
-@pytest.fixture()
+@pytest.fixture
 def server(studio):
     running = StudioServer(studio, "127.0.0.1", 0)
     running.serve_in_background()
@@ -189,24 +201,32 @@ def _request(server, path, method="GET", body=None, token=True, host=None):
 
 def test_the_page_and_its_assets_are_served_with_strict_headers(server):
     status, body, headers = _request(server, "/", token=False)
-    assert status == 200 and body == INDEX_HTML and headers["Content-Type"] == "text/html; charset=utf-8"
-    assert "script-src 'self'" in headers["Content-Security-Policy"] and headers["X-Frame-Options"] == "DENY"
-    assert headers["X-Content-Type-Options"] == "nosniff" and headers["Cache-Control"] == "no-store"
+    assert status == 200
+    assert body == INDEX_HTML
+    assert headers["Content-Type"] == "text/html; charset=utf-8"
+    assert "script-src 'self'" in headers["Content-Security-Policy"]
+    assert headers["X-Frame-Options"] == "DENY"
+    assert headers["X-Content-Type-Options"] == "nosniff"
+    assert headers["Cache-Control"] == "no-store"
     assert _request(server, "/studio.js", token=False)[1] == STUDIO_JS
     assert _request(server, "/studio.css", token=False)[2]["Content-Type"] == "text/css; charset=utf-8"
-    assert "innerHTML" not in STUDIO_JS and "<script src=\"/studio.js\">" in INDEX_HTML
+    assert "innerHTML" not in STUDIO_JS
+    assert "<script src=\"/studio.js\">" in INDEX_HTML
     assert server.url == f"http://127.0.0.1:{server.server_address[1]}/#token={server.token}"
-    assert DEFAULT_PORT == 9947 and len(server.token) >= 32
+    assert DEFAULT_PORT == 9947
+    assert len(server.token) >= 32
 
 
 def test_the_api_needs_the_token_and_the_right_host(server):
     assert _request(server, "/api/dashboard")[0] == 200
     for token in (False, "guess", server.token + "x"):
         status, body, _headers = _request(server, "/api/dashboard", token=token)
-        assert status == 403 and "token" in json.loads(body)["message"]
+        assert status == 403
+        assert "token" in json.loads(body)["message"]
     for path in ("/", "/api/dashboard"):
         status, body, _headers = _request(server, path, host="evil.example.com")
-        assert status == 403 and "not the one" in json.loads(body)["message"]
+        assert status == 403
+        assert "not the one" in json.loads(body)["message"]
     assert _request(server, "/api/dashboard", host=f"localhost:{server.server_address[1]}")[0] == 200
     assert _request(server, "/api/nothing")[0] == 404
     assert _request(server, "/api/send")[0] == 404
@@ -229,11 +249,15 @@ def test_an_address_studio_does_not_have_is_not_echoed_back(server):
 def test_the_api_over_http(server, studio):
     status, body, _headers = _request(server, "/api/send", "POST",
                                       {"to": "qa@example.com", "subject": "報表", "text": "body"})
-    assert status == 200 and json.loads(body)["subject"] == "報表" and len(studio.sender.sent) == 1
+    assert status == 200
+    assert json.loads(body)["subject"] == "報表"
+    assert len(studio.sender.sent) == 1
     status, body, _headers = _request(server, "/api/send", "POST", {"subject": "nobody"})
-    assert status == 400 and json.loads(body)["error"] == "MailThunderMessageException"
+    assert status == 400
+    assert json.loads(body)["error"] == "MailThunderMessageException"
     status, body, _headers = _request(server, "/api/templates/render", "POST", {"name": "report", "context": ["x"]})
-    assert status == 400 and "context is a mapping" in json.loads(body)["message"]
+    assert status == 400
+    assert "context is a mapping" in json.loads(body)["message"]
     assert json.loads(_request(server, "/api/logs?lines=1")[1])["audit"][0]["event"] == "message_failed"
     assert json.loads(_request(server, "/api/policies", "POST", {"max_count": 3})[1])["max_count"] == 3
     assert _PASSWORD not in _request(server, "/api/accounts")[1]
@@ -265,19 +289,22 @@ def test_start_studio_and_the_command_line(tmp_path, monkeypatch):
     monkeypatch.setenv("MAIL_THUNDER_FILE_PROVIDER_DIR", str(tmp_path / "outbox"))
     running = start_studio(host="127.0.0.1", port=0, project=str(tmp_path))
     try:
-        assert _request(running, "/api/settings")[0] == 200 and running.api.project == str(tmp_path)
+        assert _request(running, "/api/settings")[0] == 200
+        assert running.api.project == str(tmp_path)
     finally:
         running.stop()
     create_project_dir(project_path=str(tmp_path), parent_name="Demo")
     created = studio_main.create_server(["--host", "127.0.0.1", "--port", "0", "--no-browser",
                                          "--project", str(tmp_path / "Demo")])
     try:
-        assert created.open_browser is False and created.api.mail.account.provider == "file"
+        assert created.open_browser is False
+        assert created.api.mail.account.provider == "file"
         assert created.api.projects()["layer"]["templates"] == ["test_report"]
     finally:
         created.server_close()
     plain = studio_main.create_server(["--host", "127.0.0.1", "--port", "0"])
     try:
-        assert plain.open_browser is True and plain.api.project is None
+        assert plain.open_browser is True
+        assert plain.api.project is None
     finally:
         plain.server_close()

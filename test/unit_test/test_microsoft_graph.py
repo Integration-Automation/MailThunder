@@ -104,8 +104,9 @@ def test_a_message_as_graph_takes_it(tmp_path):
     assert "attachments" not in graph_message(message, attachments=False)
     assert graph_message(MailMessage(to="a@example.com", text="only text"))["body"] == {
         "contentType": "Text", "content": "only text"}
+    with_a_standard_header = MailMessage(to="a@example.com", headers={"List-Id": "x", "x-ok": "1"})
     with pytest.raises(MailThunderProviderException, match="start with X-: \\['List-Id'\\]"):
-        graph_message(MailMessage(to="a@example.com", headers={"List-Id": "x", "x-ok": "1"}))
+        graph_message(with_a_standard_header)
 
 
 def test_a_graph_message_as_a_mail_message():
@@ -135,10 +136,14 @@ def test_a_small_message_is_one_sendmail_request():
     provider.send(_MESSAGE)
     ((method, path, headers, payload),) = graph.requests
     assert (method, path) == ("POST", "/me/sendMail")
-    assert headers["Authorization"] == f"Bearer {_TOKEN}" and headers["Content-Type"] == "application/json"
-    assert payload["saveToSentItems"] is True and payload["message"]["subject"] == "Hello"
+    assert headers["Authorization"] == f"Bearer {_TOKEN}"
+    assert headers["Content-Type"] == "application/json"
+    assert payload["saveToSentItems"] is True
+    assert payload["message"]["subject"] == "Hello"
     assert "from" not in payload["message"]
-    assert isinstance(provider, MailSender) and isinstance(provider, MailStore) and provider.close() is None
+    assert isinstance(provider, MailSender)
+    assert isinstance(provider, MailStore)
+    assert provider.close() is None
 
 
 def test_another_sender_is_named_in_the_message():
@@ -234,9 +239,11 @@ def test_messages_come_a_page_at_a_time_newest_first():
     assert [message.message_id for message in rest] == ["2", "1"]
     assert rest[0].attachments[0].filename == "r.pdf"
     method, path, _headers, _payload = graph.requests[0]
-    assert method == "GET" and path.startswith("/me/mailFolders/inbox/messages?")
+    assert method == "GET"
+    assert path.startswith("/me/mailFolders/inbox/messages?")
     query = urllib.parse.parse_qs(path.split("?", 1)[1])
-    assert query["$orderby"] == ["receivedDateTime desc"] and query["$top"] == ["25"]
+    assert query["$orderby"] == ["receivedDateTime desc"]
+    assert query["$top"] == ["25"]
     assert query["$filter"] == ["receivedDateTime ge 1900-01-01T00:00:00Z and isRead eq false and "
                                 "(from/emailAddress/address eq 'ci@example.com')"]
     assert graph.calls()[1:] == [
@@ -246,8 +253,10 @@ def test_messages_come_a_page_at_a_time_newest_first():
 def test_a_limit_stops_the_reading_and_sizes_the_page():
     provider, graph = _provider((200, {"value": [_resource("3"), _resource("2")], "@odata.nextLink": "ignored"}))
     assert [message.message_id for message in provider.get_messages("Archive", limit=1)] == ["3"]
-    assert "%24top=1" in graph.requests[0][1] and "/me/mailFolders/archive/messages" in graph.requests[0][1]
-    assert list(provider.get_messages(limit=0)) == [] and len(graph.requests) == 1
+    assert "%24top=1" in graph.requests[0][1]
+    assert "/me/mailFolders/archive/messages" in graph.requests[0][1]
+    assert list(provider.get_messages(limit=0)) == []
+    assert len(graph.requests) == 1
 
 
 def test_a_next_link_outside_graph_is_not_followed():
@@ -335,7 +344,8 @@ def test_mail_sends_and_reads_through_graph():
     with Mail(account=MailAccount(provider="microsoft_graph", auth=_AUTH), providers=[provider]) as mail:
         sent = mail.send(to="reader@example.com", subject="Report", html="<b>ok</b>")
         assert [message.subject for message in mail.get_messages(limit=5)] == ["Report"]
-    assert sent.sender == _USER and graph.calls()[0] == ("POST", "/me/sendMail")
+    assert sent.sender == _USER
+    assert graph.calls()[0] == ("POST", "/me/sendMail")
 
 
 # --- the HTTPS client -------------------------------------------------------------------------------------------
@@ -392,18 +402,22 @@ def test_graph_polling_asks_for_what_was_received_since_the_last_look():
                          _resource("2", received="2026-10-01T08:00:05Z")]}),
         (200, {"value": []}))
     backend = create_backend(provider, "INBOX", batch_limit=10)
-    assert type(backend) is GraphPollingBackend and backend.name == "graph-polling"
+    assert type(backend) is GraphPollingBackend
+    assert backend.name == "graph-polling"
     events = []
     backend.bind(events.append)
     assert backend.poll() == 0
-    assert backend.poll() == 1 and events[0].message.subject == "New" and events[0].provider == "microsoft_graph"
+    assert backend.poll() == 1
+    assert events[0].message.subject == "New"
+    assert events[0].provider == "microsoft_graph"
     assert backend.poll() == 0
     filters = [urllib.parse.parse_qs(path.split("?", 1)[1])["$filter"][0] for _method, path in graph.calls()]
     assert filters[0] == "receivedDateTime ge 1900-01-01T00:00:00Z"
     assert filters[1] == filters[2] == (
         "receivedDateTime ge 1900-01-01T00:00:00Z and (receivedDateTime ge 2026-10-01T08:00:05Z)")
+    another_store = RecordingStore()
     with pytest.raises(MailThunderTriggerException, match="needs a MicrosoftGraphProvider"):
-        GraphPollingBackend(RecordingStore())
+        GraphPollingBackend(another_store)
 
 
 def _webhook(*answers, **options):
@@ -419,20 +433,26 @@ def test_a_webhook_subscription_is_created_renewed_and_removed(monkeypatch):
     assert backend.poll() == 0
     method, path, _headers, payload = graph.requests[0]
     assert (method, path) == ("POST", "/subscriptions")
-    assert payload["changeType"] == "created" and payload["notificationUrl"] == "https://hooks.example.com/mail"
-    assert payload["resource"] == "me/mailFolders('inbox')/messages" and len(payload["clientState"]) >= 32
+    assert payload["changeType"] == "created"
+    assert payload["notificationUrl"] == "https://hooks.example.com/mail"
+    assert payload["resource"] == "me/mailFolders('inbox')/messages"
+    assert len(payload["clientState"]) >= 32
     expires = datetime.strptime(payload["expirationDateTime"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
     assert timedelta(minutes=58) < expires - datetime.now(timezone.utc) <= timedelta(minutes=60)
-    assert backend.poll() == 0 and len(graph.requests) == 1
+    assert backend.poll() == 0
+    assert len(graph.requests) == 1
     monkeypatch.setattr(graph_triggers, "RENEW_MARGIN", timedelta(minutes=61))
     assert backend.poll() == 0
-    assert graph.calls()[1] == ("PATCH", "/subscriptions/sub%2F1") and "expirationDateTime" in graph.requests[1][3]
+    assert graph.calls()[1] == ("PATCH", "/subscriptions/sub%2F1")
+    assert "expirationDateTime" in graph.requests[1][3]
     described = backend.describe()
-    assert described["subscribed"] is True and described["listening"] == "127.0.0.1:0"
+    assert described["subscribed"] is True
+    assert described["listening"] == "127.0.0.1:0"
     assert payload["clientState"] not in json.dumps(described)
     backend.close()
     backend.close()
-    assert graph.calls()[2] == ("DELETE", "/subscriptions/sub%2F1") and len(graph.requests) == 3
+    assert graph.calls()[2] == ("DELETE", "/subscriptions/sub%2F1")
+    assert len(graph.requests) == 3
 
 
 def test_a_notification_needs_the_secret_and_the_subscription_id():
@@ -444,7 +464,8 @@ def test_a_notification_needs_the_secret_and_the_subscription_id():
     forged = {"value": [{"subscriptionId": "sub-1", "clientState": "guess", "resourceData": {"id": "m1"}},
                         {"subscriptionId": "other", "clientState": secret, "resourceData": {"id": "m1"}},
                         {"subscriptionId": "sub-1", "resourceData": {"id": "m1"}}]}
-    assert backend.handle_notification(forged) == 0 and len(graph.requests) == 1
+    assert backend.handle_notification(forged) == 0
+    assert len(graph.requests) == 1
     assert backend.handle_notification(["not", "an", "object"]) == 0
     genuine = {"value": [{"subscriptionId": "sub-1", "clientState": secret, "resourceData": {"id": "m1"}}]}
     assert backend.handle_notification(genuine) == 2
@@ -491,11 +512,13 @@ def test_the_listener_answers_the_validation_and_takes_notifications():
         genuine = json.dumps({"value": [{"subscriptionId": "sub-1", "clientState": secret,
                                          "resourceData": {"id": "m1"}}]}).encode("utf-8")
         assert _post(port, "/", genuine)[0] == 202
-        assert arrived.wait(5) and events[0].message.message_id == "m1"
+        assert arrived.wait(5)
+        assert events[0].message.message_id == "m1"
         assert _post(port, "/", b"not json")[0] == 202
         assert _post(port, "/")[0] == 400
         assert _post(port, "/", b"x", {"Content-Length": "nonsense"})[0] == 400
     finally:
         backend.stop()
-    assert backend.running is False and backend._server is None
+    assert backend.running is False
+    assert backend._server is None
     assert graph.calls()[-1] == ("DELETE", "/subscriptions/sub-1")

@@ -53,7 +53,8 @@ def test_the_wrappers_check_attachments_against_the_default_policy(wrapper, tmp_
     smtp = _smtp(wrapper)
     assert smtp.attachment_policy is DEFAULT_ATTACHMENT_POLICY
     smtp.create_message_with_attach_and_send("body", _SETTINGS, str(report))
-    assert len(smtp.sent) == 1 and smtp.sent[0]["Subject"] == "Report"
+    assert len(smtp.sent) == 1
+    assert smtp.sent[0]["Subject"] == "Report"
 
 
 def test_an_attachment_the_policy_refuses_is_not_sent(tmp_path):

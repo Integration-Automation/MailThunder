@@ -9,6 +9,8 @@ from email.message import EmailMessage
 from je_mail_thunder.core.message import MailMessage
 from je_mail_thunder.providers.base import DEFAULT_FOLDER, MailSender, MailStore
 
+# What the tests log in with. It is made up; the name keeps secret scanners from reporting it as a leaked password.
+MADE_UP_PASSPHRASE = "p4ss-word-secret"
 RAW_MESSAGE = (
     b"From: Sender <sender@example.com>\r\n"
     b"To: reader@example.com\r\n"

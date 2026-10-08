@@ -22,7 +22,7 @@ _LAYER_FILES = ["config.py", "templates/test_report/body.html", "templates/test_
                 "templates/test_report/subject.txt", "templates/test_report/template.json", "triggers.py"]
 
 
-@pytest.fixture()
+@pytest.fixture
 def project(tmp_path, monkeypatch):
     """A scaffolded project whose file provider writes inside it."""
     create_project_dir(project_path=str(tmp_path), parent_name="Demo")
@@ -45,7 +45,8 @@ def test_a_scaffolded_project_has_a_mail_layer(project):
     mail_dir = project / "mail"
     found = sorted(path.relative_to(mail_dir).as_posix() for path in mail_dir.rglob("*") if path.is_file())
     assert found == _LAYER_FILES
-    assert (project / "keyword" / "keyword1.json").is_file() and (project / "executor").is_dir()
+    assert (project / "keyword" / "keyword1.json").is_file()
+    assert (project / "executor").is_dir()
     assert describe_mail_layer(project) == {
         "directory": str(mail_dir), "config": True, "triggers": True, "templates": ["test_report"]}
     assert json.loads((mail_dir / "templates" / "test_report" / "template.json").read_text(encoding="utf-8"))[
@@ -65,21 +66,26 @@ def test_the_scaffolded_layer_gives_a_working_mail(project):
     before = set(sys.modules)
     mail = project_mail(project)
     assert not [name for name in set(sys.modules) - before if name.startswith("_mail_thunder_project_")]
-    assert mail.account.provider == "file" and isinstance(mail.providers[0], FileProvider)
-    assert mail.policy.max_count == 10 and ".html" in mail.policy.allowed_extensions
+    assert mail.account.provider == "file"
+    assert isinstance(mail.providers[0], FileProvider)
+    assert mail.policy.max_count == 10
+    assert ".html" in mail.policy.allowed_extensions
     assert mail.templates.directories == (project / "mail" / "templates", shared_template_directory())
     assert [subscription.event for subscription in mail.events.subscriptions] == [
         "*", "message_received", "message_failed"]
     (backend,) = mail.triggers.backends
-    assert backend.folder == "INBOX" and not backend.running
+    assert backend.folder == "INBOX"
+    assert not backend.running
     sent = mail.send(to="qa@example.com", sender="ci@example.com", template="test_report", context={
         "project": "Demo", "passed": 3, "failed": 1, "failures": [{"name": "login", "reason": "timeout"},
                                                                   {"name": "logout"}]})
     assert sent.subject == "[Demo] 3 passed, 1 failed"
     assert "  1. login: timeout\n  2. logout: no reason given\n" in sent.text
-    assert "<li>login: timeout</li>" in sent.html and "Everything passed" not in sent.html
+    assert "<li>login: timeout</li>" in sent.html
+    assert "Everything passed" not in sent.html
     passed = mail.render("test_report", {"project": "Demo", "passed": 4})
-    assert passed.subject == "[Demo] 4 passed, 0 failed" and "Everything passed." in passed.text
+    assert passed.subject == "[Demo] 4 passed, 0 failed"
+    assert "Everything passed." in passed.text
     assert len(list((project / "outbox" / "Sent").glob("*.eml"))) == 1
     program = project / "setup.exe"
     program.write_bytes(b"MZ")
@@ -97,8 +103,10 @@ def test_a_layer_without_files_is_the_default_mail(tmp_path, monkeypatch):
     for name in ("mail_thunder_mail_provider", "mail_thunder_oauth2_access_token", "mail_thunder_oauth2_refresh_token"):
         monkeypatch.delenv(name, raising=False)
     mail = project_mail()
-    assert mail.account.provider == "google" and mail.policy is DEFAULT_ATTACHMENT_POLICY
-    assert mail.events.subscriptions == () and mail.triggers.backends == ()
+    assert mail.account.provider == "google"
+    assert mail.policy is DEFAULT_ATTACHMENT_POLICY
+    assert mail.events.subscriptions == ()
+    assert mail.triggers.backends == ()
     assert mail.templates.directories[0] == tmp_path / "Bare" / "mail" / "templates"
     assert mail_layer_directory() == tmp_path / "Bare" / "mail"
     assert describe_mail_layer() == {"directory": str(tmp_path / "Bare" / "mail"), "config": False,
@@ -133,13 +141,15 @@ def test_the_config_can_name_a_login_or_a_whole_account(tmp_path):
     ("def broken(:\n", "could not be loaded: SyntaxError"),
 ])
 def test_a_config_that_cannot_be_used_names_its_file(config, message, tmp_path):
+    layer = _layer(tmp_path, config=config)
     with pytest.raises(MailThunderProjectException, match=message):
-        project_mail(_layer(tmp_path, config=config))
+        project_mail(layer)
 
 
 def test_triggers_must_define_register_and_its_errors_are_reported(tmp_path):
+    layer = _layer(tmp_path, triggers="HANDLERS = []\n")
     with pytest.raises(MailThunderProjectException, match="must define register\\(mail\\)"):
-        project_mail(_layer(tmp_path, triggers="HANDLERS = []\n"))
+        project_mail(layer)
     (tmp_path / "Bare" / "mail" / "triggers.py").write_text(
         "def register(mail):\n    mail.on('message_recieved', print)\n", encoding="utf-8")
     with pytest.raises(MailThunderTriggerException, match="unknown event 'message_recieved'"):

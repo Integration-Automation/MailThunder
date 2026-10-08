@@ -72,7 +72,8 @@ def test_dependabot_waits_a_week_before_proposing_a_release():
     text = (_ROOT / ".github" / "dependabot.yml").read_text(encoding="utf-8")
     blocks = re.split(r"^\s*-\s*package-ecosystem:", text, flags=re.MULTILINE)[1:]
     days = [re.search(r"^\s*default-days:\s*(\d+)", block, re.MULTILINE) for block in blocks]
-    assert blocks and all(match and int(match.group(1)) >= 7 for match in days)
+    assert blocks
+    assert all(match and int(match.group(1)) >= 7 for match in days)
 
 
 def _checkout_steps(path: Path) -> list[tuple[int, str]]:
@@ -174,7 +175,8 @@ def _locked_version(package: str) -> tuple[int, ...]:
 def test_a_job_with_the_pypi_token_builds_with_the_locked_backend(name, body):
     # An isolated build downloads the newest setuptools each time, outside the lock.
     builds = _BUILD.findall(body)
-    assert builds and all("--no-isolation" in command for command in builds), name
+    assert builds, name
+    assert all("--no-isolation" in command for command in builds), name
 
 
 @pytest.mark.parametrize("toml_name", ["pyproject.toml", "dev.toml"])
