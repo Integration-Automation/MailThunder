@@ -25,6 +25,7 @@
   - [JSON 設定檔](#json-設定檔)
   - [環境變數](#環境變數)
   - [OAuth2（Google 與 Microsoft）](#oauth2google-與-microsoft)
+  - [驗證物件](#驗證物件)
 - [附件政策](#附件政策)
 - [腳本引擎](#腳本引擎)
   - [Action JSON 格式](#action-json-格式)
@@ -58,6 +59,7 @@
 - **套件管理器** — 動態載入 Python 套件至腳本執行器
 - **環境變數驗證** — 支援設定檔或作業系統環境變數進行身份驗證
 - **OAuth2 登入** — Gmail 與 Microsoft 365 的 SASL `XOAUTH2`，以標準函式庫交換 refresh token 並快取存取權杖
+- **驗證物件** — `PasswordAuth`、`AppPasswordAuth`、`OAuth2Auth` 與 `XOAUTH2Auth`，共用同一個 `Authentication` 介面
 - **自動匯出** — 一行指令即可將信箱所有郵件匯出為本機檔案
 - **Context Manager 支援** — SMTP 和 IMAP 連線皆可使用 `with` 語法
 - **日誌記錄** — 內建所有操作的日誌紀錄
@@ -247,6 +249,33 @@ with SMTPStartTLSWrapper() as smtp:
     smtp.oauth2_login(settings.user, oauth2_token_cache.access_token(settings))
     smtp.create_message_and_send("Hello", {"Subject": "Hi", "From": settings.user, "To": "friend@example.com"})
 ```
+
+### 驗證物件
+
+每一種登入方式都是一個 `Authentication` 物件，因此負責連線的程式不需要在意拿到的是哪一種：
+
+| 類別 | 登入方式 | 適用於 |
+|---|---|---|
+| `PasswordAuth(user, password)` | 帳號的密碼 | SMTP、IMAP |
+| `AppPasswordAuth(user, app_password)` | 應用程式密碼（Google、Yahoo、iCloud）；顯示時夾帶的空白會被去除 | SMTP、IMAP |
+| `OAuth2Auth(settings)` | OAuth2 存取權杖，以 `Authorization: Bearer ...` 送出 | HTTP API |
+| `XOAUTH2Auth(settings)` | 同一個權杖，以 SASL `XOAUTH2` 送出 | SMTP、IMAP、HTTP API |
+
+```python
+from je_mail_thunder import AppPasswordAuth, OAuth2Settings, SMTPWrapper, XOAUTH2Auth, resolve_authentication
+
+auth = AppPasswordAuth("you@gmail.com", "abcd efgh ijkl mnop")
+auth = XOAUTH2Auth(OAuth2Settings(user="you@gmail.com", client_id="...", client_secret="...", refresh_token="..."))
+auth = resolve_authentication()   # 設定檔或環境變數裡的登入方式，沒有則為 None
+
+with SMTPWrapper() as smtp:
+    auth.login(smtp)              # 同一個呼叫也能登入 IMAPWrapper
+```
+
+`auth.login(client)` 登入 SMTP 或 IMAP wrapper，`auth.authorization()` 回傳 HTTP `Authorization` 標頭的值。
+某個機制做不到其中一項時會引發 `MailThunderAuthenticationException`；`MailThunderOAuth2Exception` 現在是它的子類別。
+`settings` 是 `OAuth2Settings`；權杖來自共用的權杖快取，並在到期前一分鐘更新。`resolve_authentication()` 與 wrapper
+一樣，有 OAuth2 設定時優先於密碼。密碼與權杖不會出現在 `repr` 中。
 
 ---
 
@@ -595,6 +624,7 @@ MailThunder/
     __init__.py              # 公開 API 匯出
     __main__.py              # CLI 進入點
     attachments/             # 附件模型、AttachmentPolicy 與驗證器
+    auth/                    # 驗證機制：密碼、應用程式密碼、OAuth2、XOAUTH2
     smtp/
       smtp_wrapper.py        # SMTPClientMixin、SMTPWrapper、SMTPStartTLSWrapper
     imap/

@@ -58,6 +58,7 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | ID | Date | Title | Tags | Batch |
 |---|---|---|---|---|
+| U-20261008-02 | 2026-10-08 | Authentication abstraction: one interface for password and OAuth2 logins | #done #auth #oauth2 #roadmap-2.0 | [2026-10](2026-10.md) |
 | U-20261008-01 | 2026-10-08 | Attachment policy checks attachments before a message is sent | #feature #attachments #security #roadmap-2.0 | [2026-10](2026-10.md) |
 | U-20261001-09 | 2026-10-01 | The publish jobs build with the locked setuptools instead of downloading the newest | #ci #security #X-13 | [2026-10](2026-10.md) |
 | U-20261001-08 | 2026-10-01 | Dependabot watches the hash-locked requirements; a guard keeps the publish jobs on them | #ci #security #X-13 | [2026-10](2026-10.md) |
@@ -94,5 +95,5 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | File | Period | Entries |
 |---|---|---:|
-| [2026-10.md](2026-10.md) | 2026-10 | 10 |
+| [2026-10.md](2026-10.md) | 2026-10 | 11 |
 | [2026-09.md](2026-09.md) | 2026-09 | 21 |

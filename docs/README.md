@@ -55,7 +55,7 @@ docs/
         exceptions.rst                   #   例外處理
       API/                               # API reference
         api_index.rst                    #   Public exports & module map
-        core_api.rst                     #   Core mail API (attachments)
+        core_api.rst                     #   Core mail API (attachments, authentication)
         smtp_api.rst                     #   SMTPWrapper API
         imap_api.rst                     #   IMAPWrapper API
         executor_api.rst                 #   Executor API

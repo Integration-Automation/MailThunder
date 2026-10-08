@@ -14,11 +14,8 @@ Cross-repo and workspace items live in `D:\Codes\progress.md` (relevant here: X-
 
 ## MailThunder 2.0 roadmap
 
-From `docs/MAILTHUNDER-2.0-ROADMAP.md` (PR #45), in its priority order. One item is one focused change; the attachment policy (P0) is done (`docs/updates` U-20261008-01).
+From `docs/MAILTHUNDER-2.0-ROADMAP.md` (PR #45), in its priority order. One item is one focused change. Done so far (P0): the attachment policy (`docs/updates` U-20261008-01) and the authentication abstraction (U-20261008-02).
 
-- **#11** [P0] Authentication abstraction.
-  - What: `je_mail_thunder/auth/` with `Authentication`, `PasswordAuth`, `AppPasswordAuth`, `OAuth2Auth` (a bearer token for HTTP APIs) and `XOAUTH2Auth` (SASL for SMTP and IMAP), over the token code in `utils/oauth2/`.
-  - Also: one function in `utils/save_mail_user_content/credentials.py` that turns the content file or the environment into an `Authentication`.
 - **#12** [P0] Core mail API and provider interface.
   - What: `Mail` (send, get_messages, get_message, create_draft, delete_message) over a `MailProvider` interface, with `SMTPProvider` and `IMAPProvider` built on the existing wrappers; a provider-independent message; `MT_mail_*` commands; attachments checked against the policy before sending.
   - Keep: `SMTPWrapper` / `IMAPWrapper` and every `MT_smtp_*` / `MT_imap_*` command work unchanged (`architecture.md` §6: PyBreeze imports them).
@@ -28,7 +25,7 @@ From `docs/MAILTHUNDER-2.0-ROADMAP.md` (PR #45), in its priority order. One item
   - Decide first: the roadmap prefers Jinja2-style syntax, and the package uses only the standard library (CLAUDE.md › Dependency Security). Either a small `{{ name }}` renderer in the standard library, or Jinja2 as an optional extra.
 - **#15** [P1] `MicrosoftGraphProvider` (`je_mail_thunder/providers/microsoft_graph.py`).
   - What: send, drafts, message retrieval and attachments over Microsoft Graph with an OAuth2 bearer token; Graph errors mapped to MailThunder exceptions.
-  - Needs: #11, #12, and the Graph scopes (`Mail.Send`, `Mail.ReadWrite`) beside the SMTP / IMAP ones in `OAUTH2_PROVIDERS`.
+  - Needs: #12, and the Graph scopes (`Mail.Send`, `Mail.ReadWrite`) beside the SMTP / IMAP ones in `OAUTH2_PROVIDERS`.
   - Decide first: whether the provider name `microsoft` moves from SMTP / IMAP to Graph, or Graph gets its own name.
 - **#16** [P1] Mail events and triggers (`core/events.py`, `triggers/`: `trigger.py`, `filter.py`, `dispatcher.py`).
   - What: `Mail.on(event, filter, handler)`; the events `message_received`, `message_sent`, `message_failed`, `attachment_received`, `attachment_rejected`, `authentication_failed`, `connection_failed`; filters on sender, recipient, subject, body, attachments, attachment type, time and metadata; a dispatcher; the `MailTriggerBackend` interface.

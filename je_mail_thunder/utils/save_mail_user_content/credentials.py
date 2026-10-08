@@ -3,10 +3,15 @@ Where the SMTP and IMAP wrappers find how to log in: the content file first, the
 
 OAuth2 settings, when present, are used instead of a password: an ``"oauth2"`` object in
 ``mail_thunder_content.json``, else the ``mail_thunder_oauth2_*`` environment variables.
+:func:`resolve_authentication` gives the same answer as an :class:`~je_mail_thunder.auth.base.Authentication`,
+which is what the mail providers log in with.
 """
 import os
 from typing import Mapping, Optional, Tuple
 
+from je_mail_thunder.auth.base import Authentication
+from je_mail_thunder.auth.password import PasswordAuth
+from je_mail_thunder.auth.xoauth2 import XOAUTH2Auth
 from je_mail_thunder.utils.exception.exceptions import MailThunderOAuth2Exception
 from je_mail_thunder.utils.logging.loggin_instance import mail_thunder_logger
 from je_mail_thunder.utils.oauth2.oauth2 import OAUTH2_SETTING_NAMES, OAuth2Provider, OAuth2Settings
@@ -66,6 +71,21 @@ def resolve_oauth2_settings() -> Optional[OAuth2Settings]:
             raise MailThunderOAuth2Exception('"oauth2" in mail_thunder_content.json must be a JSON object')
         return OAuth2Settings.from_mapping(block, user=content.get("user"))
     return oauth2_settings_from_environ()
+
+
+def resolve_authentication() -> Optional[Authentication]:
+    """
+    How the account of the content file or the environment logs in: ``XOAUTH2`` when there are OAuth2 settings
+    (:func:`resolve_oauth2_settings`), else its user and password (:func:`resolve_login_credentials`), else
+    ``None``.
+
+    :raises MailThunderOAuth2Exception: the OAuth2 settings found are incomplete or invalid.
+    """
+    oauth2_settings = resolve_oauth2_settings()
+    if oauth2_settings is not None:
+        return XOAUTH2Auth(oauth2_settings)
+    credentials = resolve_login_credentials()
+    return None if credentials is None else PasswordAuth(*credentials)
 
 
 def configured_oauth2_provider() -> Optional[OAuth2Provider]:

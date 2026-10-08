@@ -27,6 +27,7 @@ MailThunder is organized into the following core modules:
      __init__.py              # Public API exports
      __main__.py              # CLI entry point (argparse)
      attachments/             # Attachment model, AttachmentPolicy and its validator
+     auth/                    # Authentication: password, app password, OAuth2, XOAUTH2
      smtp/
        smtp_wrapper.py        # SMTPWrapper — extends smtplib.SMTP_SSL
      imap/

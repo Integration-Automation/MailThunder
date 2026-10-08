@@ -19,6 +19,8 @@ MailThunder 為不同的錯誤情境定義了一組自訂例外類別。
            ├── ExecuteActionException
            ├── AddCommandException
            ├── JsonActionException
+           ├── MailThunderAuthenticationException
+           │     └── MailThunderOAuth2Exception
            └── MailThunderAttachmentException
                  ├── AttachmentNotFound
                  ├── AttachmentTooLarge
@@ -51,6 +53,11 @@ MailThunder 為不同的錯誤情境定義了一組自訂例外類別。
      - ``add_command_to_executor()`` 收到非可呼叫值（非函式/方法）
    * - ``JsonActionException``
      - 找不到 JSON 動作檔或無法儲存
+   * - ``MailThunderAuthenticationException``
+     - 沒有可用來登入的認證資訊，或該機制做不到被要求的事情（要求密碼提供 HTTP 授權、
+       要求單純的 OAuth2 登入郵件伺服器）
+   * - ``MailThunderOAuth2Exception``
+     - OAuth2 設定不完整或無效，或權杖端點拒絕、無法連線
    * - ``MailThunderAttachmentException``
      - 附件錯誤的基底；``AttachmentPolicy`` 或 ``Attachment`` 無效時也會引發
    * - ``AttachmentNotFound``

@@ -114,3 +114,79 @@ MIME Helpers
      - The last extension, lower-cased and with its dot (``""`` without one)
    * - ``safe_filename(filename, fallback="attachment")``
      - A bare file name that cannot leave the directory it is written to
+
+----
+
+Authentication
+--------------
+
+**Modules:** ``je_mail_thunder.auth.base``, ``je_mail_thunder.auth.password``,
+``je_mail_thunder.auth.oauth2``, ``je_mail_thunder.auth.xoauth2``
+
+Authentication
+~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+   class Authentication(ABC):
+       def __init__(self, user: str) -> None: ...
+
+One way of logging an account in. A mechanism overrides what it can do; the rest raises
+``MailThunderAuthenticationException``.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - Member
+     - Description
+   * - ``user``
+     - The account's mail address
+   * - ``mechanism``
+     - The mechanism's name, for logs and error messages (abstract)
+   * - ``login(client)``
+     - Log an SMTP or IMAP wrapper in
+   * - ``authorization()``
+     - The value of the HTTP ``Authorization`` header
+
+Mechanisms
+~~~~~~~~~~
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 15 45
+
+   * - Class
+     - ``mechanism``
+     - Notes
+   * - ``PasswordAuth(user, password)``
+     - ``password``
+     - ``login`` calls ``client.login(user, password)``
+   * - ``AppPasswordAuth(user, app_password)``
+     - ``app-password``
+     - A ``PasswordAuth`` that drops the whitespace an app password is shown with
+   * - ``OAuth2Auth(settings, token_cache=None)``
+     - ``oauth2``
+     - ``access_token()`` and ``authorization()`` (``Bearer <token>``); no mail server login
+   * - ``XOAUTH2Auth(settings, token_cache=None)``
+     - ``xoauth2``
+     - An ``OAuth2Auth`` whose ``login`` calls ``client.oauth2_login(user, access_token)``
+
+``settings`` is an ``OAuth2Settings``. ``token_cache`` defaults to the shared ``oauth2_token_cache``,
+looked up each time a token is needed. A missing user, password or settings object raises
+``MailThunderAuthenticationException``; a refused or unreachable token endpoint raises
+``MailThunderOAuth2Exception``, a subclass.
+
+resolve_authentication()
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Module:** ``je_mail_thunder.utils.save_mail_user_content.credentials``
+
+.. code-block:: python
+
+   def resolve_authentication() -> Optional[Authentication]
+
+The login of ``mail_thunder_content.json`` or the environment: an ``XOAUTH2Auth`` when there are
+OAuth2 settings, else a ``PasswordAuth``, else ``None``.
+
+**Raises:** ``MailThunderOAuth2Exception`` when the OAuth2 settings found are incomplete or invalid.

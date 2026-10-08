@@ -20,10 +20,11 @@ executor exposes the same operations to action files, a CLI and a TCP socket ser
 | `je_mail_thunder/__main__.py` | Legacy flag CLI (`python -m je_mail_thunder`) |
 | `je_mail_thunder/smtp/smtp_wrapper.py` | `SMTPClientMixin` (messages, login, send, quit; mixed in before an `smtplib` class), `SMTPWrapper(SMTPClientMixin, SMTP_SSL)` (default `smtp.gmail.com:465`), `SMTPStartTLSWrapper(SMTPClientMixin, SMTP)` (default `smtp.office365.com:587`; STARTTLS before anything else, refused when the server lacks it), `default_smtp_client()` and the module instance `smtp_instance` (a `LazyInstance` of it) |
 | `je_mail_thunder/imap/imap_wrapper.py` | `IMAPWrapper(IMAP4_SSL)` (default `imap.gmail.com`; `oauth2_login`), `default_imap_client()` and the module instance `imap_instance` (a `LazyInstance` of it) |
+| `je_mail_thunder/auth/` | How an account logs in, behind one interface: `base.Authentication` (`user`, `mechanism`, `login(client)` for the SMTP / IMAP wrappers, `authorization()` for HTTP; what a mechanism cannot do raises `MailThunderAuthenticationException`), `password.PasswordAuth` / `AppPasswordAuth`, `oauth2.OAuth2Auth` (bearer token from `utils/oauth2`'s cache), `xoauth2.XOAUTH2Auth` (the same token as SASL `XOAUTH2`); secrets stay out of every `repr` |
 | `je_mail_thunder/attachments/` | What a message may carry: `attachment.Attachment` (a file to send by `path`, or one that arrived as `content`; `save` writes it under `mime.safe_filename`), `policy.AttachmentPolicy` / `DEFAULT_ATTACHMENT_POLICY` (count, size, extension and MIME-type limits), `validator.validate_attachments` (count → existence → size → extension → MIME type → total size; raises the `MailThunderAttachmentException` subclasses), `mime` (type and extension from the file name) |
 | `je_mail_thunder/utils/oauth2/oauth2.py` | OAuth2 with the standard library: `OAUTH2_PROVIDERS` (`google`, `microsoft`: token URL, scope, SMTP/IMAP hosts), `OAuth2Settings` (secrets out of `repr`), `refresh_access_token` (https only), `OAuth2TokenCache` / `oauth2_token_cache`, `xoauth2_string` |
 | `je_mail_thunder/utils/executor/action_executor.py` | `Executor` (je_action_core's `ActionExecutor` with MailThunder's settings): `event_dict` (`MT_*` commands plus je_action_core's `SAFE_BUILTINS` allowlist), `execute_action`, `execute_files`, `add_command_to_executor`, `action_list_from_mapping` |
-| `je_mail_thunder/utils/save_mail_user_content/` | Credential sources: `mail_thunder_content.json` in the working directory (`read_output_content` / `write_output_content`) and the env vars `mail_thunder_user` / `mail_thunder_user_password` (`set_/get_mail_thunder_os_environ`); `credentials.resolve_login_credentials` picks one, for both wrappers; `credentials.resolve_oauth2_settings` reads the `"oauth2"` object of the file, else the `mail_thunder_oauth2_*` env vars, and `configured_oauth2_provider` picks the servers the module instances connect to |
+| `je_mail_thunder/utils/save_mail_user_content/` | Credential sources: `mail_thunder_content.json` in the working directory (`read_output_content` / `write_output_content`) and the env vars `mail_thunder_user` / `mail_thunder_user_password` (`set_/get_mail_thunder_os_environ`); `credentials.resolve_login_credentials` picks one, for both wrappers; `credentials.resolve_oauth2_settings` reads the `"oauth2"` object of the file, else the `mail_thunder_oauth2_*` env vars, and `configured_oauth2_provider` picks the servers the module instances connect to; `credentials.resolve_authentication` returns the same choice as an `auth` object (`XOAUTH2Auth`, else `PasswordAuth`, else `None`) |
 | `je_mail_thunder/utils/socket_server/mail_thunder_socket_server.py` | `start_mail_thunder_socket_server`: je_action_core's TCP action server (old name `start_autocontrol_socket_server` kept as a deprecated alias) with payload validation first (`_validate_payload`, `MAX_ACTIONS`) and oversized payloads dropped |
 | `je_mail_thunder/utils/package_manager/` | `package_manager` (je_action_core's, gate on): loads an installed package's members into the executor; `executor.allow_packages` / `set_allow_arbitrary_packages` are its Python-only switches |
 | `je_mail_thunder/utils/project/` | `create_project_dir` scaffolding; `template/template_keyword.py` and `template_executor.py` hold the templates |
@@ -37,6 +38,7 @@ executor exposes the same operations to action files, a CLI and a TCP socket ser
 - **Python facade**: `import je_mail_thunder` gives you:
   - wrappers: `SMTPWrapper`, `smtp_instance`, `IMAPWrapper`, `imap_instance`;
   - attachments: `Attachment`, `AttachmentPolicy`, `DEFAULT_ATTACHMENT_POLICY`, `validate_attachments`;
+  - authentication: `Authentication`, `PasswordAuth`, `AppPasswordAuth`, `OAuth2Auth`, `XOAUTH2Auth`, `resolve_authentication`;
   - execution: `execute_action`, `execute_files`, `add_command_to_executor`, `read_action_json`,
     `get_dir_files_as_list`, `create_project_dir`;
   - credentials: `read_output_content`, `write_output_content`, `set_mail_thunder_os_environ`,
@@ -120,7 +122,9 @@ does not connect either. Login still waits until `later_init`.
      `save_mail_user_content/`.
   3. Add a module-level instance, register it in the executor, export it from the facade, and add tests.
 - **New credential source**: extend `save_mail_user_content/` and `credentials.resolve_login_credentials`, which
-  both wrappers use.
+  both wrappers use, and `credentials.resolve_authentication`.
+- **New login mechanism**: subclass `auth.base.Authentication` (set `mechanism`, override `login` and / or
+  `authorization`), keep its secret out of `repr`, and export it from the facade.
 - **Project template keyword**: edit `utils/project/template/template_keyword.py` /
   `template_executor.py`, which are wired from `utils/project/create_project_structure.py`.
 

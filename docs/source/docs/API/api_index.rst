@@ -20,6 +20,16 @@ All public APIs are accessible from the top-level ``je_mail_thunder`` package:
        IMAPWrapper,              # IMAP wrapper class
        imap_instance,            # Pre-created IMAP instance (or None)
 
+       # Authentication objects
+       Authentication,           # Interface of the login mechanisms
+       PasswordAuth,             # The account's password
+       AppPasswordAuth,          # An app password
+       OAuth2Auth,               # OAuth2 bearer token (HTTP APIs)
+       XOAUTH2Auth,              # OAuth2 as SASL XOAUTH2 (SMTP / IMAP)
+       resolve_authentication,   # The login of the config file or the environment
+       OAuth2Settings,           # Who logs in and how the token is obtained
+       oauth2_token_cache,       # Shared access-token cache
+
        # Attachments
        Attachment,               # A file to send, or one that arrived
        AttachmentPolicy,         # Count, size and type limits
@@ -64,6 +74,19 @@ Module Map
      - ``SMTPWrapper`` class, ``smtp_instance``
    * - ``je_mail_thunder.imap.imap_wrapper``
      - ``IMAPWrapper`` class, ``imap_instance``
+   * - ``je_mail_thunder.auth.base``
+     - ``Authentication`` class
+   * - ``je_mail_thunder.auth.password``
+     - ``PasswordAuth``, ``AppPasswordAuth``
+   * - ``je_mail_thunder.auth.oauth2``
+     - ``OAuth2Auth``
+   * - ``je_mail_thunder.auth.xoauth2``
+     - ``XOAUTH2Auth``
+   * - ``je_mail_thunder.utils.oauth2.oauth2``
+     - ``OAuth2Settings``, ``OAuth2Provider``, ``OAUTH2_PROVIDERS``, ``OAuth2TokenCache``, ``oauth2_token_cache``,
+       ``refresh_access_token()``, ``xoauth2_string()``
+   * - ``je_mail_thunder.utils.save_mail_user_content.credentials``
+     - ``resolve_authentication()``, ``resolve_oauth2_settings()``, ``resolve_login_credentials()``
    * - ``je_mail_thunder.attachments.attachment``
      - ``Attachment`` class
    * - ``je_mail_thunder.attachments.policy``

@@ -26,7 +26,11 @@ class JsonActionException(MailThunderException):
     pass
 
 
-class MailThunderOAuth2Exception(MailThunderException):
+class MailThunderAuthenticationException(MailThunderException):
+    """There is nothing to log in with, the mechanism does not fit the server, or the server refused the login."""
+
+
+class MailThunderOAuth2Exception(MailThunderAuthenticationException):
     """OAuth2 settings are invalid, or the token endpoint refused or could not be reached."""
 
 

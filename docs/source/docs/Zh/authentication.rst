@@ -170,6 +170,60 @@ Google 與 Microsoft 都在淘汰郵件的密碼登入。使用 OAuth2 時，Mai
    with SMTPStartTLSWrapper() as smtp:
        smtp.oauth2_login(settings.user, oauth2_token_cache.access_token(settings))
 
+認證物件
+--------
+
+每一種登入方式都是一個 ``Authentication`` 物件，因此負責連線的程式不需要在意拿到的是哪一種。
+
+.. list-table::
+   :header-rows: 1
+   :widths: 38 42 20
+
+   * - 類別
+     - 登入方式
+     - 適用於
+   * - ``PasswordAuth(user, password)``
+     - 帳號的密碼
+     - SMTP、IMAP
+   * - ``AppPasswordAuth(user, app_password)``
+     - 應用程式密碼（Google、Yahoo、iCloud）。顯示時夾帶的空白會被去除
+     - SMTP、IMAP
+   * - ``OAuth2Auth(settings)``
+     - OAuth2 存取權杖，以 ``Authorization: Bearer ...`` 送出
+     - HTTP API
+   * - ``XOAUTH2Auth(settings)``
+     - 同一個權杖，以 SASL ``XOAUTH2`` 送出
+     - SMTP、IMAP、HTTP API
+
+.. code-block:: python
+
+   from je_mail_thunder import AppPasswordAuth, OAuth2Settings, SMTPWrapper, XOAUTH2Auth, resolve_authentication
+
+   auth = AppPasswordAuth("you@gmail.com", "abcd efgh ijkl mnop")
+   auth = XOAUTH2Auth(OAuth2Settings(user="you@gmail.com", client_id="...",
+                                     client_secret="...", refresh_token="..."))
+   auth = resolve_authentication()   # 設定檔或環境變數裡的登入方式，沒有則為 None
+
+   with SMTPWrapper() as smtp:
+       auth.login(smtp)              # 同一個呼叫也能登入 IMAPWrapper
+
+- ``auth.login(client)`` 登入 SMTP 或 IMAP wrapper。
+- ``auth.authorization()`` 回傳 HTTP ``Authorization`` 標頭的值。
+- ``auth.user`` 是帳號的位址，``auth.mechanism`` 是機制的名稱
+  （``"password"``、``"app-password"``、``"oauth2"``、``"xoauth2"``）。
+
+機制做不到被要求的事情時會引發 ``MailThunderAuthenticationException``：
+密碼沒有 HTTP 授權，單純的 ``OAuth2Auth`` 不能登入郵件伺服器（請用 ``XOAUTH2Auth``）。
+``MailThunderOAuth2Exception`` 現在是它的子類別。
+
+``settings`` 是 ``OAuth2Settings``\ （見方式三）。權杖來自共用的 ``oauth2_token_cache``，
+除非另外給類別自己的 ``token_cache``；權杖會在到期前一分鐘更新。
+
+``resolve_authentication()`` 回傳設定檔或環境變數裡的登入方式：有 OAuth2 設定時是 ``XOAUTH2Auth``，
+否則是 ``PasswordAuth``，都沒有則為 ``None``。找到的 OAuth2 設定不完整時會引發 ``MailThunderOAuth2Exception``。
+
+密碼與權杖不會出現在 ``repr``、日誌或例外訊息中。
+
 從程式提供認證資訊
 ------------------
 

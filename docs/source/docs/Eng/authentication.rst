@@ -174,6 +174,63 @@ messages or the settings' ``repr``.
    with SMTPStartTLSWrapper() as smtp:
        smtp.oauth2_login(settings.user, oauth2_token_cache.access_token(settings))
 
+Authentication Objects
+----------------------
+
+Each way of logging in is an ``Authentication`` object, so the code that connects does not care
+which one it is given.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 38 42 20
+
+   * - Class
+     - Logs in with
+     - Works for
+   * - ``PasswordAuth(user, password)``
+     - The account's password
+     - SMTP, IMAP
+   * - ``AppPasswordAuth(user, app_password)``
+     - An app password (Google, Yahoo, iCloud). The spaces it is shown with are dropped
+     - SMTP, IMAP
+   * - ``OAuth2Auth(settings)``
+     - An OAuth2 access token, as ``Authorization: Bearer ...``
+     - HTTP APIs
+   * - ``XOAUTH2Auth(settings)``
+     - The same token, as SASL ``XOAUTH2``
+     - SMTP, IMAP, HTTP APIs
+
+.. code-block:: python
+
+   from je_mail_thunder import AppPasswordAuth, OAuth2Settings, SMTPWrapper, XOAUTH2Auth, resolve_authentication
+
+   auth = AppPasswordAuth("you@gmail.com", "abcd efgh ijkl mnop")
+   auth = XOAUTH2Auth(OAuth2Settings(user="you@gmail.com", client_id="...",
+                                     client_secret="...", refresh_token="..."))
+   auth = resolve_authentication()   # what the config file or the environment holds, or None
+
+   with SMTPWrapper() as smtp:
+       auth.login(smtp)              # the same call logs an IMAPWrapper in
+
+- ``auth.login(client)`` logs an SMTP or IMAP wrapper in.
+- ``auth.authorization()`` gives the value of an HTTP ``Authorization`` header.
+- ``auth.user`` is the account's address and ``auth.mechanism`` the mechanism's name
+  (``"password"``, ``"app-password"``, ``"oauth2"``, ``"xoauth2"``).
+
+A mechanism that cannot do what it is asked raises ``MailThunderAuthenticationException``:
+a password has no HTTP authorization, and plain ``OAuth2Auth`` has no mail server login
+(use ``XOAUTH2Auth``). ``MailThunderOAuth2Exception`` is now a subclass of it.
+
+``settings`` is an ``OAuth2Settings`` (see Method 3). The token comes from the shared
+``oauth2_token_cache`` unless the class is given its own ``token_cache``, and is refreshed a
+minute before it expires.
+
+``resolve_authentication()`` returns the login of the config file or the environment: an
+``XOAUTH2Auth`` when there are OAuth2 settings, else a ``PasswordAuth``, else ``None``. It
+raises ``MailThunderOAuth2Exception`` when the OAuth2 settings it finds are incomplete.
+
+Passwords and tokens never appear in a ``repr``, a log line or an exception message.
+
 Credentials From Code
 ---------------------
 

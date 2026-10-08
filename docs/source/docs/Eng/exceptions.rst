@@ -19,6 +19,8 @@ Exception Hierarchy
            ├── ExecuteActionException
            ├── AddCommandException
            ├── JsonActionException
+           ├── MailThunderAuthenticationException
+           │     └── MailThunderOAuth2Exception
            └── MailThunderAttachmentException
                  ├── AttachmentNotFound
                  ├── AttachmentTooLarge
@@ -51,6 +53,11 @@ Exception Reference
      - ``add_command_to_executor()`` receives a non-callable value (not a function/method)
    * - ``JsonActionException``
      - JSON action file not found or cannot be saved
+   * - ``MailThunderAuthenticationException``
+     - There is nothing to log in with, or the mechanism cannot do what it is asked (a password asked
+       for an HTTP authorization, plain OAuth2 asked to log in to a mail server)
+   * - ``MailThunderOAuth2Exception``
+     - OAuth2 settings are incomplete or invalid, or the token endpoint refused or could not be reached
    * - ``MailThunderAttachmentException``
      - Base of the attachment errors; also raised for an invalid ``AttachmentPolicy`` or ``Attachment``
    * - ``AttachmentNotFound``

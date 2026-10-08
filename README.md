@@ -25,6 +25,7 @@
   - [JSON Config File](#json-config-file)
   - [Environment Variables](#environment-variables)
   - [OAuth2 (Google and Microsoft)](#oauth2-google-and-microsoft)
+  - [Authentication Objects](#authentication-objects)
 - [Attachment Policy](#attachment-policy)
 - [Scripting Engine](#scripting-engine)
   - [Action JSON Format](#action-json-format)
@@ -58,6 +59,7 @@
 - **Package manager** — Dynamically load Python packages into the scripting executor
 - **Environment variable auth** — Authenticate via config file or OS environment variables
 - **OAuth2 login** — SASL `XOAUTH2` for Gmail and Microsoft 365, with refresh-token exchange and a token cache in the standard library
+- **Authentication objects** — `PasswordAuth`, `AppPasswordAuth`, `OAuth2Auth` and `XOAUTH2Auth` behind one `Authentication` interface
 - **Auto-export** — Export all mailbox emails to local files in one call
 - **Context manager support** — Use `with` statement for both SMTP and IMAP connections
 - **Logging** — Built-in logging for all operations
@@ -249,6 +251,34 @@ with SMTPStartTLSWrapper() as smtp:
     smtp.oauth2_login(settings.user, oauth2_token_cache.access_token(settings))
     smtp.create_message_and_send("Hello", {"Subject": "Hi", "From": settings.user, "To": "friend@example.com"})
 ```
+
+### Authentication Objects
+
+Each way of logging in is an `Authentication` object, so the code that connects does not care which one it is given:
+
+| Class | Logs in with | Works for |
+|---|---|---|
+| `PasswordAuth(user, password)` | the account's password | SMTP, IMAP |
+| `AppPasswordAuth(user, app_password)` | an app password (Google, Yahoo, iCloud); the spaces it is shown with are dropped | SMTP, IMAP |
+| `OAuth2Auth(settings)` | an OAuth2 access token, as `Authorization: Bearer ...` | HTTP APIs |
+| `XOAUTH2Auth(settings)` | the same token, as SASL `XOAUTH2` | SMTP, IMAP, HTTP APIs |
+
+```python
+from je_mail_thunder import AppPasswordAuth, OAuth2Settings, SMTPWrapper, XOAUTH2Auth, resolve_authentication
+
+auth = AppPasswordAuth("you@gmail.com", "abcd efgh ijkl mnop")
+auth = XOAUTH2Auth(OAuth2Settings(user="you@gmail.com", client_id="...", client_secret="...", refresh_token="..."))
+auth = resolve_authentication()   # what the config file or the environment holds, or None
+
+with SMTPWrapper() as smtp:
+    auth.login(smtp)              # the same call logs an IMAPWrapper in
+```
+
+`auth.login(client)` logs an SMTP or IMAP wrapper in, and `auth.authorization()` gives the value of an HTTP
+`Authorization` header. A mechanism that cannot do one of them raises `MailThunderAuthenticationException`, which
+`MailThunderOAuth2Exception` now subclasses. `settings` is an `OAuth2Settings`; the token comes from the shared token
+cache and is refreshed a minute before it expires. `resolve_authentication()` prefers OAuth2 settings to a password,
+as the wrappers do. Passwords and tokens never appear in a `repr`.
 
 ---
 
@@ -599,6 +629,7 @@ MailThunder/
     __init__.py              # Public API exports
     __main__.py              # CLI entry point
     attachments/             # Attachment model, AttachmentPolicy and its validator
+    auth/                    # Authentication: password, app password, OAuth2, XOAUTH2
     smtp/
       smtp_wrapper.py        # SMTPClientMixin, SMTPWrapper, SMTPStartTLSWrapper
     imap/

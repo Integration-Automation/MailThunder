@@ -27,6 +27,7 @@ MailThunder 核心模組架構：
      __init__.py              # 公開 API 匯出
      __main__.py              # CLI 進入點 (argparse)
      attachments/             # 附件模型、AttachmentPolicy 與驗證器
+     auth/                    # 認證機制：密碼、應用程式密碼、OAuth2、XOAUTH2
      smtp/
        smtp_wrapper.py        # SMTPWrapper — 繼承 smtplib.SMTP_SSL
      imap/
