@@ -453,8 +453,9 @@ read the file name, not the content: they stop the wrong file being sent by mist
 directory parts, `..`, control characters and the characters Windows refuses are removed, so the file cannot land
 outside `directory`.
 
-`Mail` applies its policy to every `send` and `create_draft`. The `SMTPWrapper` methods do not apply one; call
-`validate_attachments` yourself before using them.
+`Mail` applies its policy to every `send` and `create_draft`. `create_message_with_attach_and_send` of the SMTP
+wrappers checks its file against the wrapper's `attachment_policy` (`DEFAULT_ATTACHMENT_POLICY`; assign another
+policy, or `None` to turn the check off): a refused file is logged and the message is not sent.
 
 ---
 
@@ -761,7 +762,7 @@ Extends `imaplib.IMAP4_SSL`. Default host: `imap.gmail.com`.
 | `select_mailbox(mailbox="INBOX", readonly=False)` | Select a mailbox, returns `bool` |
 | `search_mailbox(search_str="ALL", charset=None)` | Search and return raw mail details as list |
 | `mail_content_list(search_str="ALL", charset=None)` | Return parsed mail content as list of dicts |
-| `output_all_mail_as_file(search_str="ALL", charset=None)` | Export all emails to files named by subject |
+| `output_all_mail_as_file(search_str="ALL", charset=None)` | Export all emails to files named by subject; path separators, control characters and `: * ? " < > \|` become `_` |
 | `oauth2_login(user, access_token)` | Log in with SASL `XOAUTH2`; raises `imaplib.IMAP4.error` when refused |
 | `quit()` | Close mailbox and logout |
 

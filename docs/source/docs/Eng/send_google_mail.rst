@@ -128,6 +128,9 @@ Set ``use_html=True`` to send HTML-formatted email content:
 When ``use_html=True``, the body is wrapped in ``MIMEText(content, "html")``
 instead of ``MIMEText(content)`` (which defaults to ``"plain"``).
 
+Before sending, the file is checked against the wrapper's ``attachment_policy`` (25 MiB of any type
+by default, see :doc:`attachment_policy`). A file it refuses is logged and the message is not sent.
+
 ----
 
 Two-Step: Create Then Send

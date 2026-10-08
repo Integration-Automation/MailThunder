@@ -1,11 +1,11 @@
 import os
-import re
 from email import message_from_bytes
 from email import policy
 from email.header import decode_header
 from imaplib import IMAP4_SSL
 from typing import Dict, List, Union
 
+from je_mail_thunder.attachments.mime import safe_filename
 from je_mail_thunder.utils.exception.exception_tags import mail_thunder_content_login_failed
 from je_mail_thunder.utils.exception.exceptions import MailThunderOAuth2Exception
 from je_mail_thunder.utils.lazy_instance.lazy_instance import LazyInstance
@@ -151,18 +151,11 @@ class IMAPWrapper(IMAP4_SSL):
     def _sanitize_subject_as_filename(subject) -> str:
         """
         Derive a safe filename from a mail SUBJECT header.
-        Strips directory components and any separator / traversal token.
+        Strips directory components, traversal tokens, control characters and what Windows refuses in a
+        file name (a ``:`` there sends the content to an alternate data stream and leaves the file empty).
         Falls back to "mail" when the sanitized result is empty.
         """
-        if subject is None:
-            return "mail"
-        name = os.path.basename(str(subject))
-        name = name.replace("\x00", "")
-        name = re.sub(r"[\\/\r\n\t]", "_", name)
-        while ".." in name:
-            name = name.replace("..", "_")
-        name = name.strip(" .")
-        return name if name else "mail"
+        return safe_filename(subject, fallback="mail")
 
     def output_all_mail_as_file(
             self, search_str: [str, list] = "ALL", charset: str = None) -> List[Dict[str, Union[str, bytes]]]:

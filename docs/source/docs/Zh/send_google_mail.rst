@@ -126,6 +126,9 @@ MailThunder 使用 ``mimetypes.guess_type()`` 自動偵測附件的 MIME 類型�
 當 ``use_html=True`` 時，內文以 ``MIMEText(content, "html")`` 包裝，
 而非預設的 ``MIMEText(content)`` (預設為 ``"plain"``)。
 
+寄送之前，檔案會先依 wrapper 的 ``attachment_policy`` 檢查（預設為 25 MiB、任何類型，
+見 :doc:`attachment_policy`）。被拒絕的檔案會寫入日誌，郵件不會寄出。
+
 ----
 
 分步操作：先建立訊息再寄送

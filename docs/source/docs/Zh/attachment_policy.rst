@@ -151,5 +151,6 @@
    ``Mail`` 會在每次 ``send`` 與 ``create_draft`` 時套用它的政策（``Mail(policy=...)``；
    沒有指定時為 ``DEFAULT_ATTACHMENT_POLICY``）。見 :doc:`mail_api`。
 
-   ``SMTPWrapper`` 的方法（``create_message_with_attach_and_send``）不會套用政策。
-   使用它們之前，請自行呼叫 ``validate_attachments``。
+   SMTP wrapper 的 ``create_message_with_attach_and_send`` 會依 wrapper 的 ``attachment_policy`` 檢查檔案；
+   除非另外指定（``smtp.attachment_policy = AttachmentPolicy(...)``，或設為 ``None`` 關閉檢查），
+   否則就是 ``DEFAULT_ATTACHMENT_POLICY``。被拒絕的檔案會寫入日誌，郵件不會寄出。

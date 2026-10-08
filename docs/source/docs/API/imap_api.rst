@@ -215,6 +215,8 @@ Export all matching emails to local files.
 **File naming logic:**
 
 - Filename = ``{subject}{counter}`` (e.g., ``My Subject0``, ``My Subject1``)
+- The subject is made safe first (``attachments.mime.safe_filename``): path separators, ``..``, control
+  characters and ``: * ? " < > |`` become ``_``; an empty result becomes ``mail``
 - Counter starts at 0 and increments for duplicate subjects
 - Files are created in the current working directory
 - Body is written as UTF-8 text (decoded from bytes if necessary)

@@ -14,7 +14,7 @@ Cross-repo and workspace items live in `D:\Codes\progress.md` (relevant here: X-
 
 ## MailThunder 2.0 roadmap
 
-From `docs/MAILTHUNDER-2.0-ROADMAP.md` (PR #45), in its priority order. One item is one focused change. P0 is done except for #21 and #24: the attachment policy (`docs/updates` U-20261008-01), the authentication abstraction (U-20261008-02), the core mail API with its provider interface (U-20261008-03) and the PyPI metadata (U-20261008-04).
+From `docs/MAILTHUNDER-2.0-ROADMAP.md` (PR #45), in its priority order. One item is one focused change. P0 is done except for #24: the attachment policy (`docs/updates` U-20261008-01), the authentication abstraction (U-20261008-02), the core mail API with its provider interface (U-20261008-03) and the PyPI metadata (U-20261008-04).
 
 - **#14** [P1] Template engine (`je_mail_thunder/templates/`: `engine.py`, `template.py`, `loader.py`).
   - What: subject / text / HTML templates with variables and metadata; shared and project-local template directories; context validation; structured rendering errors; `Mail.send(template="name", context={...})`.
@@ -34,12 +34,8 @@ From `docs/MAILTHUNDER-2.0-ROADMAP.md` (PR #45), in its priority order. One item
 - **#19** [P3] [DECIDE] MailThunder Studio: a UI over the core API (Dashboard, Accounts, Templates, Triggers, Policies, Projects, Logs, Settings).
   - Decide first: the UI toolkit, and whether it ships in this package or in its own.
 - **#20** [P4] Webhook / event extensions, provider health monitoring, audit logging, further providers.
-- **#21** [P0 follow-up] Migration cleanup (roadmap PR 12): send the wrappers' own mail through the core (`legacy API → adapter → core`). `core/compat.py` has the two bridges and the READMEs and `docs/source/docs/{Eng,Zh}/mail_api.rst` the migration table; the wrapper methods themselves still build and send their own messages, without the attachment policy.
 - **#24** [UNVERIFIED] The core mail API has not been run against a real mailbox.
   - Tested so far: fake SMTP / IMAP clients, and a fake SMTP server on localhost for what reaches the wire (`test/unit_test/test_mail_providers.py`).
   - To check on Gmail and Microsoft 365: `send` with attachments and both bodies; `get_messages` (newest first, `unread_only`, a non-ASCII `query`, which is sent as UTF-8 in a quoted string with `CHARSET UTF-8`); `create_draft` finding the folder flagged `\Drafts`; `delete_message` with `UID EXPUNGE`; a non-ASCII folder name; a connection left idle past the server's timeout.
   - Where: a script under `test/unit_test/manual_test/`, which the test run does not collect.
 - **#22** [DECIDE] The roadmap's examples import `mailthunder`; the package is `je_mail_thunder`, which PyBreeze imports (`architecture.md` §6). Keep the name, or also ship a `mailthunder` import name (check first that the name is free on PyPI).
-- **#23** `IMAPWrapper.output_all_mail_as_file` loses the mail body on Windows when the subject holds `:` (`Re: ...`).
-  - Verified 2026-10-08 on Windows 11: `open("Re: hello0", "w")` creates an empty file `Re` and writes into an alternate data stream. `_sanitize_subject_as_filename` (`je_mail_thunder/imap/imap_wrapper.py`) replaces only `\ / CR LF TAB`.
-  - Fix: have it return `attachments.mime.safe_filename(subject, "mail")`, which also replaces `: * ? " < > |`. That renames the exported files of subjects with those characters on every platform, so say so in the three READMEs and `docs/source/docs/{Eng,Zh}/read_google_mail.rst`.

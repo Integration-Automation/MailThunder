@@ -11,6 +11,9 @@ from os import path
 from smtplib import SMTP, SMTP_SSL
 from typing import Optional
 
+from je_mail_thunder.attachments.attachment import Attachment
+from je_mail_thunder.attachments.policy import DEFAULT_ATTACHMENT_POLICY
+from je_mail_thunder.attachments.validator import validate_attachments
 from je_mail_thunder.utils.exception.exceptions import MailThunderOAuth2Exception
 from je_mail_thunder.utils.lazy_instance.lazy_instance import LazyInstance
 from je_mail_thunder.utils.logging.loggin_instance import mail_thunder_logger
@@ -27,6 +30,10 @@ class SMTPClientMixin:
     What MailThunder's SMTP clients add to :mod:`smtplib`: building messages, logging in with the content file or
     the environment, sending and quitting. It goes before the ``smtplib`` class in the bases.
     """
+
+    #: What ``create_message_with_attach_and_send`` checks its attachment against before sending; ``None`` turns
+    #: the check off.
+    attachment_policy = DEFAULT_ATTACHMENT_POLICY
 
     def __enter__(self):
         return self
@@ -176,7 +183,8 @@ class SMTPClientMixin:
     def create_message_with_attach_and_send(self, message_content: str, message_setting_dict: dict,
                                             attach_file: str, use_html: bool = False):
         """
-        Create new EmailMessage with attach file instance then send EmailMessage instance
+        Create new EmailMessage with attach file instance then send EmailMessage instance.
+        The file is first checked against ``attachment_policy``; one it refuses is logged and not sent.
         :param message_content: Mail content
         :param message_setting_dict: Dict include SUBJECT FROM TO and another EmailMessage Key and Value
         :param attach_file: File path as str
@@ -187,6 +195,8 @@ class SMTPClientMixin:
             f"smtp_create_message_with_attach_and_send, message_content: {message_content}, "
             f"message_setting_dict: {message_setting_dict}, attach_file:{attach_file}, use_html:{use_html}")
         try:
+            if self.attachment_policy is not None:
+                validate_attachments([Attachment.from_path(attach_file)], self.attachment_policy)
             self.send_message(
                 self.create_message_with_attach(message_content, message_setting_dict, attach_file, use_html))
         except Exception as error:

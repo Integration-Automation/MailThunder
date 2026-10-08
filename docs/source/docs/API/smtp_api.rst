@@ -250,6 +250,10 @@ Create a ``MIMEMultipart`` message with attachment and immediately send it.
 
 **Parameters:** Same as ``create_message_with_attach()``.
 
+The file is first checked against the class attribute ``attachment_policy``
+(``DEFAULT_ATTACHMENT_POLICY``; assign another ``AttachmentPolicy``, or ``None`` for no check).
+A refused file is logged and nothing is sent.
+
 ----
 
 try_to_login_with_env_or_content()

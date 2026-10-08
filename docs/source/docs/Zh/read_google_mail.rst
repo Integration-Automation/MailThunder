@@ -161,6 +161,8 @@ MailThunder 的 ``IMAPWrapper`` 繼承自 ``imaplib.IMAP4_SSL``，提供讀取�
 - 第一封：``My Subject0``
 - 重複主旨：``My Subject1``、``My Subject2``、...
 - 檔案內容 = 解碼後的郵件內文
+- 主旨中的路徑分隔符號、控制字元與 Windows 不接受的字元（``: * ? " < > |``）會被換成 ``_``，
+  所以 ``Re: hello`` 會存成 ``Re_ hello0``
 
 ----
 

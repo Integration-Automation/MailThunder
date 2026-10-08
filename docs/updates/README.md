@@ -58,6 +58,7 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | ID | Date | Title | Tags | Batch |
 |---|---|---|---|---|
+| U-20261008-05 | 2026-10-08 | SMTP wrappers check attachments; exported mail keeps its body on Windows | #done #bugfix #attachments #windows | [2026-10](2026-10.md) |
 | U-20261008-04 | 2026-10-08 | PyPI metadata: description, keywords, classifiers and project URLs | #done #packaging #roadmap-2.0 | [2026-10](2026-10.md) |
 | U-20261008-03 | 2026-10-08 | Core mail API: Mail over a provider interface, with SMTP and IMAP providers | #done #api #providers #roadmap-2.0 | [2026-10](2026-10.md) |
 | U-20261008-02 | 2026-10-08 | Authentication abstraction: one interface for password and OAuth2 logins | #done #auth #oauth2 #roadmap-2.0 | [2026-10](2026-10.md) |
@@ -97,5 +98,5 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | File | Period | Entries |
 |---|---|---:|
-| [2026-10.md](2026-10.md) | 2026-10 | 13 |
+| [2026-10.md](2026-10.md) | 2026-10 | 14 |
 | [2026-09.md](2026-09.md) | 2026-09 | 21 |

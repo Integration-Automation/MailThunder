@@ -445,8 +445,9 @@ total_bytes = validate_attachments(attachments, policy)
 `Attachment.save(directory)` 用来写入随邮件收到的附件。文件名会先处理成安全的名称：目录部分、`..`、控制字符与
 Windows 不接受的字符都会被移除，因此文件不会落在 `directory` 之外。
 
-`Mail` 会在每次 `send` 与 `create_draft` 时应用它的策略。`SMTPWrapper` 的方法不会应用策略；使用它们之前请自行
-调用 `validate_attachments`。
+`Mail` 会在每次 `send` 与 `create_draft` 时套用它的策略。SMTP wrapper 的 `create_message_with_attach_and_send`
+会依 wrapper 的 `attachment_policy` 检查文件（默认为 `DEFAULT_ATTACHMENT_POLICY`；可以指定另一个策略，或设为 `None`
+关闭检查）：被拒绝的文件会写入日志，邮件不会发出。
 
 ---
 
@@ -752,7 +753,7 @@ smtp = SMTPStartTLSWrapper()
 | `select_mailbox(mailbox="INBOX", readonly=False)` | 选择邮箱，返回 `bool` |
 | `search_mailbox(search_str="ALL", charset=None)` | 搜索并返回原始邮件详细信息列表 |
 | `mail_content_list(search_str="ALL", charset=None)` | 返回已解析的邮件内容字典列表 |
-| `output_all_mail_as_file(search_str="ALL", charset=None)` | 以主题为文件名导出所有邮件 |
+| `output_all_mail_as_file(search_str="ALL", charset=None)` | 以主旨为文件名导出所有邮件；路径分隔符号、控制字符与 `: * ? " < > \|` 会被换成 `_` |
 | `oauth2_login(user, access_token)` | 以 SASL `XOAUTH2` 登录；被拒时抛出 `imaplib.IMAP4.error` |
 | `quit()` | 关闭邮箱并登出 |
 
