@@ -1,3 +1,4 @@
+import json
 from os import getcwd
 from pathlib import Path
 from threading import Lock
@@ -8,6 +9,14 @@ from je_mail_thunder.utils.project.template.template_executor import executor_te
     executor_template_2, bad_executor_template_1
 from je_mail_thunder.utils.project.template.template_keyword import template_keyword_1, \
     template_keyword_2, bad_template_1
+from je_mail_thunder.utils.project.template.template_mail import (
+    mail_config_template,
+    mail_template_details,
+    mail_template_html,
+    mail_template_subject,
+    mail_template_text,
+    mail_triggers_template,
+)
 
 _template_lock = Lock()
 
@@ -50,6 +59,27 @@ def _write_executor_template(executor_dir: Path, keyword_dir: Path) -> None:
             file.write(template.replace("{temp}", replacement))
 
 
+def _write_mail_layer(mail_dir: Path) -> None:
+    """
+    :param mail_dir: the project's ``mail`` directory, to populate with its config, triggers and one template.
+        A file that is already there is the project's own and is left as it is
+    :return: None
+    """
+    report_dir = mail_dir / "templates" / "test_report"
+    files = (
+        (mail_dir / "config.py", mail_config_template),
+        (mail_dir / "triggers.py", mail_triggers_template),
+        (report_dir / "subject.txt", mail_template_subject),
+        (report_dir / "body.txt", mail_template_text),
+        (report_dir / "body.html", mail_template_html),
+        (report_dir / "template.json", json.dumps(mail_template_details, indent=4) + "\n"),
+    )
+    for target, content in files:
+        if not target.exists():
+            with open(str(target), "w", encoding="utf-8") as file:
+                file.write(content)
+
+
 def create_template(parent_name: str, project_path: str = None) -> None:
     """
     :param parent_name: project subdirectory name under project_path
@@ -66,6 +96,10 @@ def create_template(parent_name: str, project_path: str = None) -> None:
     if executor_dir.exists() and executor_dir.is_dir():
         with _template_lock:
             _write_executor_template(executor_dir, keyword_dir)
+    mail_dir = base / "mail"
+    if (mail_dir / "templates" / "test_report").is_dir():
+        with _template_lock:
+            _write_mail_layer(mail_dir)
 
 
 def create_project_dir(project_path: str = None, parent_name: str = "MailThunder") -> None:
@@ -80,4 +114,5 @@ def create_project_dir(project_path: str = None, parent_name: str = "MailThunder
     base = Path(project_path) / parent_name
     create_dir(str(base / "keyword"))
     create_dir(str(base / "executor"))
+    create_dir(str(base / "mail" / "templates" / "test_report"))
     create_template(parent_name, project_path)

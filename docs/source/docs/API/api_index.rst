@@ -63,6 +63,10 @@ All public APIs are accessible from the top-level ``je_mail_thunder`` package:
        WebhookForwarder,         # Posts events to an HTTPS address
        FileProvider,             # Keeps mail as .eml files (dry runs)
 
+       # Project mail layer
+       project_mail,             # The Mail a project's mail/ directory describes
+       describe_mail_layer,      # What a project's mail/ directory holds
+
        # Authentication objects
        Authentication,           # Interface of the login mechanisms
        PasswordAuth,             # The account's password
@@ -173,6 +177,8 @@ Module Map
      - ``WebhookForwarder``, ``webhook_payload()``, ``sign()``
    * - ``je_mail_thunder.providers.file``
      - ``FileProvider``
+   * - ``je_mail_thunder.core.project``
+     - ``project_mail()``, ``describe_mail_layer()``, ``mail_layer_directory()``
    * - ``je_mail_thunder.auth.base``
      - ``Authentication`` class
    * - ``je_mail_thunder.auth.password``

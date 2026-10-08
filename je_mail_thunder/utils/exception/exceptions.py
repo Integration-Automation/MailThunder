@@ -149,3 +149,7 @@ class TemplateRenderError(MailThunderTemplateException):
 
 class MailThunderTriggerException(MailThunderException):
     """An event name, a filter or a trigger backend is not usable as it was given."""
+
+
+class MailThunderProjectException(MailThunderException):
+    """A project has no mail layer, or a file of it cannot be used."""

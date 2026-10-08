@@ -37,6 +37,7 @@
 - [郵件事件與觸發器](#郵件事件與觸發器)
 - [Microsoft Graph](#microsoft-graph)
 - [監控](#監控)
+- [專案郵件層](#專案郵件層)
 - [腳本引擎](#腳本引擎)
   - [Action JSON 格式](#action-json-格式)
   - [可用的腳本指令](#可用的腳本指令)
@@ -65,6 +66,7 @@
 - **Microsoft Graph 供應商** — 以 OAuth2 透過 Graph API 寄送、建立草稿、讀取與刪除 Microsoft 365 郵件，並提供輪詢與 webhook 觸發器
 - **監控** — 只能附加的稽核日誌、每個供應商的健康報告，以及帶簽章的對外 webhook，全部由郵件事件驅動
 - **更多供應商** — Yahoo、iCloud、Zoho 與 Fastmail 的預設值，以及把郵件留在磁碟上、供試跑使用的 `file` 供應商
+- **專案郵件層** — 專案把供應商、政策、模板與觸發器放在 `mail/`，`project_mail()` 就能給程式一個設定好的 `Mail`
 - **SMTP 支援** — 透過隱含式 TLS 寄送郵件，預設使用 Gmail，也可自訂其他 SMTP 服務；或透過 STARTTLS（Microsoft 365）
 - **IMAP4 支援** — 透過 IMAP4 SSL 讀取、搜尋和匯出郵件
 - **附件處理** — 自動偵測文字、圖片、音訊和二進位檔案的 MIME 類型
@@ -619,6 +621,41 @@ print(audit.entries(limit=10))
 
 ---
 
+## 專案郵件層
+
+自動化專案把「怎麼寄信」放在自己的 `mail/` 目錄裡，程式只要取得一個設定好的 `Mail`，不必指定供應商。之後要把專案
+換到另一家供應商，或是不寄出任何東西先試跑，都只需要修改一個檔案：
+
+```
+MyProject/
+  mail/
+    config.py       # PROVIDER, AUTH or ACCOUNT, ATTACHMENT_POLICY, AUDIT (all optional)
+    triggers.py     # register(mail): event handlers and watched folders
+    templates/      # the project's mail templates
+```
+
+```python
+from je_mail_thunder import project_mail
+
+mail = project_mail()                    # 工作目錄中的專案
+mail.send(to="qa@example.com", template="test_report",
+          context={"project": "MyProject", "passed": 98, "failed": 2})
+mail.triggers.poll()                     # 查看一次有沒有新郵件
+mail.close()
+```
+
+- **`config.py`** 可以設定 `PROVIDER`（已註冊的供應商名稱）、`AUTH` 或完整的 `ACCOUNT`、`ATTACHMENT_POLICY`，以及 `AUDIT`
+  （`True` 會把每個郵件事件記錄到 `mail/audit.jsonl`）。省略 `AUTH` 時登入資訊來自 `mail_thunder_content.json` 或
+  環境變數，這樣認證資訊就不會出現在專案的檔案裡。
+- **`triggers.py`** 定義 `register(mail)`，負責訂閱專案的處理函式（`mail.on(...)`）並指定要監看的資料夾（`mail.watch(...)`）。
+- **`templates/`** 會比共用模板先被搜尋。
+
+`create_project_dir()` 會建立這一層，內含 `test_report` 模板並使用 `file` 供應商，所以新專案在指定真正的供應商之前，
+郵件都只會留在磁碟上。`project_mail()` 會執行 `config.py` 與 `triggers.py`，它們是專案的 Python 檔：只載入你信任的專案。
+沒有任何動作指令會載入這一層；`describe_mail_layer()` 則只列出檔案，不會執行它們。
+
+---
+
 ## 腳本引擎
 
 MailThunder 內建 JSON 腳本引擎，讓你無需撰寫 Python 程式碼即可自動化郵件工作流程。
@@ -791,6 +828,10 @@ MyMailProject/
     executor_one_file.py   # 執行單一動作檔
     executor_folder.py     # 執行目錄內所有動作檔
     executor_bad_file.py   # 不良實踐範例
+  mail/
+    config.py              # 專案的供應商、附件政策與稽核日誌
+    triggers.py            # register(mail)：事件處理函式與要監看的資料夾
+    templates/test_report/ # subject.txt、body.txt、body.html、template.json
 ```
 
 ---

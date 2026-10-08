@@ -92,4 +92,5 @@ MailThunder 核心模組架構：
 - :doc:`mail_triggers` — 郵件事件與觸發器
 - :doc:`microsoft_graph` — 透過 Microsoft Graph 存取 Microsoft 365 郵件
 - :doc:`monitoring` — 稽核日誌、供應商健康狀態與 webhook
+- :doc:`project_mail_layer` — 專案自己的郵件層
 - :doc:`scripting_engine` — 使用 JSON 腳本自動化工作流程

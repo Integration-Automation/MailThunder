@@ -93,6 +93,7 @@ je_mail_thunder/
 - The `Executor` registers only the `SAFE_BUILTINS` allowlist (je_action_core) into `event_dict`; do not register other builtins. Any new command registration via `add_command_to_executor` must validate that only `types.MethodType` or `types.FunctionType` are accepted (already enforced).
 - **Never use `eval()` or `exec()`** on untrusted input.
 - **Never use `subprocess.shell=True`** with user-provided strings.
+- `project_mail()` runs a project's `mail/config.py` and `mail/triggers.py`. It is Python-only: never register it, or anything else that runs a file, as an action command.
 
 ### Network Security
 - SMTP uses `SMTP_SSL` (port 465), or `SMTPStartTLSWrapper` (port 587), which upgrades with `STARTTLS` and a verifying `ssl.create_default_context()` before anything else is sent and refuses a server that does not offer it — always use SSL/TLS. Do not downgrade to plain SMTP or send credentials before TLS.

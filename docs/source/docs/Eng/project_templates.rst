@@ -59,6 +59,10 @@ Generated Structure
        executor_one_file.py   # Execute a single action file
        executor_folder.py     # Execute all action files in a directory
        executor_bad_file.py   # Bad practice example (security warning)
+     mail/
+       config.py              # Provider, attachment policy and audit log (see :doc:`project_mail_layer`)
+       triggers.py            # register(mail): event handlers and watched folders
+       templates/test_report/ # subject.txt, body.txt, body.html, template.json
 
 ----
 

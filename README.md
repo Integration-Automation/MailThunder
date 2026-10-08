@@ -37,6 +37,7 @@
 - [Mail Events and Triggers](#mail-events-and-triggers)
 - [Microsoft Graph](#microsoft-graph)
 - [Monitoring](#monitoring)
+- [Project Mail Layer](#project-mail-layer)
 - [Scripting Engine](#scripting-engine)
   - [Action JSON Format](#action-json-format)
   - [Available Script Commands](#available-script-commands)
@@ -65,6 +66,7 @@
 - **Microsoft Graph provider** — Send, draft, read and delete Microsoft 365 mail over the Graph API with OAuth2, with polling and webhook triggers
 - **Monitoring** — An append-only audit log, a health report per provider, and signed outgoing webhooks, all fed by the mail events
 - **More providers** — Yahoo, iCloud, Zoho and Fastmail presets, and a `file` provider that keeps mail on disk for dry runs
+- **Project mail layer** — A project keeps its provider, policy, templates and triggers in `mail/`, and `project_mail()` gives its code a ready `Mail`
 - **SMTP support** — Send emails over implicit TLS with Gmail (default) or any SMTP provider, or over STARTTLS (Microsoft 365)
 - **IMAP4 support** — Read, search, and export emails via IMAP4 SSL
 - **Attachment handling** — Automatically detect MIME types for text, image, audio, and binary files
@@ -633,6 +635,44 @@ print(audit.entries(limit=10))
 
 ---
 
+## Project Mail Layer
+
+An automation project keeps how it mails in its own `mail/` directory, and its code asks for a ready `Mail` without
+naming a provider. Moving the project to another provider, or trying it without sending anything, is a change in one
+file:
+
+```
+MyProject/
+  mail/
+    config.py       # PROVIDER, AUTH or ACCOUNT, ATTACHMENT_POLICY, AUDIT (all optional)
+    triggers.py     # register(mail): event handlers and watched folders
+    templates/      # the project's mail templates
+```
+
+```python
+from je_mail_thunder import project_mail
+
+mail = project_mail()                    # the project in the working directory
+mail.send(to="qa@example.com", template="test_report",
+          context={"project": "MyProject", "passed": 98, "failed": 2})
+mail.triggers.poll()                     # look once for new mail
+mail.close()
+```
+
+- **`config.py`** may set `PROVIDER` (a registered provider name), `AUTH` or a whole `ACCOUNT`, `ATTACHMENT_POLICY`,
+  and `AUDIT` (`True` records every mail event in `mail/audit.jsonl`). Without `AUTH` the login comes from
+  `mail_thunder_content.json` or the environment, which keeps credentials out of the project's files.
+- **`triggers.py`** defines `register(mail)`, which subscribes the project's handlers (`mail.on(...)`) and names the
+  folders to watch (`mail.watch(...)`).
+- **`templates/`** is searched before the shared templates.
+
+`create_project_dir()` scaffolds the layer with a `test_report` template and the `file` provider, so a new project
+keeps its mail on disk until a real provider is named. `project_mail()` runs `config.py` and `triggers.py`, which are
+Python files of the project: load only the layer of a project you trust. No action command loads a layer, and
+`describe_mail_layer()` lists its files without running them.
+
+---
+
 ## Scripting Engine
 
 MailThunder includes a JSON-based scripting engine that lets you automate email workflows without writing Python code.
@@ -805,6 +845,10 @@ MyMailProject/
     executor_one_file.py   # Execute a single action file
     executor_folder.py     # Execute all action files in a directory
     executor_bad_file.py   # Bad practice example
+  mail/
+    config.py              # Provider, attachment policy and audit log of the project
+    triggers.py            # register(mail): event handlers and watched folders
+    templates/test_report/ # subject.txt, body.txt, body.html, template.json
 ```
 
 ---

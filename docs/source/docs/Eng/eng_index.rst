@@ -94,4 +94,5 @@ Next Steps
 - :doc:`mail_triggers` — Mail events and triggers
 - :doc:`microsoft_graph` — Microsoft 365 mail over Microsoft Graph
 - :doc:`monitoring` — Audit log, provider health and webhooks
+- :doc:`project_mail_layer` — A project's own mail layer
 - :doc:`scripting_engine` — Automate workflows with JSON scripts

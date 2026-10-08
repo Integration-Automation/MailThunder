@@ -16,9 +16,9 @@ Cross-repo and workspace items live in `D:\Codes\progress.md` (relevant here: X-
 
 From `docs/MAILTHUNDER-2.0-ROADMAP.md` (PR #45), in its priority order. One item is one focused change. P0 is done except for #24: the attachment policy (`docs/updates` U-20261008-01), the authentication abstraction (U-20261008-02), the core mail API with its provider interface (U-20261008-03) and the PyPI metadata (U-20261008-04).
 
-- **#18** [P2] Project Mail Layer.
-  - What: a `mail/` package per automation project (`config.py`, `triggers.py`, `templates/`), scaffolded by `create_project_dir`. Needs #14 and #16.
-  - Cross-repo: using it from APITestka, WebRunner and LoadDensity belongs in `D:\Codes\progress.md`.
+- **#18** [P2] [BLOCKED: the other repositories] Use the project mail layer from APITestka, WebRunner and LoadDensity.
+  - Here it is done (`docs/updates` U-20261008-10): `project_mail()`, the `mail/` layout, and `create_project_dir` scaffolding it.
+  - There: each project gets a `mail/` directory and sends its reports with `project_mail().send(template=...)`. That is a workspace item for `D:\Codes\progress.md`; `architecture.md` §6 names the contract.
 - **#19** [P3] [DECIDE] MailThunder Studio: a UI over the core API (Dashboard, Accounts, Templates, Triggers, Policies, Projects, Logs, Settings).
   - Decide first: the UI toolkit, and whether it ships in this package or in its own.
 - **#25** Microsoft Graph reaches only the signed-in user's mailbox (`/me`, a delegated token). A shared mailbox or an app-only token (client credentials, `/users/{id}`) needs a mailbox setting on `MailAccount` and a client-credentials grant in `utils/oauth2/oauth2.py`.

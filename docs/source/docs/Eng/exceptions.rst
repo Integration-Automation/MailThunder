@@ -31,6 +31,7 @@ Exception Hierarchy
            │     ├── TemplateContextError
            │     └── TemplateRenderError
            ├── MailThunderTriggerException
+           ├── MailThunderProjectException
            └── MailThunderAttachmentException
                  ├── AttachmentNotFound
                  ├── AttachmentTooLarge
@@ -90,6 +91,8 @@ Exception Reference
      - A value does not fit what the template does with it, or the output is too large
    * - ``MailThunderTriggerException``
      - An event name, a filter rule or a trigger backend is not usable as it was given
+   * - ``MailThunderProjectException``
+     - A project has no mail layer, or a file of it cannot be used
    * - ``MailThunderAttachmentException``
      - Base of the attachment errors; also raised for an invalid ``AttachmentPolicy`` or ``Attachment``
    * - ``AttachmentNotFound``

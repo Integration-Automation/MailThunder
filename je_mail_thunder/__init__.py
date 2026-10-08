@@ -7,6 +7,7 @@ from je_mail_thunder.core.account import MailAccount, MailServers
 from je_mail_thunder.core.compat import legacy_message, mail_from_wrappers
 from je_mail_thunder.core.mail import Mail, mail_instance
 from je_mail_thunder.core.message import MailMessage
+from je_mail_thunder.core.project import describe_mail_layer, project_mail
 # Providers
 from je_mail_thunder.providers.base import MailProvider, MailSender, MailStore
 from je_mail_thunder.providers.file import FileProvider
@@ -70,6 +71,7 @@ __all__ = [
     "EVENT_NAMES", "MailEvent", "MailFilter", "EventDispatcher", "MailTriggerBackend", "PollingBackend",
     "IMAPPollingBackend", "IMAPIdleBackend", "GraphPollingBackend", "GraphWebhookBackend",
     "MicrosoftGraphProvider", "FileProvider", "AuditLog", "ProviderHealth", "WebhookForwarder",
+    "project_mail", "describe_mail_layer",
     "MailTemplate", "RenderedTemplate", "TemplateLoader", "render_string",
     "Authentication", "PasswordAuth", "AppPasswordAuth", "OAuth2Auth", "XOAUTH2Auth", "resolve_authentication",
     "Attachment", "AttachmentPolicy", "DEFAULT_ATTACHMENT_POLICY", "validate_attachments",

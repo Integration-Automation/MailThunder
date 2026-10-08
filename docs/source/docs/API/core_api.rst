@@ -569,3 +569,28 @@ Monitoring and More Providers
    * - ``SERVER_PRESETS``
      - ``je_mail_thunder.core.account``: the SMTP / IMAP servers of ``google``, ``microsoft``, ``yahoo``,
        ``icloud``, ``zoho`` and ``fastmail``
+
+----
+
+Project Mail Layer
+------------------
+
+**Module:** ``je_mail_thunder.core.project``
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
+
+   * - Function
+     - Description
+   * - ``project_mail(project=None)``
+     - The ``Mail`` a project's ``mail/`` directory describes: provider, login, attachment policy,
+       templates (the project's first), audit log, and the handlers ``triggers.py`` registers. Runs
+       ``config.py`` and ``triggers.py``
+   * - ``describe_mail_layer(project=None)``
+     - ``{"directory", "config", "triggers", "templates"}`` from the file system alone
+   * - ``mail_layer_directory(project=None)``
+     - The project's ``mail`` directory
+
+**Raises:** ``MailThunderProjectException`` when the project has no ``mail`` directory, a setting has the
+wrong type, a file cannot be run, or ``triggers.py`` has no ``register``.
