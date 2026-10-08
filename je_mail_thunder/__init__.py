@@ -2,6 +2,10 @@
 from je_mail_thunder.imap.imap_wrapper import IMAPWrapper, imap_instance
 # SMTP Wrapper
 from je_mail_thunder.smtp.smtp_wrapper import SMTPClientMixin, SMTPStartTLSWrapper, SMTPWrapper, smtp_instance
+# Attachments
+from je_mail_thunder.attachments.attachment import Attachment
+from je_mail_thunder.attachments.policy import DEFAULT_ATTACHMENT_POLICY, AttachmentPolicy
+from je_mail_thunder.attachments.validator import validate_attachments
 # OAuth2
 from je_mail_thunder.utils.oauth2.oauth2 import (
     OAUTH2_PROVIDERS, OAuth2Provider, OAuth2Settings, OAuth2TokenCache, oauth2_token_cache, refresh_access_token,
@@ -26,6 +30,7 @@ from je_mail_thunder.utils.executor.action_executor import execute_action, execu
 from je_mail_thunder.utils.project.create_project_structure import create_project_dir
 __all__ = [
     "IMAPWrapper", "imap_instance", "SMTPWrapper", "SMTPStartTLSWrapper", "SMTPClientMixin", "smtp_instance",
+    "Attachment", "AttachmentPolicy", "DEFAULT_ATTACHMENT_POLICY", "validate_attachments",
     "OAUTH2_PROVIDERS", "OAuth2Provider", "OAuth2Settings", "OAuth2TokenCache", "oauth2_token_cache",
     "refresh_access_token", "resolve_oauth2_settings", "xoauth2_string", "is_need_to_save_content",
     "mail_thunder_content_data_dict", "read_output_content", "write_output_content", "get_mail_thunder_os_environ",

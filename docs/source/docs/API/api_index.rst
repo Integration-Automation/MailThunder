@@ -20,6 +20,12 @@ All public APIs are accessible from the top-level ``je_mail_thunder`` package:
        IMAPWrapper,              # IMAP wrapper class
        imap_instance,            # Pre-created IMAP instance (or None)
 
+       # Attachments
+       Attachment,               # A file to send, or one that arrived
+       AttachmentPolicy,         # Count, size and type limits
+       DEFAULT_ATTACHMENT_POLICY,  # 25 MiB of any type
+       validate_attachments,     # Check attachments against a policy
+
        # Authentication
        set_mail_thunder_os_environ,        # Set auth env vars
        get_mail_thunder_os_environ,        # Get auth env vars
@@ -58,6 +64,14 @@ Module Map
      - ``SMTPWrapper`` class, ``smtp_instance``
    * - ``je_mail_thunder.imap.imap_wrapper``
      - ``IMAPWrapper`` class, ``imap_instance``
+   * - ``je_mail_thunder.attachments.attachment``
+     - ``Attachment`` class
+   * - ``je_mail_thunder.attachments.policy``
+     - ``AttachmentPolicy`` class, ``DEFAULT_ATTACHMENT_POLICY``, ``MEBIBYTE``
+   * - ``je_mail_thunder.attachments.validator``
+     - ``validate_attachments()``
+   * - ``je_mail_thunder.attachments.mime``
+     - ``guess_content_type()``, ``file_extension()``, ``safe_filename()``
    * - ``je_mail_thunder.utils.executor.action_executor``
      - ``Executor`` class, ``execute_action()``, ``execute_files()``, ``add_command_to_executor()``
    * - ``je_mail_thunder.utils.save_mail_user_content.save_on_env``

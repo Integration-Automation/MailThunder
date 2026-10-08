@@ -25,6 +25,7 @@
   - [JSON 設定檔](#json-設定檔)
   - [環境變數](#環境變數)
   - [OAuth2（Google 與 Microsoft）](#oauth2google-與-microsoft)
+- [附件政策](#附件政策)
 - [腳本引擎](#腳本引擎)
   - [Action JSON 格式](#action-json-格式)
   - [可用的腳本指令](#可用的腳本指令)
@@ -49,6 +50,7 @@
 - **SMTP 支援** — 透過隱含式 TLS 寄送郵件，預設使用 Gmail，也可自訂其他 SMTP 服務；或透過 STARTTLS（Microsoft 365）
 - **IMAP4 支援** — 透過 IMAP4 SSL 讀取、搜尋和匯出郵件
 - **附件處理** — 自動偵測文字、圖片、音訊和二進位檔案的 MIME 類型
+- **附件政策** — 寄送前檢查附件的數量、大小、副檔名與 MIME 類型，每條規則都有對應的結構化例外
 - **HTML 郵件** — 支援寄送 HTML 格式的郵件與附件
 - **JSON 腳本引擎** — 使用 JSON 動作檔自動化郵件工作流程
 - **專案模板** — 快速建立包含預設關鍵字和執行器模板的專案
@@ -245,6 +247,49 @@ with SMTPStartTLSWrapper() as smtp:
     smtp.oauth2_login(settings.user, oauth2_token_cache.access_token(settings))
     smtp.create_message_and_send("Hello", {"Subject": "Hi", "From": settings.user, "To": "friend@example.com"})
 ```
+
+---
+
+## 附件政策
+
+`AttachmentPolicy` 定義一封郵件可以攜帶什麼。`validate_attachments` 會在寄出任何東西之前依政策檢查郵件的附件，
+並在第一條被違反的規則處引發結構化例外。
+
+```python
+from je_mail_thunder import Attachment, AttachmentPolicy, validate_attachments
+
+policy = AttachmentPolicy(
+    max_file_size=10 * 1024 * 1024,     # 單一附件的位元組上限
+    max_total_size=20 * 1024 * 1024,    # 所有附件合計的位元組上限
+    max_count=5,
+    allowed_extensions={"pdf", "csv", "html"},
+    allowed_mime_types={"application/pdf", "text/*"},
+)
+attachments = [Attachment.from_path("report.pdf"), Attachment.from_path("results.csv")]
+total_bytes = validate_attachments(attachments, policy)
+```
+
+每個上限都是選用的：預設值 `None` 表示不設限。副檔名比對不分大小寫、有沒有點都可以，並以最後一個副檔名為準
+（`report.pdf.exe` 是 `.exe`）。MIME 類型可以用 `/*` 結尾。
+`DEFAULT_ATTACHMENT_POLICY` 允許單一附件與整封郵件各 25 MiB、任何類型。
+
+檢查順序為：數量 → 是否存在 → 大小 → 副檔名 → MIME 類型 → 合計大小：
+
+| 例外 | 引發時機 | 屬性 |
+|---|---|---|
+| `AttachmentCountExceeded` | 附件數量超過 `max_count` | `count`、`limit` |
+| `AttachmentNotFound` | 要附加的檔案不存在 | `path` |
+| `AttachmentTooLarge` | 單一附件超過 `max_file_size` | `filename`、`size`、`limit` |
+| `AttachmentTypeNotAllowed` | 副檔名或 MIME 類型不在允許範圍內 | `filename`、`kind`、`value` |
+| `TotalAttachmentSizeExceeded` | 附件合計超過 `max_total_size` | `size`、`limit` |
+
+它們都繼承自 `MailThunderAttachmentException`（`je_mail_thunder.utils.exception.exceptions`）。類型檢查看的是檔名而不是
+內容：它能防止誤寄錯誤的檔案，無法防止刻意改名的檔案。
+
+`Attachment.save(directory)` 用來寫入隨郵件收到的附件。檔名會先處理成安全的名稱：目錄部分、`..`、控制字元與
+Windows 不接受的字元都會被移除，因此檔案不會落在 `directory` 之外。
+
+`SMTPWrapper` 的方法不會套用政策；使用它們之前請自行呼叫 `validate_attachments`。
 
 ---
 
@@ -549,6 +594,7 @@ MailThunder/
   je_mail_thunder/
     __init__.py              # 公開 API 匯出
     __main__.py              # CLI 進入點
+    attachments/             # 附件模型、AttachmentPolicy 與驗證器
     smtp/
       smtp_wrapper.py        # SMTPClientMixin、SMTPWrapper、SMTPStartTLSWrapper
     imap/

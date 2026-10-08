@@ -26,6 +26,7 @@ MailThunder is organized into the following core modules:
    je_mail_thunder/
      __init__.py              # Public API exports
      __main__.py              # CLI entry point (argparse)
+     attachments/             # Attachment model, AttachmentPolicy and its validator
      smtp/
        smtp_wrapper.py        # SMTPWrapper — extends smtplib.SMTP_SSL
      imap/
@@ -80,4 +81,5 @@ Next Steps
 - :doc:`authentication` — Configure email credentials
 - :doc:`send_google_mail` — Send your first email
 - :doc:`read_google_mail` — Read emails from your inbox
+- :doc:`attachment_policy` — Check attachments before they are sent
 - :doc:`scripting_engine` — Automate workflows with JSON scripts

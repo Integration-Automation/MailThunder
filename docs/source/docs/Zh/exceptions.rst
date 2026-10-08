@@ -18,7 +18,13 @@ MailThunder 為不同的錯誤情境定義了一組自訂例外類別。
            ├── MailThunderArgparseException
            ├── ExecuteActionException
            ├── AddCommandException
-           └── JsonActionException
+           ├── JsonActionException
+           └── MailThunderAttachmentException
+                 ├── AttachmentNotFound
+                 ├── AttachmentTooLarge
+                 ├── AttachmentTypeNotAllowed
+                 ├── AttachmentCountExceeded
+                 └── TotalAttachmentSizeExceeded
 
 ----
 
@@ -45,6 +51,18 @@ MailThunder 為不同的錯誤情境定義了一組自訂例外類別。
      - ``add_command_to_executor()`` 收到非可呼叫值（非函式/方法）
    * - ``JsonActionException``
      - 找不到 JSON 動作檔或無法儲存
+   * - ``MailThunderAttachmentException``
+     - 附件錯誤的基底；``AttachmentPolicy`` 或 ``Attachment`` 無效時也會引發
+   * - ``AttachmentNotFound``
+     - 要附加的檔案不存在或無法讀取（``path``）
+   * - ``AttachmentTooLarge``
+     - 單一附件超過政策的 ``max_file_size``\ （``filename``、``size``、``limit``）
+   * - ``AttachmentTypeNotAllowed``
+     - 副檔名或 MIME 類型不在允許範圍內（``filename``、``kind``、``value``）
+   * - ``AttachmentCountExceeded``
+     - 附件數量超過政策的 ``max_count``\ （``count``、``limit``）
+   * - ``TotalAttachmentSizeExceeded``
+     - 附件合計超過 ``max_total_size``\ （``size``、``limit``）
 
 ----
 

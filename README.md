@@ -25,6 +25,7 @@
   - [JSON Config File](#json-config-file)
   - [Environment Variables](#environment-variables)
   - [OAuth2 (Google and Microsoft)](#oauth2-google-and-microsoft)
+- [Attachment Policy](#attachment-policy)
 - [Scripting Engine](#scripting-engine)
   - [Action JSON Format](#action-json-format)
   - [Available Script Commands](#available-script-commands)
@@ -49,6 +50,7 @@
 - **SMTP support** — Send emails over implicit TLS with Gmail (default) or any SMTP provider, or over STARTTLS (Microsoft 365)
 - **IMAP4 support** — Read, search, and export emails via IMAP4 SSL
 - **Attachment handling** — Automatically detect MIME types for text, image, audio, and binary files
+- **Attachment policy** — Check the count, size, extension and MIME type of attachments before a message is sent, with a structured exception for each rule
 - **HTML email** — Send HTML-formatted emails with attachments
 - **JSON scripting engine** — Automate email workflows using JSON action files
 - **Project templates** — Scaffold projects with pre-built keyword and executor templates
@@ -247,6 +249,50 @@ with SMTPStartTLSWrapper() as smtp:
     smtp.oauth2_login(settings.user, oauth2_token_cache.access_token(settings))
     smtp.create_message_and_send("Hello", {"Subject": "Hi", "From": settings.user, "To": "friend@example.com"})
 ```
+
+---
+
+## Attachment Policy
+
+An `AttachmentPolicy` says what a message may carry. `validate_attachments` checks a message's attachments against it
+before anything is sent, and raises a structured exception at the first rule that is broken.
+
+```python
+from je_mail_thunder import Attachment, AttachmentPolicy, validate_attachments
+
+policy = AttachmentPolicy(
+    max_file_size=10 * 1024 * 1024,     # bytes one attachment may have
+    max_total_size=20 * 1024 * 1024,    # bytes all attachments may have together
+    max_count=5,
+    allowed_extensions={"pdf", "csv", "html"},
+    allowed_mime_types={"application/pdf", "text/*"},
+)
+attachments = [Attachment.from_path("report.pdf"), Attachment.from_path("results.csv")]
+total_bytes = validate_attachments(attachments, policy)
+```
+
+Every limit is optional: `None`, the default, lifts it. Extensions are compared without case, with or without the
+dot, and by the last extension (`report.pdf.exe` is an `.exe`). A MIME type may end in `/*`.
+`DEFAULT_ATTACHMENT_POLICY` allows 25 MiB per attachment and per message, of any type.
+
+The checks run in the order count → existence → size → extension → MIME type → total size:
+
+| Exception | Raised when | Attributes |
+|---|---|---|
+| `AttachmentCountExceeded` | there are more attachments than `max_count` | `count`, `limit` |
+| `AttachmentNotFound` | a file to attach does not exist | `path` |
+| `AttachmentTooLarge` | one attachment is over `max_file_size` | `filename`, `size`, `limit` |
+| `AttachmentTypeNotAllowed` | an extension or MIME type is not allowed | `filename`, `kind`, `value` |
+| `TotalAttachmentSizeExceeded` | together they are over `max_total_size` | `size`, `limit` |
+
+All of them subclass `MailThunderAttachmentException` (`je_mail_thunder.utils.exception.exceptions`). The type checks
+read the file name, not the content: they stop the wrong file being sent by mistake, not a file renamed on purpose.
+
+`Attachment.save(directory)` writes an attachment that arrived with a message. Its name is made safe first:
+directory parts, `..`, control characters and the characters Windows refuses are removed, so the file cannot land
+outside `directory`.
+
+The `SMTPWrapper` methods do not apply a policy; call `validate_attachments` yourself before using them.
 
 ---
 
@@ -552,6 +598,7 @@ MailThunder/
   je_mail_thunder/
     __init__.py              # Public API exports
     __main__.py              # CLI entry point
+    attachments/             # Attachment model, AttachmentPolicy and its validator
     smtp/
       smtp_wrapper.py        # SMTPClientMixin, SMTPWrapper, SMTPStartTLSWrapper
     imap/

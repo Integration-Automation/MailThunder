@@ -18,7 +18,13 @@ Exception Hierarchy
            ├── MailThunderArgparseException
            ├── ExecuteActionException
            ├── AddCommandException
-           └── JsonActionException
+           ├── JsonActionException
+           └── MailThunderAttachmentException
+                 ├── AttachmentNotFound
+                 ├── AttachmentTooLarge
+                 ├── AttachmentTypeNotAllowed
+                 ├── AttachmentCountExceeded
+                 └── TotalAttachmentSizeExceeded
 
 ----
 
@@ -45,6 +51,18 @@ Exception Reference
      - ``add_command_to_executor()`` receives a non-callable value (not a function/method)
    * - ``JsonActionException``
      - JSON action file not found or cannot be saved
+   * - ``MailThunderAttachmentException``
+     - Base of the attachment errors; also raised for an invalid ``AttachmentPolicy`` or ``Attachment``
+   * - ``AttachmentNotFound``
+     - A file to attach does not exist or cannot be read (``path``)
+   * - ``AttachmentTooLarge``
+     - One attachment is over the policy's ``max_file_size`` (``filename``, ``size``, ``limit``)
+   * - ``AttachmentTypeNotAllowed``
+     - An extension or MIME type is not allowed (``filename``, ``kind``, ``value``)
+   * - ``AttachmentCountExceeded``
+     - More attachments than the policy's ``max_count`` (``count``, ``limit``)
+   * - ``TotalAttachmentSizeExceeded``
+     - The attachments together are over ``max_total_size`` (``size``, ``limit``)
 
 ----
 
@@ -117,3 +135,5 @@ You can catch MailThunder exceptions in your code:
    Most MailThunder methods (especially in ``SMTPWrapper`` and ``IMAPWrapper``) catch
    exceptions internally and log them rather than propagating. Exceptions are more
    commonly raised by the executor, JSON file utilities, and CLI components.
+   ``validate_attachments`` is different: it logs the failure and raises it, so a message
+   that breaks the policy is never sent. See :doc:`attachment_policy`.

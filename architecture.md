@@ -20,6 +20,7 @@ executor exposes the same operations to action files, a CLI and a TCP socket ser
 | `je_mail_thunder/__main__.py` | Legacy flag CLI (`python -m je_mail_thunder`) |
 | `je_mail_thunder/smtp/smtp_wrapper.py` | `SMTPClientMixin` (messages, login, send, quit; mixed in before an `smtplib` class), `SMTPWrapper(SMTPClientMixin, SMTP_SSL)` (default `smtp.gmail.com:465`), `SMTPStartTLSWrapper(SMTPClientMixin, SMTP)` (default `smtp.office365.com:587`; STARTTLS before anything else, refused when the server lacks it), `default_smtp_client()` and the module instance `smtp_instance` (a `LazyInstance` of it) |
 | `je_mail_thunder/imap/imap_wrapper.py` | `IMAPWrapper(IMAP4_SSL)` (default `imap.gmail.com`; `oauth2_login`), `default_imap_client()` and the module instance `imap_instance` (a `LazyInstance` of it) |
+| `je_mail_thunder/attachments/` | What a message may carry: `attachment.Attachment` (a file to send by `path`, or one that arrived as `content`; `save` writes it under `mime.safe_filename`), `policy.AttachmentPolicy` / `DEFAULT_ATTACHMENT_POLICY` (count, size, extension and MIME-type limits), `validator.validate_attachments` (count → existence → size → extension → MIME type → total size; raises the `MailThunderAttachmentException` subclasses), `mime` (type and extension from the file name) |
 | `je_mail_thunder/utils/oauth2/oauth2.py` | OAuth2 with the standard library: `OAUTH2_PROVIDERS` (`google`, `microsoft`: token URL, scope, SMTP/IMAP hosts), `OAuth2Settings` (secrets out of `repr`), `refresh_access_token` (https only), `OAuth2TokenCache` / `oauth2_token_cache`, `xoauth2_string` |
 | `je_mail_thunder/utils/executor/action_executor.py` | `Executor` (je_action_core's `ActionExecutor` with MailThunder's settings): `event_dict` (`MT_*` commands plus je_action_core's `SAFE_BUILTINS` allowlist), `execute_action`, `execute_files`, `add_command_to_executor`, `action_list_from_mapping` |
 | `je_mail_thunder/utils/save_mail_user_content/` | Credential sources: `mail_thunder_content.json` in the working directory (`read_output_content` / `write_output_content`) and the env vars `mail_thunder_user` / `mail_thunder_user_password` (`set_/get_mail_thunder_os_environ`); `credentials.resolve_login_credentials` picks one, for both wrappers; `credentials.resolve_oauth2_settings` reads the `"oauth2"` object of the file, else the `mail_thunder_oauth2_*` env vars, and `configured_oauth2_provider` picks the servers the module instances connect to |
@@ -35,6 +36,7 @@ executor exposes the same operations to action files, a CLI and a TCP socket ser
 
 - **Python facade**: `import je_mail_thunder` gives you:
   - wrappers: `SMTPWrapper`, `smtp_instance`, `IMAPWrapper`, `imap_instance`;
+  - attachments: `Attachment`, `AttachmentPolicy`, `DEFAULT_ATTACHMENT_POLICY`, `validate_attachments`;
   - execution: `execute_action`, `execute_files`, `add_command_to_executor`, `read_action_json`,
     `get_dir_files_as_list`, `create_project_dir`;
   - credentials: `read_output_content`, `write_output_content`, `set_mail_thunder_os_environ`,

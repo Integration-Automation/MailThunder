@@ -26,6 +26,7 @@ MailThunder 核心模組架構：
    je_mail_thunder/
      __init__.py              # 公開 API 匯出
      __main__.py              # CLI 進入點 (argparse)
+     attachments/             # 附件模型、AttachmentPolicy 與驗證器
      smtp/
        smtp_wrapper.py        # SMTPWrapper — 繼承 smtplib.SMTP_SSL
      imap/
@@ -78,4 +79,5 @@ MailThunder 核心模組架構：
 - :doc:`authentication` — 設定郵件認證
 - :doc:`send_google_mail` — 寄送第一封郵件
 - :doc:`read_google_mail` — 讀取收件匣郵件
+- :doc:`attachment_policy` — 寄送前檢查附件
 - :doc:`scripting_engine` — 使用 JSON 腳本自動化工作流程

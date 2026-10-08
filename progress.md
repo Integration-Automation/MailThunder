@@ -11,3 +11,37 @@ Cross-repo and workspace items live in `D:\Codes\progress.md` (relevant here: X-
   - Docs: the "Package gate" paragraph in the three READMEs and the "Package Gate" section of `docs/source/docs/{Eng,Zh}/package_manager.rst`.
   - Timing: the warning is first released in the version after 0.0.29 (`origin/main` `pyproject.toml`); flip once two releases after that one have shipped it.
   - Decide first: how a user who only runs action files (`python -m je_mail_thunder -e`, the socket server) allows a package without a Python host to call `executor.allow_packages(...)`.
+
+## MailThunder 2.0 roadmap
+
+From `docs/MAILTHUNDER-2.0-ROADMAP.md` (PR #45), in its priority order. One item is one focused change; the attachment policy (P0) is done (`docs/updates` U-20261008-01).
+
+- **#11** [P0] Authentication abstraction.
+  - What: `je_mail_thunder/auth/` with `Authentication`, `PasswordAuth`, `AppPasswordAuth`, `OAuth2Auth` (a bearer token for HTTP APIs) and `XOAUTH2Auth` (SASL for SMTP and IMAP), over the token code in `utils/oauth2/`.
+  - Also: one function in `utils/save_mail_user_content/credentials.py` that turns the content file or the environment into an `Authentication`.
+- **#12** [P0] Core mail API and provider interface.
+  - What: `Mail` (send, get_messages, get_message, create_draft, delete_message) over a `MailProvider` interface, with `SMTPProvider` and `IMAPProvider` built on the existing wrappers; a provider-independent message; `MT_mail_*` commands; attachments checked against the policy before sending.
+  - Keep: `SMTPWrapper` / `IMAPWrapper` and every `MT_smtp_*` / `MT_imap_*` command work unchanged (`architecture.md` §6: PyBreeze imports them).
+- **#13** [P0] PyPI metadata: description, keywords, classifiers, maintainers and project URLs in `pyproject.toml` and `dev.toml`.
+- **#14** [P1] Template engine (`je_mail_thunder/templates/`: `engine.py`, `template.py`, `loader.py`).
+  - What: subject / text / HTML templates with variables and metadata; shared and project-local template directories; context validation; structured rendering errors; `Mail.send(template="name", context={...})`.
+  - Decide first: the roadmap prefers Jinja2-style syntax, and the package uses only the standard library (CLAUDE.md › Dependency Security). Either a small `{{ name }}` renderer in the standard library, or Jinja2 as an optional extra.
+- **#15** [P1] `MicrosoftGraphProvider` (`je_mail_thunder/providers/microsoft_graph.py`).
+  - What: send, drafts, message retrieval and attachments over Microsoft Graph with an OAuth2 bearer token; Graph errors mapped to MailThunder exceptions.
+  - Needs: #11, #12, and the Graph scopes (`Mail.Send`, `Mail.ReadWrite`) beside the SMTP / IMAP ones in `OAUTH2_PROVIDERS`.
+  - Decide first: whether the provider name `microsoft` moves from SMTP / IMAP to Graph, or Graph gets its own name.
+- **#16** [P1] Mail events and triggers (`core/events.py`, `triggers/`: `trigger.py`, `filter.py`, `dispatcher.py`).
+  - What: `Mail.on(event, filter, handler)`; the events `message_received`, `message_sent`, `message_failed`, `attachment_received`, `attachment_rejected`, `authentication_failed`, `connection_failed`; filters on sender, recipient, subject, body, attachments, attachment type, time and metadata; a dispatcher; the `MailTriggerBackend` interface.
+  - Needs: #12.
+- **#17** [P2] Trigger backends: `IMAPPollingBackend`, `IMAPIdleBackend`, `GraphPollingBackend`, `GraphWebhookBackend`. Needs #16; the Graph ones need #15.
+- **#18** [P2] Project Mail Layer.
+  - What: a `mail/` package per automation project (`config.py`, `triggers.py`, `templates/`), scaffolded by `create_project_dir`. Needs #14 and #16.
+  - Cross-repo: using it from APITestka, WebRunner and LoadDensity belongs in `D:\Codes\progress.md`.
+- **#19** [P3] [DECIDE] MailThunder Studio: a UI over the core API (Dashboard, Accounts, Templates, Triggers, Policies, Projects, Logs, Settings).
+  - Decide first: the UI toolkit, and whether it ships in this package or in its own.
+- **#20** [P4] Webhook / event extensions, provider health monitoring, audit logging, further providers.
+- **#21** [P0 follow-up] Migration: send the wrappers' own mail through the core (`legacy API → adapter → core`), a migration guide, and integration tests against a real mailbox (roadmap PR 12). Needs #12.
+- **#22** [DECIDE] The roadmap's examples import `mailthunder`; the package is `je_mail_thunder`, which PyBreeze imports (`architecture.md` §6). Keep the name, or also ship a `mailthunder` import name (check first that the name is free on PyPI).
+- **#23** `IMAPWrapper.output_all_mail_as_file` loses the mail body on Windows when the subject holds `:` (`Re: ...`).
+  - Verified 2026-10-08 on Windows 11: `open("Re: hello0", "w")` creates an empty file `Re` and writes into an alternate data stream. `_sanitize_subject_as_filename` (`je_mail_thunder/imap/imap_wrapper.py`) replaces only `\ / CR LF TAB`.
+  - Fix: have it return `attachments.mime.safe_filename(subject, "mail")`, which also replaces `: * ? " < > |`. That renames the exported files of subjects with those characters on every platform, so say so in the three READMEs and `docs/source/docs/{Eng,Zh}/read_google_mail.rst`.

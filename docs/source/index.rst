@@ -28,6 +28,7 @@ Key Features
 - **SMTP support** — Send emails via SSL with Gmail (default) or any SMTP provider
 - **IMAP4 support** — Read, search, and export emails via IMAP4 SSL
 - **Attachment handling** — Automatically detect MIME types for text, image, audio, and binary files
+- **Attachment policy** — Check the count, size, extension and MIME type of attachments before a message is sent
 - **HTML email** — Send HTML-formatted emails with attachments
 - **JSON scripting engine** — Automate email workflows using JSON action files
 - **Project templates** — Scaffold projects with pre-built keyword and executor templates
@@ -83,6 +84,7 @@ Quick Example
    docs/Eng/authentication
    docs/Eng/send_google_mail
    docs/Eng/read_google_mail
+   docs/Eng/attachment_policy
    docs/Eng/scripting_engine
    docs/Eng/project_templates
    docs/Eng/cli
@@ -100,6 +102,7 @@ Quick Example
    docs/Zh/authentication
    docs/Zh/send_google_mail
    docs/Zh/read_google_mail
+   docs/Zh/attachment_policy
    docs/Zh/scripting_engine
    docs/Zh/project_templates
    docs/Zh/cli
@@ -113,6 +116,7 @@ Quick Example
    :caption: API Reference
 
    docs/API/api_index
+   docs/API/core_api
    docs/API/smtp_api
    docs/API/imap_api
    docs/API/executor_api

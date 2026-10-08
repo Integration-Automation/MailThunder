@@ -58,6 +58,7 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | ID | Date | Title | Tags | Batch |
 |---|---|---|---|---|
+| U-20261008-01 | 2026-10-08 | Attachment policy checks attachments before a message is sent | #feature #attachments #security #roadmap-2.0 | [2026-10](2026-10.md) |
 | U-20261001-09 | 2026-10-01 | The publish jobs build with the locked setuptools instead of downloading the newest | #ci #security #X-13 | [2026-10](2026-10.md) |
 | U-20261001-08 | 2026-10-01 | Dependabot watches the hash-locked requirements; a guard keeps the publish jobs on them | #ci #security #X-13 | [2026-10](2026-10.md) |
 | U-20261001-07 | 2026-10-01 | CI publishes je_mail_thunder_dev from the dev branch | #release #ci #X-13 | [2026-10](2026-10.md) |
@@ -93,5 +94,5 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | File | Period | Entries |
 |---|---|---:|
-| [2026-10.md](2026-10.md) | 2026-10 | 9 |
+| [2026-10.md](2026-10.md) | 2026-10 | 10 |
 | [2026-09.md](2026-09.md) | 2026-09 | 21 |
