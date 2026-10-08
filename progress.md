@@ -21,10 +21,7 @@ From `docs/MAILTHUNDER-2.0-ROADMAP.md` (PR #45), in its priority order. One item
   - How: one class that is a `MailSender` and a `MailStore`, registered with `register_provider`; `OAuth2Auth.authorization()` is the bearer header; HTTP with `urllib`, as `utils/oauth2/oauth2.py` does.
   - Needs: the Graph scopes (`Mail.Send`, `Mail.ReadWrite`) beside the SMTP / IMAP ones in `OAUTH2_PROVIDERS`.
   - Decide first: whether the provider name `microsoft` moves from SMTP / IMAP to Graph, or Graph gets its own name.
-- **#16** [P1] Mail events and triggers (`core/events.py`, `triggers/`: `trigger.py`, `filter.py`, `dispatcher.py`).
-  - What: `Mail.on(event, filter, handler)`; the events `message_received`, `message_sent`, `message_failed`, `attachment_received`, `attachment_rejected`, `authentication_failed`, `connection_failed`; filters on sender, recipient, subject, body, attachments, attachment type, time and metadata; a dispatcher; the `MailTriggerBackend` interface.
-  - Where the events come from: `Mail.send` and the providers already raise one exception per failure kind (`MailThunderSendException`, `MailThunderAuthenticationException`, `MailThunderConnectionException`, the attachment exceptions).
-- **#17** [P2] Trigger backends: `IMAPPollingBackend`, `IMAPIdleBackend`, `GraphPollingBackend`, `GraphWebhookBackend`. Needs #16; the Graph ones need #15.
+- **#17** [P2] The Graph trigger backends: `GraphPollingBackend`, `GraphWebhookBackend` (the IMAP ones are done: U-20261008-07). Needs #15; register them with `triggers.factory.register_backends`.
 - **#18** [P2] Project Mail Layer.
   - What: a `mail/` package per automation project (`config.py`, `triggers.py`, `templates/`), scaffolded by `create_project_dir`. Needs #14 and #16.
   - Cross-repo: using it from APITestka, WebRunner and LoadDensity belongs in `D:\Codes\progress.md`.
@@ -33,6 +30,6 @@ From `docs/MAILTHUNDER-2.0-ROADMAP.md` (PR #45), in its priority order. One item
 - **#20** [P4] Webhook / event extensions, provider health monitoring, audit logging, further providers.
 - **#24** [UNVERIFIED] The core mail API has not been run against a real mailbox.
   - Tested so far: fake SMTP / IMAP clients, and a fake SMTP server on localhost for what reaches the wire (`test/unit_test/test_mail_providers.py`).
-  - To check on Gmail and Microsoft 365: `send` with attachments and both bodies; `get_messages` (newest first, `unread_only`, a non-ASCII `query`, which is sent as UTF-8 in a quoted string with `CHARSET UTF-8`); `create_draft` finding the folder flagged `\Drafts`; `delete_message` with `UID EXPUNGE`; a non-ASCII folder name; a connection left idle past the server's timeout.
+  - To check on Gmail and Microsoft 365: `send` with attachments and both bodies; `get_messages` (newest first, `unread_only`, a non-ASCII `query`, which is sent as UTF-8 in a quoted string with `CHARSET UTF-8`); `create_draft` finding the folder flagged `\Drafts`; `delete_message` with `UID EXPUNGE`; a non-ASCII folder name; a connection left idle past the server's timeout; `mail.watch()` and `mail.watch(idle=True)` (`IMAPProvider.idle` writes `IDLE` / `DONE` itself and has only been run against a scripted client).
   - Where: a script under `test/unit_test/manual_test/`, which the test run does not collect.
 - **#22** [DECIDE] The roadmap's examples import `mailthunder`; the package is `je_mail_thunder`, which PyBreeze imports (`architecture.md` §6). Keep the name, or also ship a `mailthunder` import name (check first that the name is free on PyPI).

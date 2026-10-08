@@ -34,6 +34,7 @@
   - [驗證物件](#驗證物件)
 - [附件政策](#附件政策)
 - [郵件模板](#郵件模板)
+- [郵件事件與觸發器](#郵件事件與觸發器)
 - [腳本引擎](#腳本引擎)
   - [Action JSON 格式](#action-json-格式)
   - [可用的腳本指令](#可用的腳本指令)
@@ -58,6 +59,7 @@
 
 - **與供應商無關的 `Mail` API** — 一個物件就能寄送、讀取、建立草稿與刪除郵件；背後是可以接上新後端的供應商介面（目前為 SMTP 與 IMAP）
 - **郵件模板** — 主旨、純文字與 HTML 模板，支援 Jinja2 風格的 `{{ }}`、`{% if %}` 與 `{% for %}`，以標準函式庫實作：`mail.send(template=..., context=...)`
+- **郵件事件與觸發器** — `mail.on("message_received", handler, filter={...})` 提供與供應商無關的事件，`mail.watch()` 以輪詢或 IMAP IDLE 監看新郵件
 - **SMTP 支援** — 透過隱含式 TLS 寄送郵件，預設使用 Gmail，也可自訂其他 SMTP 服務；或透過 STARTTLS（Microsoft 365）
 - **IMAP4 支援** — 透過 IMAP4 SSL 讀取、搜尋和匯出郵件
 - **附件處理** — 自動偵測文字、圖片、音訊和二進位檔案的 MIME 類型
@@ -500,6 +502,47 @@ mail/templates/test_report/
 
 ---
 
+## 郵件事件與觸發器
+
+`Mail` 會把郵件發生的事情以事件回報，不論供應商是哪一家都用同一套名稱；觸發器後端則負責監看資料夾，讓新郵件也成為事件：
+
+```python
+from je_mail_thunder import Mail
+
+mail = Mail()
+
+def handle_report(event):
+    print(event.message.sender, event.message.subject)
+
+mail.on("message_received", handle_report, filter={"subject": "[TEST]", "has_attachments": True})
+mail.watch("INBOX")                  # 在背景執行緒每 60 秒查看一次
+mail.watch("INBOX", idle=True)       # 或由伺服器通知新郵件（IMAP IDLE）
+
+@mail.on("message_failed")           # on() 也可以當作裝飾器
+def alert(event):
+    print("not sent:", event.error)
+```
+
+| 事件 | 發生時機 |
+|---|---|
+| `message_received`、`attachment_received` | 被監看的資料夾有新郵件（它的每個附件各一次） |
+| `message_sent` | `send` 已把郵件交給供應商 |
+| `message_failed` | `send` 或 `create_draft` 失敗，不論原因 |
+| `attachment_rejected` | 附件不存在或違反附件政策 |
+| `authentication_failed`、`connection_failed` | 沒有認證資訊或登入被拒；無法連上伺服器或連線中斷 |
+
+處理函式會收到一個 `MailEvent`（`name`、`message`、`attachment`、`error`、`provider`、`folder`、`timestamp`、`metadata`）。
+`filter` 可以是規則的 mapping（`sender`、`recipient`、`subject`、`body`、`has_attachments`、`attachment_type`、`since`、
+`until`、`metadata`）、接收事件的函式，或 `MailFilter`；文字規則不分大小寫，也可以使用編譯過的正規表示式。
+失敗仍然會以例外回報給呼叫端；處理函式引發的例外只會被記錄，不會中斷其他事情。
+
+`mail.watch(folder, interval=60, idle=False, start=True, include_existing=False)` 會在 `mail.triggers` 加入一個後端：
+`IMAPPollingBackend`（只搜尋比上次看到的更大的 UID）、`IMAPIdleBackend`，或是適用於其他 `MailStore` 的 `PollingBackend`。
+監看使用自己的連線，第一次查看只會記下已經存在的郵件；`mail.triggers.poll()` 則是只查看一次，不啟動執行緒。
+在動作檔中，`MT_mail_poll` 會回傳上一次 `MT_mail_poll` 以來的事件。
+
+---
+
 ## 腳本引擎
 
 MailThunder 內建 JSON 腳本引擎，讓你無需撰寫 Python 程式碼即可自動化郵件工作流程。
@@ -543,6 +586,7 @@ MailThunder 內建 JSON 腳本引擎，讓你無需撰寫 Python 程式碼即可
 | `MT_mail_delete_message` | 依識別碼刪除一封郵件 | `{"message_id": str, "folder": str}` |
 | `MT_mail_close` | 關閉供應商的連線 | 無 |
 | `MT_mail_render_template` | 產生郵件模板的內容，不寄出 | `{"template": str, "context": dict}` |
+| `MT_mail_poll` | 取得資料夾自上次輪詢以來新郵件的事件 | `{"folder": str}`（預設：INBOX） |
 | `MT_set_mail_thunder_os_environ` | 設定驗證環境變數 | `{"mail_thunder_user": str, "mail_thunder_user_password": str}` |
 | `MT_get_mail_thunder_os_environ` | 取得驗證環境變數 | 無 |
 | `MT_add_package_to_executor` | 載入 Python 套件至執行器 | `["套件名稱"]` |
@@ -856,6 +900,7 @@ MailThunder/
     core/                    # Mail（與供應商無關的 API）、MailMessage、MailAccount
     providers/               # MailSender / MailStore 介面、SMTPProvider、IMAPProvider、註冊表
     templates/               # 郵件模板：模板語法、MailTemplate、TemplateLoader
+    triggers/                # 郵件事件：過濾器、dispatcher、輪詢與 IMAP IDLE 後端
     smtp/
       smtp_wrapper.py        # SMTPClientMixin、SMTPWrapper、SMTPStartTLSWrapper
     imap/

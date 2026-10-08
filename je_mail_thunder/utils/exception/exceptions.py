@@ -145,3 +145,7 @@ class TemplateContextError(MailThunderTemplateException):
 
 class TemplateRenderError(MailThunderTemplateException):
     """A template could not be rendered with the values it was given."""
+
+
+class MailThunderTriggerException(MailThunderException):
+    """An event name, a filter or a trigger backend is not usable as it was given."""

@@ -101,6 +101,7 @@ The wrappers below keep working as before.
    docs/Eng/read_google_mail
    docs/Eng/attachment_policy
    docs/Eng/mail_templates
+   docs/Eng/mail_triggers
    docs/Eng/scripting_engine
    docs/Eng/project_templates
    docs/Eng/cli
@@ -121,6 +122,7 @@ The wrappers below keep working as before.
    docs/Zh/read_google_mail
    docs/Zh/attachment_policy
    docs/Zh/mail_templates
+   docs/Zh/mail_triggers
    docs/Zh/scripting_engine
    docs/Zh/project_templates
    docs/Zh/cli

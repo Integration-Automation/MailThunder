@@ -34,6 +34,7 @@
   - [Authentication Objects](#authentication-objects)
 - [Attachment Policy](#attachment-policy)
 - [Mail Templates](#mail-templates)
+- [Mail Events and Triggers](#mail-events-and-triggers)
 - [Scripting Engine](#scripting-engine)
   - [Action JSON Format](#action-json-format)
   - [Available Script Commands](#available-script-commands)
@@ -58,6 +59,7 @@
 
 - **Provider-agnostic `Mail` API** — One object sends, reads, drafts and deletes mail, behind a provider interface new backends plug into (SMTP and IMAP today)
 - **Mail templates** — Subject, text and HTML templates with Jinja2-style `{{ }}`, `{% if %}` and `{% for %}`, rendered with the standard library: `mail.send(template=..., context=...)`
+- **Mail events and triggers** — `mail.on("message_received", handler, filter={...})` with provider-independent events, and `mail.watch()` to notice new mail by polling or IMAP IDLE
 - **SMTP support** — Send emails over implicit TLS with Gmail (default) or any SMTP provider, or over STARTTLS (Microsoft 365)
 - **IMAP4 support** — Read, search, and export emails via IMAP4 SSL
 - **Attachment handling** — Automatically detect MIME types for text, image, audio, and binary files
@@ -510,6 +512,50 @@ Templates can also be built in code: `mail.templates.add(MailTemplate("welcome",
 
 ---
 
+## Mail Events and Triggers
+
+`Mail` reports what happens to mail as events, in the same words for every provider, and a trigger backend watches a
+folder so that new mail becomes an event too:
+
+```python
+from je_mail_thunder import Mail
+
+mail = Mail()
+
+def handle_report(event):
+    print(event.message.sender, event.message.subject)
+
+mail.on("message_received", handle_report, filter={"subject": "[TEST]", "has_attachments": True})
+mail.watch("INBOX")                  # look every 60 seconds on a background thread
+mail.watch("INBOX", idle=True)       # or let the server announce new mail (IMAP IDLE)
+
+@mail.on("message_failed")           # on() is also a decorator
+def alert(event):
+    print("not sent:", event.error)
+```
+
+| Event | When |
+|---|---|
+| `message_received`, `attachment_received` | a watched folder has a new message (and once for each of its attachments) |
+| `message_sent` | `send` handed a message to the provider |
+| `message_failed` | `send` or `create_draft` failed, whatever the reason |
+| `attachment_rejected` | an attachment was missing or broke the attachment policy |
+| `authentication_failed`, `connection_failed` | no credentials or a refused login; an unreachable server or a lost connection |
+
+A handler gets a `MailEvent` (`name`, `message`, `attachment`, `error`, `provider`, `folder`, `timestamp`, `metadata`).
+`filter` is a mapping of rules (`sender`, `recipient`, `subject`, `body`, `has_attachments`, `attachment_type`, `since`,
+`until`, `metadata`), a function of the event, or a `MailFilter`; text rules ignore case, and a compiled regular
+expression works too. A failure is still raised to the caller, and a handler that raises is logged without stopping
+anything else.
+
+`mail.watch(folder, interval=60, idle=False, start=True, include_existing=False)` adds a backend to `mail.triggers`:
+`IMAPPollingBackend` (searches only UIDs above the last one seen), `IMAPIdleBackend`, or `PollingBackend` for any other
+`MailStore`. The watcher uses a connection of its own, the first look only notes the mail that is already there, and
+`mail.triggers.poll()` looks once instead of running a thread. In an action file, `MT_mail_poll` answers with the
+events since the previous `MT_mail_poll`.
+
+---
+
 ## Scripting Engine
 
 MailThunder includes a JSON-based scripting engine that lets you automate email workflows without writing Python code.
@@ -553,6 +599,7 @@ Action files use a list of commands. Each command is an array where the first el
 | `MT_mail_delete_message` | Delete one message by its id | `{"message_id": str, "folder": str}` |
 | `MT_mail_close` | Close the provider connections | None |
 | `MT_mail_render_template` | Render a mail template without sending | `{"template": str, "context": dict}` |
+| `MT_mail_poll` | Get the events for the mail that arrived since the last poll of a folder | `{"folder": str}` (default: INBOX) |
 | `MT_set_mail_thunder_os_environ` | Set auth env vars | `{"mail_thunder_user": str, "mail_thunder_user_password": str}` |
 | `MT_get_mail_thunder_os_environ` | Get auth env vars | None |
 | `MT_add_package_to_executor` | Load a Python package into executor | `["package_name"]` |
@@ -867,6 +914,7 @@ MailThunder/
     core/                    # Mail (the provider-agnostic API), MailMessage, MailAccount
     providers/               # MailSender / MailStore interfaces, SMTPProvider, IMAPProvider, registry
     templates/               # Mail templates: the template language, MailTemplate, TemplateLoader
+    triggers/                # Mail events: filters, dispatcher, polling and IMAP IDLE backends
     smtp/
       smtp_wrapper.py        # SMTPClientMixin, SMTPWrapper, SMTPStartTLSWrapper
     imap/

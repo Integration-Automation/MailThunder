@@ -69,6 +69,8 @@ Executor Class
      - ``mail_instance.close``
    * - ``MT_mail_render_template``
      - ``core.actions.mail_render_template`` (``mail_instance.render`` as a dict)
+   * - ``MT_mail_poll``
+     - ``core.actions.mail_poll`` (one look of the folder's trigger backend, as event dicts)
    * - ``MT_set_mail_thunder_os_environ``
      - ``set_mail_thunder_os_environ``
    * - ``MT_get_mail_thunder_os_environ``

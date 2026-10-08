@@ -7,9 +7,10 @@ read with ``BODY.PEEK[]``, so reading one never marks it as read.
 import base64
 import imaplib
 import re
+import select
 import time
 from email import policy
-from typing import Iterator, List, Optional, Tuple
+from typing import Callable, Iterator, List, Optional, Tuple
 
 from je_mail_thunder.core.message import MailMessage
 from je_mail_thunder.core.rfc822 import parse_message, to_email_message
@@ -25,6 +26,19 @@ _NON_ASCII_RUN = re.compile(r"[^\x20-\x7e]+")
 # One line of a LIST answer: (flags) "delimiter" name
 _LIST_LINE = re.compile(rb'\((?P<flags>[^)]*)\) (?:"[^"]*"|NIL) (?P<name>.+)')
 _APPEND_UID = re.compile(r"APPENDUID \d+ (\d+)")
+# While idling, the connection is looked at this often, so a stop is noticed within a second.
+IDLE_SLICE_SECONDS = 1.0
+# Lines read after DONE while waiting for the end of an IDLE, before the connection is given up.
+_MAX_IDLE_LINES = 1000
+
+
+def _readable(connection, seconds: float) -> bool:
+    """True when the server has sent something, waiting at most ``seconds`` for it."""
+    pending = getattr(connection, "pending", None)
+    if pending is not None and pending():
+        return True
+    readable, _, _ = select.select([connection], [], [], seconds)
+    return bool(readable)
 
 
 def _utf7_run(match: "re.Match[str]") -> str:
@@ -85,6 +99,7 @@ class IMAPProvider(WrapperProvider, MailStore):
         super().__init__(account, client, clock)
         # The folder this provider opened last, and whether it may change it.
         self._selected: Optional[Tuple[str, bool]] = None
+        self._idle_count = 0
 
     def _connect(self):
         host = self._account.resolved_servers.imap_host
@@ -227,3 +242,52 @@ class IMAPProvider(WrapperProvider, MailStore):
             self._run("the expunge", client.uid, "EXPUNGE", uid)
         else:
             self._run("the expunge", client.expunge)
+
+    def _idle_wait(self, client, timeout: float, should_stop: Optional[Callable[[], bool]]) -> bool:
+        """Wait for the server to say something; False when the time is up or the caller wants to stop."""
+        deadline = self._clock() + timeout
+        while self._clock() < deadline and not (should_stop is not None and should_stop()):
+            if _readable(client.sock, IDLE_SLICE_SECONDS):
+                return True
+        return False
+
+    @staticmethod
+    def _idle_end(client, tag: bytes) -> bool:
+        """Read to the end of the IDLE; True when the server reported new mail on the way."""
+        announced = False
+        for _ in range(_MAX_IDLE_LINES):
+            line = client.readline()
+            if not line:
+                raise imaplib.IMAP4.abort("the connection closed during IDLE")
+            if line.startswith(tag):
+                return announced
+            announced = announced or b"EXISTS" in line or b"RECENT" in line
+        raise imaplib.IMAP4.abort("the IDLE did not end")
+
+    def idle(self, folder: str = DEFAULT_FOLDER, timeout: float = 300.0,
+             should_stop: Optional[Callable[[], bool]] = None) -> bool:
+        """
+        Wait in IMAP ``IDLE`` (RFC 2177) until the server reports a change in the folder, the time is up, or
+        ``should_stop`` says so. The connection can do nothing else meanwhile.
+
+        :param folder: the folder to watch
+        :param timeout: the longest to wait, in seconds
+        :param should_stop: asked about once a second; a true answer ends the wait
+        :return: True when the server said something, which is a hint to look for new mail
+        :raises MailThunderProviderException: the server does not offer ``IDLE`` or refused it
+        :raises MailThunderConnectionException: the connection was lost
+        """
+        client = self._open_folder(folder)
+        if "IDLE" not in getattr(client, "capabilities", ()):
+            raise MailThunderProviderException("the imap server does not offer IDLE")
+        self._idle_count += 1
+        tag = b"MTIDLE%d" % self._idle_count
+        try:
+            client.send(tag + b" IDLE\r\n")
+            if not client.readline().startswith(b"+"):
+                raise imaplib.IMAP4.error("the server did not accept IDLE")
+            heard = self._idle_wait(client, timeout, should_stop)
+            client.send(b"DONE\r\n")
+            return self._idle_end(client, tag) or heard
+        except self._server_errors as error:
+            raise self._failure("idling", error, MailThunderProviderException) from error

@@ -454,3 +454,50 @@ Templates
 
 **Raises:** ``TemplateNotFound``, ``TemplateSyntaxError``, ``TemplateContextError`` or
 ``TemplateRenderError`` (all ``MailThunderTemplateException``).
+
+----
+
+Events and Triggers
+-------------------
+
+**Modules:** ``je_mail_thunder.core.events``, ``je_mail_thunder.triggers.filter``,
+``je_mail_thunder.triggers.dispatcher``, ``je_mail_thunder.triggers.trigger``,
+``je_mail_thunder.triggers.polling``, ``je_mail_thunder.triggers.imap``, ``je_mail_thunder.triggers.factory``
+
+.. list-table::
+   :header-rows: 1
+   :widths: 45 55
+
+   * - Name
+     - Description
+   * - ``MailEvent(name, message=None, attachment=None, error=None, provider="", folder="", timestamp=now, metadata={})``
+     - One thing that happened; ``to_dict()`` is JSON-ready. ``EVENT_NAMES`` lists the seven names
+   * - ``failure_events(error, message=None, provider="", sending=False)``
+     - The events a failed operation stands for, the most specific first
+   * - ``MailFilter(sender, recipient, subject, body, has_attachments, attachment_type, since, until, metadata, predicate)``
+     - ``matches(event)``; ``MailFilter.of(value)`` accepts ``None``, a mapping, a function or a filter;
+       ``describe()`` is JSON-ready
+   * - ``EventDispatcher``
+     - ``on(event, handler, mail_filter=None)`` returns a ``Subscription``; ``off(subscription)``;
+       ``emit(event)`` returns how many handlers were called; ``subscriptions``
+   * - ``Mail.on(event, handler=None, filter=...)``
+     - Subscribe on ``mail.events``; without a handler it is a decorator
+   * - ``Mail.watch(folder="INBOX", idle=False, start=True, **options)``
+     - Add a backend to ``mail.triggers`` and start it; ``options`` are ``interval``, ``include_existing``
+       and ``batch_limit``
+   * - ``MailTriggerBackend(interval=60.0)``
+     - Abstract ``poll()``; ``bind(emit)``, ``start()``, ``stop()``, ``run()``, ``wait(seconds)``, ``close()``,
+       ``running``, ``describe()``
+   * - ``TriggerManager``
+     - ``mail.triggers``: ``backends``, ``add``, ``remove``, ``poll``, ``start``, ``stop``
+   * - ``PollingBackend(store, folder="INBOX", interval=60.0, include_existing=False, batch_limit=50, lock=None)``
+     - Reports the messages a ``MailStore`` did not have at the last look
+   * - ``IMAPPollingBackend`` / ``IMAPIdleBackend``
+     - Polling with ``UID <last + 1>:*``; and waiting in ``IDLE`` between looks
+   * - ``IMAPProvider.idle(folder="INBOX", timeout=300.0, should_stop=None)``
+     - Wait in IMAP ``IDLE``; true when the server said something
+   * - ``create_backend(store, folder="INBOX", idle=False, **options)`` / ``register_backends(store_type, polling, push=None)``
+     - Which backend watches which kind of store
+
+**Raises:** ``MailThunderTriggerException`` for an unknown event, filter rule or option, and for a backend
+that cannot work with what it was given.

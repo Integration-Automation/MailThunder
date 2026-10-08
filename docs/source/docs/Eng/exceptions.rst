@@ -30,6 +30,7 @@ Exception Hierarchy
            │     ├── TemplateSyntaxError
            │     ├── TemplateContextError
            │     └── TemplateRenderError
+           ├── MailThunderTriggerException
            └── MailThunderAttachmentException
                  ├── AttachmentNotFound
                  ├── AttachmentTooLarge
@@ -87,6 +88,8 @@ Exception Reference
      - The context lacks variables the template needs (``missing``, ``template``)
    * - ``TemplateRenderError``
      - A value does not fit what the template does with it, or the output is too large
+   * - ``MailThunderTriggerException``
+     - An event name, a filter rule or a trigger backend is not usable as it was given
    * - ``MailThunderAttachmentException``
      - Base of the attachment errors; also raised for an invalid ``AttachmentPolicy`` or ``Attachment``
    * - ``AttachmentNotFound``

@@ -3,6 +3,7 @@ Stand-ins the core mail API tests share: providers that record what they are ask
 that answer like a server without a network.
 """
 import imaplib
+from collections import deque
 from email.message import EmailMessage
 
 from je_mail_thunder.core.message import MailMessage
@@ -112,6 +113,16 @@ class FakeSMTPClient:
         self._call("close")
 
 
+class FakeSocket:
+    """The part of a socket the providers touch: the timeout they set on a new connection."""
+
+    def __init__(self):
+        self.timeout = None
+
+    def settimeout(self, seconds):
+        self.timeout = seconds
+
+
 class FakeIMAPClient:
     """What ``IMAPProvider`` uses of an IMAP wrapper, over a mailbox of UID -> raw message."""
 
@@ -125,6 +136,10 @@ class FakeIMAPClient:
         self.folders = [b'(\\HasNoChildren) "/" "INBOX"', b'(\\HasNoChildren \\Drafts) "/" "[Gmail]/Drafts"']
         self.append_answer = [b"[APPENDUID 7 42] (Success)"]
         self.appended = []
+        # For IDLE: what the provider writes, and the lines the server answers with.
+        self.sock = FakeSocket()
+        self.written = []
+        self.lines = deque()
 
     def _call(self, name, *arguments):
         self.calls.append((name,) + arguments)
@@ -181,6 +196,14 @@ class FakeIMAPClient:
     def _uid_expunge(self, uid):
         self.mailbox.pop(int(uid), None)
         return "OK", [None]
+
+    def send(self, data):
+        self._call("send", data)
+        self.written.append(data)
+
+    def readline(self):
+        self._call("readline")
+        return self.lines.popleft() if self.lines else b""
 
     def logout(self):
         self._call("logout")

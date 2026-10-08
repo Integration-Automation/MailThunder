@@ -146,6 +146,8 @@ Built-in Commands
      - Close the provider connections
    * - ``MT_mail_render_template``
      - Render a mail template without sending (``template``, ``context``)
+   * - ``MT_mail_poll``
+     - Get the events for the mail that arrived since the last poll of a folder (``folder``)
 
 **Authentication commands:**
 

@@ -26,6 +26,7 @@ je_mail_thunder/
   auth/                     # Authentication: PasswordAuth, AppPasswordAuth, OAuth2Auth, XOAUTH2Auth
   attachments/              # Attachment, AttachmentPolicy, validate_attachments
   templates/                # Mail templates: engine (Jinja2-style subset), MailTemplate, TemplateLoader
+  triggers/                 # Mail events: MailFilter, EventDispatcher, trigger backends (polling, IMAP IDLE)
   smtp/smtp_wrapper.py      # SMTPClientMixin; SMTPWrapper (SMTP_SSL), SMTPStartTLSWrapper (SMTP + STARTTLS)
   imap/imap_wrapper.py      # IMAPWrapper (extends IMAP4_SSL)
   utils/

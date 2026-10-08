@@ -20,6 +20,7 @@ from je_mail_thunder.core.actions import (
     mail_create_draft,
     mail_get_message,
     mail_get_messages,
+    mail_poll,
     mail_render_template,
     mail_send,
 )
@@ -102,6 +103,7 @@ class Executor(ActionExecutor):
             "MT_mail_create_draft": mail_create_draft,
             "MT_mail_get_messages": mail_get_messages,
             "MT_mail_get_message": mail_get_message,
+            "MT_mail_poll": mail_poll,
             "MT_mail_delete_message": mail_instance.delete_message,
             "MT_mail_close": mail_instance.close,
             # Content

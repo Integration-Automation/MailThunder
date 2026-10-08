@@ -42,6 +42,16 @@ All public APIs are accessible from the top-level ``je_mail_thunder`` package:
        TemplateLoader,           # Finds templates by name
        render_string,            # Render template text
 
+       # Events and triggers
+       MailEvent,                # One thing that happened to mail
+       EVENT_NAMES,              # The seven event names
+       MailFilter,               # Which events a handler wants
+       EventDispatcher,          # Calls the subscribed handlers
+       MailTriggerBackend,       # Base of what watches a mailbox
+       PollingBackend,           # Watches any MailStore by polling
+       IMAPPollingBackend,       # IMAP polling by UID
+       IMAPIdleBackend,          # IMAP IDLE
+
        # Authentication objects
        Authentication,           # Interface of the login mechanisms
        PasswordAuth,             # The account's password
@@ -124,6 +134,20 @@ Module Map
      - ``MailTemplate``, ``RenderedTemplate``, ``TemplateVariable``
    * - ``je_mail_thunder.templates.loader``
      - ``TemplateLoader``, ``shared_template_directory()``
+   * - ``je_mail_thunder.core.events``
+     - ``MailEvent``, ``EVENT_NAMES``, ``ANY_EVENT``, ``failure_events()``
+   * - ``je_mail_thunder.triggers.filter``
+     - ``MailFilter``
+   * - ``je_mail_thunder.triggers.dispatcher``
+     - ``EventDispatcher``, ``Subscription``
+   * - ``je_mail_thunder.triggers.trigger``
+     - ``MailTriggerBackend``, ``TriggerManager``
+   * - ``je_mail_thunder.triggers.polling``
+     - ``PollingBackend``
+   * - ``je_mail_thunder.triggers.imap``
+     - ``IMAPPollingBackend``, ``IMAPIdleBackend``
+   * - ``je_mail_thunder.triggers.factory``
+     - ``create_backend()``, ``register_backends()``
    * - ``je_mail_thunder.auth.base``
      - ``Authentication`` class
    * - ``je_mail_thunder.auth.password``

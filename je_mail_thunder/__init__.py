@@ -12,6 +12,13 @@ from je_mail_thunder.providers.base import MailProvider, MailSender, MailStore
 from je_mail_thunder.providers.imap import IMAPProvider
 from je_mail_thunder.providers.registry import register_provider, registered_providers
 from je_mail_thunder.providers.smtp import SMTPProvider
+# Events and triggers
+from je_mail_thunder.core.events import EVENT_NAMES, MailEvent
+from je_mail_thunder.triggers.dispatcher import EventDispatcher
+from je_mail_thunder.triggers.filter import MailFilter
+from je_mail_thunder.triggers.imap import IMAPIdleBackend, IMAPPollingBackend
+from je_mail_thunder.triggers.polling import PollingBackend
+from je_mail_thunder.triggers.trigger import MailTriggerBackend
 # Templates
 from je_mail_thunder.templates.engine import render_string
 from je_mail_thunder.templates.loader import TemplateLoader
@@ -53,6 +60,8 @@ __all__ = [
     "Mail", "mail_instance", "MailAccount", "MailServers", "MailMessage", "legacy_message", "mail_from_wrappers",
     "MailProvider", "MailSender", "MailStore", "SMTPProvider", "IMAPProvider", "register_provider",
     "registered_providers",
+    "EVENT_NAMES", "MailEvent", "MailFilter", "EventDispatcher", "MailTriggerBackend", "PollingBackend",
+    "IMAPPollingBackend", "IMAPIdleBackend",
     "MailTemplate", "RenderedTemplate", "TemplateLoader", "render_string",
     "Authentication", "PasswordAuth", "AppPasswordAuth", "OAuth2Auth", "XOAUTH2Auth", "resolve_authentication",
     "Attachment", "AttachmentPolicy", "DEFAULT_ATTACHMENT_POLICY", "validate_attachments",

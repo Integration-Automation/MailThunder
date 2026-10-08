@@ -32,6 +32,7 @@ MailThunder 核心模組架構：
      core/                    # Mail（與供應商無關的 API）、MailMessage、MailAccount
      providers/               # MailSender / MailStore 介面、SMTPProvider、IMAPProvider
      templates/               # 郵件模板：模板語法、MailTemplate、TemplateLoader
+     triggers/                # 郵件事件：過濾器、dispatcher、輪詢與 IDLE 後端
      smtp/
        smtp_wrapper.py        # SMTPWrapper — 繼承 smtplib.SMTP_SSL
      imap/
@@ -87,4 +88,5 @@ MailThunder 核心模組架構：
 - :doc:`read_google_mail` — 讀取收件匣郵件
 - :doc:`attachment_policy` — 寄送前檢查附件
 - :doc:`mail_templates` — 可重複使用的郵件模板
+- :doc:`mail_triggers` — 郵件事件與觸發器
 - :doc:`scripting_engine` — 使用 JSON 腳本自動化工作流程

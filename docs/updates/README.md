@@ -58,6 +58,7 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | ID | Date | Title | Tags | Batch |
 |---|---|---|---|---|
+| U-20261008-07 | 2026-10-08 | Mail events and triggers: mail.on, filters, polling and IMAP IDLE backends | #done #triggers #events #roadmap-2.0 | [2026-10](2026-10.md) |
 | U-20261008-06 | 2026-10-08 | Mail templates with a Jinja2-style language in the standard library | #done #templates #roadmap-2.0 | [2026-10](2026-10.md) |
 | U-20261008-05 | 2026-10-08 | SMTP wrappers check attachments; exported mail keeps its body on Windows | #done #bugfix #attachments #windows | [2026-10](2026-10.md) |
 | U-20261008-04 | 2026-10-08 | PyPI metadata: description, keywords, classifiers and project URLs | #done #packaging #roadmap-2.0 | [2026-10](2026-10.md) |
@@ -99,5 +100,5 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | File | Period | Entries |
 |---|---|---:|
-| [2026-10.md](2026-10.md) | 2026-10 | 15 |
+| [2026-10.md](2026-10.md) | 2026-10 | 16 |
 | [2026-09.md](2026-09.md) | 2026-09 | 21 |

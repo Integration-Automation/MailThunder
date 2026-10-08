@@ -4,6 +4,7 @@ returning JSON-ready values so an action file or the socket server can use it.
 """
 from typing import Any, List, Mapping, Optional
 
+from je_mail_thunder.core.events import ANY_EVENT
 from je_mail_thunder.core.mail import mail_instance
 from je_mail_thunder.providers.base import DEFAULT_FOLDER
 
@@ -64,3 +65,22 @@ def mail_get_message(message_id: str, folder: str = DEFAULT_FOLDER) -> dict:
     :return: the message
     """
     return mail_instance.get_message(message_id, folder).to_dict()
+
+
+def mail_poll(folder: str = DEFAULT_FOLDER) -> List[dict]:
+    """
+    ``MT_mail_poll``: what arrived in a folder since the last ``MT_mail_poll`` of it. The first one only notes
+    what is already there and answers with an empty list.
+
+    :param folder: the folder to look at
+    :return: the events (``message_received``, ``attachment_received``), oldest first
+    """
+    watching = [backend for backend in mail_instance.triggers.backends if getattr(backend, "folder", None) == folder]
+    backend = watching[0] if watching else mail_instance.watch(folder, start=False)
+    collected: List[dict] = []
+    subscription = mail_instance.events.on(ANY_EVENT, lambda event: collected.append(event.to_dict()))
+    try:
+        backend.poll()
+    finally:
+        mail_instance.events.off(subscription)
+    return collected

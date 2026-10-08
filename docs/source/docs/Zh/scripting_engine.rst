@@ -144,6 +144,8 @@ MailThunder 內建強大的 JSON 腳本引擎，讓您無需撰寫 Python 程式
      - 關閉供應商的連線
    * - ``MT_mail_render_template``
      - 產生郵件模板的內容，不寄出（``template``、``context``）
+   * - ``MT_mail_poll``
+     - 取得資料夾自上次輪詢以來新郵件的事件（``folder``）
 
 **認證命令：**
 
