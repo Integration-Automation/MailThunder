@@ -58,6 +58,7 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | ID | Date | Title | Tags | Batch |
 |---|---|---|---|---|
+| U-20261008-18 | 2026-10-08 | PR #46 is clean on SonarCloud and Codacy; the rules that caught it are in CLAUDE.md | #docs #sonarcloud #codacy | [2026-10](2026-10.md) |
 | U-20261008-17 | 2026-10-08 | The tests' findings on PR #46: one fact per assertion, one call per expected exception | #tests #refactor #sonarcloud #codacy | [2026-10](2026-10.md) |
 | U-20261008-16 | 2026-10-08 | The package's maintainability findings on PR #46, and three of Codacy's | #refactor #sonarcloud #codacy #templates | [2026-10](2026-10.md) |
 | U-20261008-15 | 2026-10-08 | SMTP and IMAP verify the server's certificate; Studio serves loopback only; a lock file | #security #bugfix #tls #studio #sonarcloud | [2026-10](2026-10.md) |
@@ -110,5 +111,5 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | File | Period | Entries |
 |---|---|---:|
-| [2026-10.md](2026-10.md) | 2026-10 | 26 |
+| [2026-10.md](2026-10.md) | 2026-10 | 27 |
 | [2026-09.md](2026-09.md) | 2026-09 | 21 |

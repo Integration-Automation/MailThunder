@@ -1,7 +1,7 @@
 # MailThunder Architecture
 
 > Short overview for people and agents.
-> Last verified: 2026-10-08 against `cb23fb1` on `feat/mailthunder-2.0`.
+> Last verified: 2026-10-08 against `035a689` on `feat/mailthunder-2.0`.
 
 ## 1. Purpose
 

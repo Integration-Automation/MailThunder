@@ -216,6 +216,18 @@ All code must pass static analysis from SonarQube, Codacy, Pylint, and Flake8. T
 - Every public module, class, and function has a docstring (Pylint `C0111` / `missing-docstring`). Use `:param` / `:return:` / `:raises:` style already in use.
 - No misleading docstrings — update them when behavior changes.
 
+### What Only SonarCloud / Codacy Report
+flake8, pylint and bandit pass on all of these; the pull request's analysis does not.
+
+- **One condition per `assert`** — never join two with `and` (SonarQube `python:S9073`).
+- **One call inside `with pytest.raises(...)`**: the call expected to raise. Build what it needs on the line before (SonarQube `python:S5778`).
+- `@pytest.fixture`, not `@pytest.fixture()` (SonarQube `python:S9083`).
+- `A | B` in type hints, not `typing.Union[A, B]` (SonarQube `python:S6546`).
+- Regular expressions: `\d` / `\w` instead of `[0-9]` / `[A-Za-z0-9_]`, with `re.ASCII` when only ASCII is meant (SonarQube `python:S6353`); complexity ≤ 20 (`python:S5843`); no repeated group inside a repeated group (Codacy Semgrep `regex_dos`). Split a large pattern into small ones.
+- No string literal that begins with `http://` (SonarQube `python:S5332`), and no string literal passed as a `token_*` / `password` keyword argument: give it a name first (Codacy Bandit `B106`).
+- **Made-up credentials in tests**: use `mail_fakes.MADE_UP_PASSPHRASE`. Never assign a string literal to an UPPERCASE `*_PASSWORD` / `*_SECRET` constant, and never write a token that starts with `ya29.` (Codacy: Prospector dodgy, Semgrep secrets).
+- A string literal used three times gets a constant (SonarQube `python:S1192`); one `with` instead of two nested ones (`python:S9154`); no conditional expression inside another (`python:S3358`).
+
 ### Enforcement Workflow
 - Before committing: run `pip install pylint flake8 bandit` and locally execute `pylint je_mail_thunder`, `flake8 je_mail_thunder`, `bandit -r je_mail_thunder`.
-- Treat any new SonarQube / Codacy finding on changed lines as a blocker. Do not suppress rules (`# noqa`, `# pylint: disable=`) without a comment explaining why and which specific rule is being suppressed.
+- Treat any new SonarQube / Codacy finding on changed lines as a blocker. After pushing to a pull request, read its SonarCloud and Codacy results before calling the work done. Do not suppress rules (`# noqa`, `# pylint: disable=`) without a comment explaining why and which specific rule is being suppressed.
