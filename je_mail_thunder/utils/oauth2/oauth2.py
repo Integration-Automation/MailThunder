@@ -51,17 +51,21 @@ class OAuth2Provider:
     imap_host: str
 
 
+# Where each provider issues tokens: public addresses, named here so that a preset is not read as holding a secret.
+_GOOGLE_ENDPOINT = "https://oauth2.googleapis.com/token"
+_MICROSOFT_ENDPOINT = "https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token"
+
 OAUTH2_PROVIDERS: Mapping[str, OAuth2Provider] = MappingProxyType({
     "google": OAuth2Provider(
         name="google",
-        token_url="https://oauth2.googleapis.com/token",
+        token_url=_GOOGLE_ENDPOINT,
         scope="https://mail.google.com/",
         smtp_host="smtp.gmail.com", smtp_port=465, smtp_starttls=False,
         imap_host="imap.gmail.com",
     ),
     "microsoft": OAuth2Provider(
         name="microsoft",
-        token_url="https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token",
+        token_url=_MICROSOFT_ENDPOINT,
         scope="https://outlook.office.com/SMTP.Send https://outlook.office.com/IMAP.AccessAsUser.All offline_access",
         smtp_host="smtp.office365.com", smtp_port=587, smtp_starttls=True,
         imap_host="outlook.office365.com",
@@ -171,7 +175,7 @@ def _post_form(url: str, form: Mapping[str, str], timeout: float) -> Mapping[str
         detail = _error_text(answer) if isinstance(answer, dict) else "no details"
         raise MailThunderOAuth2Exception(f"the token endpoint refused the refresh (HTTP {error.code}): {detail}") \
             from None
-    except (urllib.error.URLError, OSError, ValueError) as error:
+    except (OSError, ValueError) as error:
         raise MailThunderOAuth2Exception(f"the token endpoint could not be used: {type(error).__name__}") from None
 
 

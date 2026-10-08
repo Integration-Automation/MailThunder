@@ -661,7 +661,7 @@ mail.close()
 ## MailThunder Studio
 
 MailThunder Studio 是一个在本机打开的页面，用来查看并试用邮件 API 目前的设置。它由标准库提供服务、不需要额外的
-套件，而且只会调用[内核邮件 API](#内核邮件-api)，所以不论使用哪一家提供商都一样运作：
+套件，而且只会调用[核心邮件 API](#核心邮件-api)，所以不论使用哪一家提供商都一样运作：
 
 ```bash
 python -m je_mail_thunder.studio                       # 使用配置文件或环境变量里的帐号

@@ -13,7 +13,7 @@ import secrets
 import time
 from email import policy
 from pathlib import Path
-from typing import Iterator, Optional, Union
+from typing import Iterator, Optional
 
 from je_mail_thunder.attachments.mime import safe_filename
 from je_mail_thunder.core.message import MailMessage
@@ -37,7 +37,7 @@ class FileProvider(MailSender, MailStore):
 
     name = PROVIDER_NAME
 
-    def __init__(self, directory: Optional[Union[str, "os.PathLike[str]"]] = None) -> None:
+    def __init__(self, directory: Optional[str | os.PathLike[str]] = None) -> None:
         """
         :param directory: where the folders are kept; ``$MAIL_THUNDER_FILE_PROVIDER_DIR``, else ``mail_outbox``
             under the working directory

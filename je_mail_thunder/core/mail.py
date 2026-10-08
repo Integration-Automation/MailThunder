@@ -3,9 +3,9 @@ The provider-agnostic mail API: one :class:`Mail` sends, reads, drafts and delet
 provider is.
 """
 import threading
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from dataclasses import replace
-from typing import Any, Callable, Iterator, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Iterator, Mapping, Optional, Sequence, Tuple
 
 from je_mail_thunder.attachments.policy import DEFAULT_ATTACHMENT_POLICY, AttachmentPolicy
 from je_mail_thunder.attachments.validator import validate_attachments
@@ -27,6 +27,9 @@ from je_mail_thunder.utils.exception.exceptions import (
     MailThunderTriggerException,
 )
 from je_mail_thunder.utils.logging.loggin_instance import mail_thunder_logger
+
+# What a store is asked for, as the error says it when no configured provider is one.
+_READING = "read mail"
 
 
 def _account_for(provider: Optional[str], auth: Optional[Authentication]) -> MailAccount:
@@ -107,15 +110,17 @@ class Mail:  # pylint: disable=too-many-instance-attributes  # reason: the parts
         raise MailThunderProviderException(f"no configured provider can {operation}")
 
     @contextmanager
-    def _operation(self, name: str, sending: bool = False) -> Iterator[dict]:
+    def _operation(self, name: str, sending: bool = False, locked: bool = False) -> Iterator[dict]:
         """
         Log the operation; when it fails, log that, emit the events the failure stands for, and raise it. The
-        operation notes the ``message`` and the ``provider`` it got to in the dict it is given.
+        operation notes the ``message`` and the ``provider`` it got to in the dict it is given. A ``locked``
+        operation has the providers to itself; the lock is released before a failure's events are emitted.
         """
         mail_thunder_logger.info(name)
         attempt: dict = {}
         try:
-            yield attempt
+            with self._lock if locked else nullcontext():
+                yield attempt
         except MailThunderException as error:
             mail_thunder_logger.error(f"{name}, failed: {repr(error)}")
             for event in failure_events(error, attempt.get("message"), attempt.get("provider", ""), sending):
@@ -155,7 +160,7 @@ class Mail:  # pylint: disable=too-many-instance-attributes  # reason: the parts
             for provider in create_providers(self.account):
                 if isinstance(provider, MailStore):
                     return provider, True
-        return self._provider(MailStore, "read mail"), False
+        return self._provider(MailStore, _READING), False
 
     def watch(self, folder: str = DEFAULT_FOLDER, idle: bool = False, start: bool = True,
               **options) -> MailTriggerBackend:
@@ -184,7 +189,7 @@ class Mail:  # pylint: disable=too-many-instance-attributes  # reason: the parts
                 backend.start()
             return backend
 
-    def render(self, template: Union[str, MailTemplate], context: Optional[Mapping[str, Any]] = None
+    def render(self, template: str | MailTemplate, context: Optional[Mapping[str, Any]] = None
                ) -> RenderedTemplate:
         """
         Render a template without sending anything, to see what ``send(template=...)`` would send.
@@ -241,12 +246,11 @@ class Mail:  # pylint: disable=too-many-instance-attributes  # reason: the parts
         :raises MailThunderTemplateException: the template is not found or cannot be rendered with the context
         :raises MailThunderProviderException: the provider could not connect, log in or send
         """
-        with self._operation("mail_send", sending=True) as attempt:
-            with self._lock:
-                message = attempt["message"] = self._outgoing(message, message_fields)
-                sender = self._provider(MailSender, "send mail")
-                attempt["provider"] = sender.name
-                sender.send(message)
+        with self._operation("mail_send", sending=True, locked=True) as attempt:
+            message = attempt["message"] = self._outgoing(message, message_fields)
+            sender = self._provider(MailSender, "send mail")
+            attempt["provider"] = sender.name
+            sender.send(message)
         self.events.emit(MailEvent(MESSAGE_SENT, message=message, provider=sender.name))
         return message
 
@@ -261,10 +265,9 @@ class Mail:  # pylint: disable=too-many-instance-attributes  # reason: the parts
         :return: the draft's ``message_id`` when the provider reports it, else ``None``
         :raises MailThunderException: as :meth:`send`
         """
-        with self._operation("mail_create_draft", sending=True) as attempt:
-            with self._lock:
-                message = attempt["message"] = self._outgoing(message, message_fields)
-                return self._provider(MailStore, "store drafts").create_draft(message, folder)
+        with self._operation("mail_create_draft", sending=True, locked=True) as attempt:
+            message = attempt["message"] = self._outgoing(message, message_fields)
+            return self._provider(MailStore, "store drafts").create_draft(message, folder)
 
     def get_messages(self, folder: str = DEFAULT_FOLDER, limit: Optional[int] = None,
                      unread_only: bool = False, query: Optional[str] = None) -> Iterator[MailMessage]:
@@ -288,8 +291,8 @@ class Mail:  # pylint: disable=too-many-instance-attributes  # reason: the parts
     def _read(self, folder: str, limit: Optional[int], unread_only: bool,
               query: Optional[str]) -> Iterator[MailMessage]:
         """The iterator :meth:`get_messages` returns; the provider is first asked when it is read."""
-        with self._operation("mail_get_messages, reading"), self._lock:
-            yield from self._provider(MailStore, "read mail").get_messages(folder, limit, unread_only, query)
+        with self._operation("mail_get_messages, reading", locked=True):
+            yield from self._provider(MailStore, _READING).get_messages(folder, limit, unread_only, query)
 
     def get_message(self, message_id: str, folder: str = DEFAULT_FOLDER) -> MailMessage:
         """
@@ -298,8 +301,8 @@ class Mail:  # pylint: disable=too-many-instance-attributes  # reason: the parts
         :return: the message
         :raises MailThunderProviderException: there is no such message, or the provider failed
         """
-        with self._operation(f"mail_get_message, folder: {folder!r}"), self._lock:
-            return self._provider(MailStore, "read mail").get_message(message_id, folder)
+        with self._operation(f"mail_get_message, folder: {folder!r}", locked=True):
+            return self._provider(MailStore, _READING).get_message(message_id, folder)
 
     def delete_message(self, message_id: str, folder: str = DEFAULT_FOLDER) -> None:
         """
@@ -308,7 +311,7 @@ class Mail:  # pylint: disable=too-many-instance-attributes  # reason: the parts
         :return: None
         :raises MailThunderProviderException: there is no such message, or the provider failed
         """
-        with self._operation(f"mail_delete_message, folder: {folder!r}"), self._lock:
+        with self._operation(f"mail_delete_message, folder: {folder!r}", locked=True):
             self._provider(MailStore, "delete mail").delete_message(message_id, folder)
 
     def close(self) -> None:
@@ -318,7 +321,7 @@ class Mail:  # pylint: disable=too-many-instance-attributes  # reason: the parts
         :return: None
         """
         self.triggers.stop()
-        with self._operation("mail_close"), self._lock:
+        with self._operation("mail_close", locked=True):
             for provider in self._providers or ():
                 provider.close()
 

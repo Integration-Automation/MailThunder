@@ -3,7 +3,7 @@ from email import message_from_bytes
 from email import policy
 from email.header import decode_header
 from imaplib import IMAP4_SSL
-from typing import Dict, List, Union
+from typing import Dict, List
 
 from je_mail_thunder.attachments.mime import safe_filename
 from je_mail_thunder.utils.exception.exception_tags import mail_thunder_content_login_failed
@@ -120,7 +120,7 @@ class IMAPWrapper(IMAP4_SSL):
                 f"imap_search_mailbox, search_str: {search_str}, charset: {charset}, failed: {repr(error)}")
 
     def mail_content_list(
-            self, search_str: [str, list] = "ALL", charset: str = None) -> List[Dict[str, Union[str, bytes]]]:
+            self, search_str: [str, list] = "ALL", charset: str = None) -> List[Dict[str, str | bytes]]:
         """
         Get all mail content as list
         :param search_str: Search pattern
@@ -163,7 +163,7 @@ class IMAPWrapper(IMAP4_SSL):
         return safe_filename(subject, fallback="mail")
 
     def output_all_mail_as_file(
-            self, search_str: [str, list] = "ALL", charset: str = None) -> List[Dict[str, Union[str, bytes]]]:
+            self, search_str: [str, list] = "ALL", charset: str = None) -> List[Dict[str, str | bytes]]:
         """
         Get all mail content data and output as file
         :param search_str: Search pattern

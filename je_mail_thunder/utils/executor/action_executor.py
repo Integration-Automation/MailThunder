@@ -1,7 +1,7 @@
 """
 The ``MT_*`` action executor: je_action_core's executor with MailThunder's commands, document key and messages.
 """
-from typing import Optional, Union
+from typing import Optional
 
 from je_action_core import (
     SAFE_BUILTINS,
@@ -144,7 +144,7 @@ def add_command_to_executor(command_dict: dict) -> None:
     executor.add_command_to_executor(command_dict)
 
 
-def execute_action(action_list: Union[list, dict]) -> dict:
+def execute_action(action_list: list | dict) -> dict:
     """Run an action list (or a ``{"mail_thunder": [...]}`` document) and return the records."""
     return executor.execute_action(action_list)
 

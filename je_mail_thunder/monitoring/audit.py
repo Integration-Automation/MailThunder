@@ -11,7 +11,7 @@ import os
 import threading
 from collections import deque
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from je_mail_thunder.core.events import ANY_EVENT, MailEvent
 from je_mail_thunder.triggers.dispatcher import EventDispatcher, Subscription
@@ -64,7 +64,7 @@ def audit_entry(event: MailEvent, subjects: bool = True) -> Dict[str, Any]:
 class AuditLog:
     """Appends an entry for every mail event it is given. Safe to share between threads and processes."""
 
-    def __init__(self, path: Optional[Union[str, "os.PathLike[str]"]] = None, subjects: bool = True) -> None:
+    def __init__(self, path: Optional[str | os.PathLike[str]] = None, subjects: bool = True) -> None:
         """
         :param path: the file to append to; ``default_audit_file()`` by default
         :param subjects: keep subject lines in the entries

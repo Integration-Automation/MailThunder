@@ -27,12 +27,11 @@ from je_mail_thunder.utils.exception.exceptions import (
 MAX_OUTPUT_CHARACTERS = 5 * 1024 * 1024
 _TAG = re.compile(r"\{\{.*?\}\}|\{%.*?%\}|\{#.*?#\}", re.DOTALL)
 _REST_OF_LINE = re.compile(r"[ \t]*(?:\r?\n|\Z)")
-_TOKEN = re.compile(r"""\s*(?:
-      (?P<string>"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')
-    | (?P<number>-?\d+(?:\.\d+)?)
-    | (?P<name>[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)*)
-    | (?P<symbol>==|!=|<=|>=|<|>|\||\(|\)|,)
-    )""", re.VERBOSE)
+_SPACE = re.compile(r"\s*")
+_NUMBER = re.compile(r"-?\d+(?:\.\d+)?")
+_NAME_START = re.compile(r"[A-Za-z_]\w*", re.ASCII)
+_NAME_PART = re.compile(r"\.\w+", re.ASCII)
+_SYMBOL = re.compile(r"[=!<>]=|[<>|(),]")
 _LITERALS = {"true": True, "false": False, "none": None}
 _COMPARISONS: Dict[str, Callable[[Any, Any], bool]] = {
     "==": lambda left, right: left == right,
@@ -62,18 +61,76 @@ _FILTERS: Dict[str, Callable[..., Any]] = {
 }
 
 
+def _string_end(source: str, start: int) -> int:
+    """Where the quoted string that opens at ``start`` ends; -1 when none opens there or it is not closed."""
+    quote = source[start]
+    if quote not in "\"'":
+        return -1
+    position = start + 1
+    while position < len(source):
+        if source[position] == quote:
+            return position + 1
+        if source[position] != "\\":
+            position += 1
+            continue
+        # A backslash takes the next character of its line with it, so an escaped quote does not close the string.
+        if source[position + 1:position + 2] in ("", "\n"):
+            return -1
+        position += 2
+    return -1
+
+
+def _name_end(source: str, start: int) -> int:
+    """Where the dotted name that begins at ``start`` ends; -1 when none begins there."""
+    match = _NAME_START.match(source, start)
+    if match is None:
+        return -1
+    end = match.end()
+    part = _NAME_PART.match(source, end)
+    while part is not None:
+        end = part.end()
+        part = _NAME_PART.match(source, end)
+    return end
+
+
+def _match_end(pattern: "re.Pattern[str]") -> Callable[[str, int], int]:
+    """A reader that tells where ``pattern`` stops matching from a position; -1 when it does not match there."""
+
+    def end_of(source: str, start: int) -> int:
+        match = pattern.match(source, start)
+        return -1 if match is None else match.end()
+
+    return end_of
+
+
+# Each kind of token with the function that finds its end, tried in this order.
+_TOKEN_READERS: Tuple[Tuple[str, Callable[[str, int], int]], ...] = (
+    ("string", _string_end),
+    ("number", _match_end(_NUMBER)),
+    ("name", _name_end),
+    ("symbol", _match_end(_SYMBOL)),
+)
+
+
+def _token_at(source: str, position: int) -> Tuple[str, int]:
+    """The kind of the token at ``position`` and where it ends; no kind when nothing there is a token."""
+    for kind, reader in _TOKEN_READERS:
+        end = reader(source, position)
+        if end > position:
+            return kind, end
+    return "", position
+
+
 def _tokens(source: str, line: int) -> List[Token]:
     """The tokens of an expression; anything that is not one is a syntax error."""
     found: List[Token] = []
-    position = 0
+    position = _SPACE.match(source).end()
     while position < len(source):
-        match = _TOKEN.match(source, position)
-        if match is None:
-            if source[position:].strip():
-                raise TemplateSyntaxError(f"cannot read {source[position:].strip()!r}", line)
-            break
-        found.append((match.lastgroup, match.group(match.lastgroup)))
-        position = match.end()
+        kind, end = _token_at(source, position)
+        if not kind:
+            raise TemplateSyntaxError(f"cannot read {source[position:].strip()!r}", line)
+        found.append((kind, source[position:end]))
+        position = _SPACE.match(source, end).end()
     return found
 
 
@@ -113,7 +170,9 @@ class _Operand:
 
     def _filtered(self, value: Any, name: str, arguments: Tuple[Any, ...]) -> Any:
         if name == "default":
-            return (arguments[0] if arguments else "") if value is _UNDEFINED else value
+            if value is not _UNDEFINED:
+                return value
+            return arguments[0] if arguments else ""
         if value is _UNDEFINED:
             return value
         try:
@@ -324,14 +383,15 @@ class _Parser:
             return _If(branches, otherwise)
 
     def _for(self, rest: str) -> _For:
-        match = re.fullmatch(r"([A-Za-z_][A-Za-z0-9_]*)\s+in\s+(.+)", rest, re.DOTALL)
-        if match is None:
+        parts = rest.split(None, 2)
+        if len(parts) != 3 or parts[1] != "in" or _NAME_START.fullmatch(parts[0]) is None:
             raise TemplateSyntaxError("a loop is written: for item in items", self._line)
-        items = self._operand(_tokens(match.group(2), self._line))
-        self._loop_names.append(match.group(1))
+        name = parts[0]
+        items = self._operand(_tokens(parts[2], self._line))
+        self._loop_names.append(name)
         body, _ = self._block(("endfor",))
         self._loop_names.pop()
-        return _For(match.group(1), items, body)
+        return _For(name, items, body)
 
     def _condition(self, source: str) -> _Condition:
         tokens = _tokens(source, self._line)

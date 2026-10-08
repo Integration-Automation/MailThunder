@@ -41,6 +41,7 @@ MAX_INLINE_TOTAL_BYTES = 2 * 1024 * 1024
 UPLOAD_CHUNK_BYTES = 10 * 320 * 1024
 PAGE_SIZE = 25
 _FILE_ATTACHMENT = "#microsoft.graph.fileAttachment"
+_SELECT = "$select"
 # What a caller calls a folder, and the name Graph knows it by.
 _WELL_KNOWN_FOLDERS = {
     "inbox": "inbox", "drafts": "drafts", "sent": "sentitems", "sent items": "sentitems", "sentitems": "sentitems",
@@ -233,7 +234,7 @@ class MicrosoftGraphProvider(MailSender, MailStore):
             return known
         if folder not in self._folders:
             name = folder.replace("'", "''")
-            query = urllib.parse.urlencode({"$filter": f"displayName eq '{name}'", "$top": "1", "$select": "id"})
+            query = urllib.parse.urlencode({"$filter": f"displayName eq '{name}'", "$top": "1", _SELECT: "id"})
             found = self.call("GET", f"/me/mailFolders?{query}").get("value") or []
             if not found:
                 raise MailThunderProviderException(f"no folder {folder!r} in the mailbox")
@@ -339,7 +340,7 @@ class MicrosoftGraphProvider(MailSender, MailStore):
         conditions = ["receivedDateTime ge 1900-01-01T00:00:00Z"]
         conditions += ["isRead eq false"] if unread_only else []
         conditions += [f"({query})"] if query else []
-        parameters = {"$select": _MESSAGE_FIELDS, "$orderby": "receivedDateTime desc",
+        parameters = {_SELECT: _MESSAGE_FIELDS, "$orderby": "receivedDateTime desc",
                       "$top": str(min(limit, PAGE_SIZE) if limit else PAGE_SIZE),
                       "$filter": " and ".join(conditions)}
         path: Optional[str] = (
@@ -362,7 +363,7 @@ class MicrosoftGraphProvider(MailSender, MailStore):
         :raises MailThunderProviderException: there is no such message
         """
         mail_thunder_logger.info(f"graph provider, get_message in {folder!r}")
-        query = urllib.parse.urlencode({"$select": _MESSAGE_FIELDS})
+        query = urllib.parse.urlencode({_SELECT: _MESSAGE_FIELDS})
         return self._complete(self.call("GET", f"{self._message_path(message_id)}?{query}"))
 
     def delete_message(self, message_id: str, folder: str = DEFAULT_FOLDER) -> None:

@@ -39,7 +39,7 @@ def https_request(method: str, url: str, headers: Mapping[str, str], body: Optio
             return response.status, response.read(MAX_RESPONSE_BYTES)
     except urllib.error.HTTPError as error:
         return error.code, error.read(MAX_RESPONSE_BYTES)
-    except (urllib.error.URLError, OSError) as error:
+    except OSError as error:
         raise MailThunderConnectionException(
             f"the mail API could not be reached: {type(error).__name__}") from error
 

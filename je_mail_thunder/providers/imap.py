@@ -68,15 +68,15 @@ def _uid(message_id: object) -> str:
     return uid
 
 
-def _search_arguments(unread_only: bool, query: Optional[str]) -> Tuple[object, ...]:
-    """The arguments of ``UID SEARCH``; a search with non-ASCII text names its charset."""
+def _search_criteria(unread_only: bool, query: Optional[str]) -> Tuple[Optional[str], object]:
+    """The charset and the criteria of ``UID SEARCH``; only a search with non-ASCII text names a charset."""
     criteria = [part for part in ("UNSEEN" if unread_only else "", (query or "").strip()) if part]
     text = " ".join(criteria) or "ALL"
     if _CONTROL_CHARACTER.search(text):
         raise MailThunderProviderException("an IMAP search must be one line")
     if text.isascii():
-        return (None, text)
-    return ("CHARSET", "UTF-8", text.encode("utf-8"))
+        return None, text
+    return "UTF-8", text.encode("utf-8")
 
 
 def _answer_text(data: object) -> str:
@@ -167,7 +167,8 @@ class IMAPProvider(WrapperProvider, MailStore):
         :raises MailThunderProviderException: the server refused the folder or the search
         """
         mail_thunder_logger.info(f"imap provider, get_messages: folder {folder!r}, limit {limit}")
-        arguments = _search_arguments(unread_only, query)
+        charset, criteria = _search_criteria(unread_only, query)
+        arguments = ("CHARSET", charset, criteria) if charset else (None, criteria)
         client = self._open_folder(folder)
         found = self._run("the search", client.uid, "SEARCH", *arguments)
         uids = found[0].split() if found and isinstance(found[0], bytes) else []

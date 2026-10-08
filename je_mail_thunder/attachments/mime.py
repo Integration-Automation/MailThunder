@@ -13,7 +13,7 @@ _FALLBACK_FILENAME = "attachment"
 # Path separators, control characters and what Windows refuses in a file name.
 _UNSAFE_CHARACTERS = re.compile(r'[\\/:*?"<>|\x00-\x1f\x7f]')
 # Names Windows opens as devices, with any extension (``NUL.txt`` is still the null device).
-_WINDOWS_DEVICE_NAME = re.compile(r"(CON|PRN|AUX|NUL|COM[0-9]|LPT[0-9])(\..*)?", re.IGNORECASE)
+_WINDOWS_DEVICE_NAME = re.compile(r"(CON|PRN|AUX|NUL|COM\d|LPT\d)(\..*)?", re.IGNORECASE | re.ASCII)
 
 
 def guess_content_type(filename: str) -> str:

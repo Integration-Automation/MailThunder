@@ -34,7 +34,7 @@ class Attachment:
             raise MailThunderAttachmentException(f"attachment {self.filename!r} needs a path or its content")
 
     @classmethod
-    def from_path(cls, path: Union[str, "os.PathLike[str]"], filename: Optional[str] = None,
+    def from_path(cls, path: str | os.PathLike[str], filename: Optional[str] = None,
                   content_type: Optional[str] = None) -> Attachment:
         """
         An attachment to send.
@@ -88,7 +88,7 @@ class Attachment:
         except OSError as error:
             raise AttachmentNotFound(self.path) from error
 
-    def save(self, directory: Union[str, "os.PathLike[str]"]) -> str:
+    def save(self, directory: str | os.PathLike[str]) -> str:
         """
         Write the attachment into ``directory`` under a name that cannot leave it.
 

@@ -12,7 +12,7 @@ import json
 import os
 import re
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from je_mail_thunder.templates.template import MailTemplate
 from je_mail_thunder.utils.exception.exceptions import MailThunderTemplateException, TemplateNotFound
@@ -63,7 +63,7 @@ def _from_directory(name: str, directory: Path) -> MailTemplate:
 class TemplateLoader:
     """Finds templates by name in a list of directories; the first directory that has the name wins."""
 
-    def __init__(self, directories: Optional[Iterable[Union[str, "os.PathLike[str]"]]] = None) -> None:
+    def __init__(self, directories: Optional[Iterable[str | os.PathLike[str]]] = None) -> None:
         """
         :param directories: where to look, in order; by default the project's ``mail/templates`` (under the
             working directory at the time of the lookup), then the shared directory

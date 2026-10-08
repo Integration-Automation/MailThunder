@@ -40,7 +40,7 @@ def file_provider(_account: MailAccount) -> Tuple[MailProvider, ...]:
     return (FileProvider(),)
 
 
-_factories: Dict[str, ProviderFactory] = {name: smtp_and_imap_providers for name in SERVER_PRESETS}
+_factories: Dict[str, ProviderFactory] = dict.fromkeys(SERVER_PRESETS, smtp_and_imap_providers)
 _factories[GENERIC_PROVIDER] = smtp_and_imap_providers
 _factories[GRAPH_PROVIDER] = graph_provider
 _factories[FILE_PROVIDER] = file_provider
