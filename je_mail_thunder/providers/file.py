@@ -43,6 +43,7 @@ class FileProvider(MailSender, MailStore):
             under the working directory
         """
         self.directory = Path(directory or os.environ.get(DIRECTORY_ENV, "").strip() or DEFAULT_DIRECTORY)
+        self._last_stamp = 0
 
     def close(self) -> None:
         """
@@ -78,8 +79,10 @@ class FileProvider(MailSender, MailStore):
         return path
 
     def _store(self, message: MailMessage, folder: str) -> str:
-        # Time first, so the names sort in the order the messages were stored.
-        message_id = f"{time.time_ns():020d}-{secrets.token_hex(4)}"
+        # Time first, so the names sort in the order the messages were stored. The clock can stand still
+        # between two messages (about 16 ms on Windows), so a stamp is never reused by this provider.
+        self._last_stamp = max(self._last_stamp + 1, time.time_ns())
+        message_id = f"{self._last_stamp:020d}-{secrets.token_hex(4)}"
         target = self._folder(folder, create=True) / (message_id + _SUFFIX)
         try:
             with open(target, "wb") as stored:
