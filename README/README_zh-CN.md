@@ -36,6 +36,7 @@
 - [邮件模板](#邮件模板)
 - [邮件事件与触发器](#邮件事件与触发器)
 - [Microsoft Graph](#microsoft-graph)
+- [监控](#监控)
 - [脚本引擎](#脚本引擎)
   - [Action JSON 格式](#action-json-格式)
   - [可用的脚本指令](#可用的脚本指令)
@@ -62,6 +63,8 @@
 - **邮件模板** — 主题、纯文本与 HTML 模板，支持 Jinja2 风格的 `{{ }}`、`{% if %}` 与 `{% for %}`，以标准库实现：`mail.send(template=..., context=...)`
 - **邮件事件与触发器** — `mail.on("message_received", handler, filter={...})` 提供与提供商无关的事件，`mail.watch()` 以轮询或 IMAP IDLE 监看新邮件
 - **Microsoft Graph 提供商** — 以 OAuth2 通过 Graph API 发送、创建草稿、读取与删除 Microsoft 365 邮件，并提供轮询与 webhook 触发器
+- **监控** — 只能附加的审计日志、每个提供商的健康报告，以及带签章的对外 webhook，全部由邮件事件驱动
+- **更多提供商** — Yahoo、iCloud、Zoho 与 Fastmail 的默认值，以及把邮件留在磁盘上、供试跑使用的 `file` 提供商
 - **SMTP 支持** — 通过隐式 TLS 发送邮件，默认使用 Gmail，也可自定义其他 SMTP 服务；或通过 STARTTLS（Microsoft 365）
 - **IMAP4 支持** — 通过 IMAP4 SSL 读取、搜索和导出邮件
 - **附件处理** — 自动检测文本、图片、音频和二进制文件的 MIME 类型
@@ -251,6 +254,9 @@ Mail(account=MailAccount(                   # 其他任何 SMTP / IMAP 服务器
 | `google`（或 `gmail`） | SMTP，`smtp.gmail.com:465`，隐式 TLS | IMAP，`imap.gmail.com` |
 | `microsoft` | SMTP，`smtp.office365.com:587`，STARTTLS | IMAP，`outlook.office365.com` |
 | `microsoft_graph` | Microsoft Graph，`https://graph.microsoft.com/v1.0`（只能用 OAuth2） | Microsoft Graph |
+| `yahoo`、`zoho`、`fastmail` | 465 端口的 SMTP，隐含式 TLS（`smtp.mail.yahoo.com`、`smtp.zoho.com`、`smtp.fastmail.com`）；以应用程序密码登录 | IMAP（`imap.mail.yahoo.com`、`imap.zoho.com`、`imap.fastmail.com`） |
+| `icloud` | SMTP，`smtp.mail.me.com:587`，STARTTLS；以应用程序密码登录 | IMAP，`imap.mail.me.com` |
+| `file` | 不会发出任何东西：每封邮件都写成 `mail_outbox/Sent` 底下的 `.eml` 档（以 `MAIL_THUNDER_FILE_PROVIDER_DIR` 指定目录） | 文件夹里的 `.eml` 档，例如 `mail_outbox/INBOX` |
 | `smtp` | 账号 `MailServers` 指定的 SMTP（465 端口的隐式 TLS，或 `smtp_starttls=True` 的 587 端口） | 账号 `MailServers` 指定的 IMAP |
 
 没有指定提供商名称时，`Mail()` 使用 OAuth2 配置指定的提供商，否则使用 Gmail：与 `smtp_instance`、`imap_instance`
@@ -580,6 +586,36 @@ with Mail(provider="microsoft_graph", auth=auth) as mail:
   并忽略没有带着密钥的通知。
 
 请求只会送往 `https://graph.microsoft.com`；令牌被拒绝时会抛出 `MailThunderAuthenticationException`。
+
+---
+
+## 监控
+
+三种监听者把[邮件事件](#邮件事件与触发器)变成事后可以查看的数据。它们都挂在 `mail.events` 上，而且都不会让邮件停下来：
+
+```python
+from je_mail_thunder import AuditLog, Mail, ProviderHealth, WebhookForwarder
+
+mail = Mail()
+audit, health = AuditLog(), ProviderHealth()
+audit.attach(mail.events)                 # 每个事件一行 JSON，写入 ~/.je_mail_thunder/audit/mail_audit.jsonl
+health.attach(mail.events)                # 每个提供商的 healthy / degraded / down 状态
+mail.on("*", WebhookForwarder("https://hooks.example.com/mail", secret="shared-secret"))
+
+print(health.report())                    # [{"provider": "smtp", "state": "healthy", ...}]
+print(health.probe(mail.providers))       # 立刻要求每个提供商连接并登录
+print(audit.entries(limit=10))
+```
+
+- **`AuditLog(path=None, subjects=True)`** 记录谁在什么时候发出或收到了什么：地址、主题、附件名称与大小、提供商，
+  以及失败时的错误。不会记录正文、附件内容或任何认证信息。文件只会附加（可用 `MAIL_THUNDER_AUDIT_FILE` 改变位置），
+  超过 10 MiB 时会轮替。
+- **`ProviderHealth(failure_threshold=3)`** 在成功后是 `healthy`，失败后是 `degraded`，连续失败 `failure_threshold` 次后
+  是 `down`。只有提供商本身的失败才会计入（登录被拒、连接中断、邮件被拒绝），缺少收件人或附件被拒绝不算。
+  `probe` 会调用每个提供商的 `check()`。
+- **`WebhookForwarder(url, secret=None, bodies=False)`** 通过背景队列把每个事件以 JSON POST 到一个 `https` 地址，
+  所以接收端再慢也不会拖慢 `send`。有 `secret` 时，每个请求都带有
+  `X-MailThunder-Signature: sha256=<内容的 HMAC-SHA256>`。除非 `bodies=True`，否则不包含邮件正文。
 
 ---
 
@@ -941,6 +977,7 @@ MailThunder/
     providers/               # MailSender / MailStore 接口、SMTPProvider、IMAPProvider、注册表
     templates/               # 邮件模板：模板语法、MailTemplate、TemplateLoader
     triggers/                # 邮件事件：过滤器、dispatcher、轮询与 IMAP IDLE 后端
+    monitoring/              # AuditLog 与 ProviderHealth，由邮件事件驱动
     smtp/
       smtp_wrapper.py        # SMTPClientMixin、SMTPWrapper、SMTPStartTLSWrapper
     imap/

@@ -21,7 +21,6 @@ From `docs/MAILTHUNDER-2.0-ROADMAP.md` (PR #45), in its priority order. One item
   - Cross-repo: using it from APITestka, WebRunner and LoadDensity belongs in `D:\Codes\progress.md`.
 - **#19** [P3] [DECIDE] MailThunder Studio: a UI over the core API (Dashboard, Accounts, Templates, Triggers, Policies, Projects, Logs, Settings).
   - Decide first: the UI toolkit, and whether it ships in this package or in its own.
-- **#20** [P4] Webhook / event extensions, provider health monitoring, audit logging, further providers.
 - **#25** Microsoft Graph reaches only the signed-in user's mailbox (`/me`, a delegated token). A shared mailbox or an app-only token (client credentials, `/users/{id}`) needs a mailbox setting on `MailAccount` and a client-credentials grant in `utils/oauth2/oauth2.py`.
 - **#24** [UNVERIFIED] The core mail API has not been run against a real mailbox.
   - Tested so far: fake SMTP / IMAP clients, and a fake SMTP server on localhost for what reaches the wire (`test/unit_test/test_mail_providers.py`).

@@ -6,6 +6,7 @@ from typing import Callable, Dict, Sequence, Tuple
 
 from je_mail_thunder.core.account import SERVER_PRESETS, MailAccount
 from je_mail_thunder.providers.base import MailProvider
+from je_mail_thunder.providers.file import PROVIDER_NAME as FILE_PROVIDER, FileProvider
 from je_mail_thunder.providers.imap import IMAPProvider
 from je_mail_thunder.providers.microsoft_graph import PROVIDER_NAME as GRAPH_PROVIDER, MicrosoftGraphProvider
 from je_mail_thunder.providers.smtp import SMTPProvider
@@ -32,9 +33,17 @@ def graph_provider(account: MailAccount) -> Tuple[MailProvider, ...]:
     return (MicrosoftGraphProvider(account),)
 
 
+def file_provider(_account: MailAccount) -> Tuple[MailProvider, ...]:
+    """
+    :return: the provider that keeps mail as ``.eml`` files instead of sending it, for dry runs and tests
+    """
+    return (FileProvider(),)
+
+
 _factories: Dict[str, ProviderFactory] = {name: smtp_and_imap_providers for name in SERVER_PRESETS}
 _factories[GENERIC_PROVIDER] = smtp_and_imap_providers
 _factories[GRAPH_PROVIDER] = graph_provider
+_factories[FILE_PROVIDER] = file_provider
 
 
 def register_provider(name: str, factory: ProviderFactory) -> None:

@@ -33,6 +33,7 @@ MailThunder 核心模組架構：
      providers/               # MailSender / MailStore 介面、SMTPProvider、IMAPProvider
      templates/               # 郵件模板：模板語法、MailTemplate、TemplateLoader
      triggers/                # 郵件事件：過濾器、dispatcher、輪詢與 IDLE 後端
+     monitoring/              # AuditLog 與 ProviderHealth，由郵件事件驅動
      smtp/
        smtp_wrapper.py        # SMTPWrapper — 繼承 smtplib.SMTP_SSL
      imap/
@@ -90,4 +91,5 @@ MailThunder 核心模組架構：
 - :doc:`mail_templates` — 可重複使用的郵件模板
 - :doc:`mail_triggers` — 郵件事件與觸發器
 - :doc:`microsoft_graph` — 透過 Microsoft Graph 存取 Microsoft 365 郵件
+- :doc:`monitoring` — 稽核日誌、供應商健康狀態與 webhook
 - :doc:`scripting_engine` — 使用 JSON 腳本自動化工作流程

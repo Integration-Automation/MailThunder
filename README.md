@@ -36,6 +36,7 @@
 - [Mail Templates](#mail-templates)
 - [Mail Events and Triggers](#mail-events-and-triggers)
 - [Microsoft Graph](#microsoft-graph)
+- [Monitoring](#monitoring)
 - [Scripting Engine](#scripting-engine)
   - [Action JSON Format](#action-json-format)
   - [Available Script Commands](#available-script-commands)
@@ -62,6 +63,8 @@
 - **Mail templates** — Subject, text and HTML templates with Jinja2-style `{{ }}`, `{% if %}` and `{% for %}`, rendered with the standard library: `mail.send(template=..., context=...)`
 - **Mail events and triggers** — `mail.on("message_received", handler, filter={...})` with provider-independent events, and `mail.watch()` to notice new mail by polling or IMAP IDLE
 - **Microsoft Graph provider** — Send, draft, read and delete Microsoft 365 mail over the Graph API with OAuth2, with polling and webhook triggers
+- **Monitoring** — An append-only audit log, a health report per provider, and signed outgoing webhooks, all fed by the mail events
+- **More providers** — Yahoo, iCloud, Zoho and Fastmail presets, and a `file` provider that keeps mail on disk for dry runs
 - **SMTP support** — Send emails over implicit TLS with Gmail (default) or any SMTP provider, or over STARTTLS (Microsoft 365)
 - **IMAP4 support** — Read, search, and export emails via IMAP4 SSL
 - **Attachment handling** — Automatically detect MIME types for text, image, audio, and binary files
@@ -253,6 +256,9 @@ Mail(account=MailAccount(                   # any other SMTP / IMAP server
 | `google` (or `gmail`) | SMTP, `smtp.gmail.com:465`, implicit TLS | IMAP, `imap.gmail.com` |
 | `microsoft` | SMTP, `smtp.office365.com:587`, STARTTLS | IMAP, `outlook.office365.com` |
 | `microsoft_graph` | Microsoft Graph, `https://graph.microsoft.com/v1.0` (OAuth2 only) | Microsoft Graph |
+| `yahoo`, `zoho`, `fastmail` | SMTP on 465, implicit TLS (`smtp.mail.yahoo.com`, `smtp.zoho.com`, `smtp.fastmail.com`); log in with an app password | IMAP (`imap.mail.yahoo.com`, `imap.zoho.com`, `imap.fastmail.com`) |
+| `icloud` | SMTP, `smtp.mail.me.com:587`, STARTTLS; log in with an app password | IMAP, `imap.mail.me.com` |
+| `file` | nothing is sent: each message is written as an `.eml` file under `mail_outbox/Sent` (`MAIL_THUNDER_FILE_PROVIDER_DIR` names the directory) | the `.eml` files of a folder, e.g. `mail_outbox/INBOX` |
 | `smtp` | SMTP on the account's `MailServers` (implicit TLS on 465, or `smtp_starttls=True` on 587) | IMAP on the account's `MailServers` |
 
 Without a provider name, `Mail()` uses the provider the OAuth2 settings name, else Gmail: the same servers
@@ -593,6 +599,37 @@ with Mail(provider="microsoft_graph", auth=auth) as mail:
   validation, and ignores notifications without its secret.
 
 Requests go only to `https://graph.microsoft.com`, and a refused token is a `MailThunderAuthenticationException`.
+
+---
+
+## Monitoring
+
+Three listeners turn the [mail events](#mail-events-and-triggers) into something to look at afterwards. Each is
+attached to `mail.events`, and none of them can stop a mail:
+
+```python
+from je_mail_thunder import AuditLog, Mail, ProviderHealth, WebhookForwarder
+
+mail = Mail()
+audit, health = AuditLog(), ProviderHealth()
+audit.attach(mail.events)                 # one JSON line per event in ~/.je_mail_thunder/audit/mail_audit.jsonl
+health.attach(mail.events)                # healthy / degraded / down per provider
+mail.on("*", WebhookForwarder("https://hooks.example.com/mail", secret="shared-secret"))
+
+print(health.report())                    # [{"provider": "smtp", "state": "healthy", ...}]
+print(health.probe(mail.providers))       # ask each provider to connect and log in, now
+print(audit.entries(limit=10))
+```
+
+- **`AuditLog(path=None, subjects=True)`** records who sent or received what, and when: addresses, subject, attachment
+  names and sizes, provider, and the error of a failure. Never a body, the content of an attachment or a credential.
+  The file is only appended to (`MAIL_THUNDER_AUDIT_FILE` moves it) and rotated past 10 MiB.
+- **`ProviderHealth(failure_threshold=3)`** is `healthy` after a success, `degraded` after a failure and `down` after
+  `failure_threshold` failures in a row. Only the provider's own failures count (a refused login, a lost connection, a
+  refused message), not a missing recipient or a refused attachment. `probe` calls each provider's `check()`.
+- **`WebhookForwarder(url, secret=None, bodies=False)`** posts each event as JSON to an `https` address from a
+  background queue, so a slow receiver never delays `send`. With a `secret`, each request carries
+  `X-MailThunder-Signature: sha256=<HMAC-SHA256 of the body>`. Message bodies are left out unless `bodies=True`.
 
 ---
 
@@ -955,6 +992,7 @@ MailThunder/
     providers/               # MailSender / MailStore interfaces, SMTPProvider, IMAPProvider, registry
     templates/               # Mail templates: the template language, MailTemplate, TemplateLoader
     triggers/                # Mail events: filters, dispatcher, polling and IMAP IDLE backends
+    monitoring/              # AuditLog and ProviderHealth, fed by the mail events
     smtp/
       smtp_wrapper.py        # SMTPClientMixin, SMTPWrapper, SMTPStartTLSWrapper
     imap/

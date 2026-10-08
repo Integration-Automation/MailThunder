@@ -128,6 +128,17 @@ class WrapperProvider(MailProvider):  # pylint: disable=too-few-public-methods  
         self._used_at = self._clock()
         return self._client
 
+    def check(self) -> None:
+        """
+        Connect and log in, or prove that the connection that is open still answers.
+
+        :return: None
+        :raises MailThunderConnectionException: the server cannot be reached
+        :raises MailThunderAuthenticationException: there are no credentials, or the server refused them
+        """
+        mail_thunder_logger.info(f"{self.name} provider, check")
+        self._live_client()
+
     def close(self) -> None:
         """
         Close the connection this provider opened; a client it was given stays with its owner.

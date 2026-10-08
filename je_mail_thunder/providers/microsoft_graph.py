@@ -168,6 +168,17 @@ class MicrosoftGraphProvider(MailSender, MailStore):
         :return: None
         """
 
+    def check(self) -> None:
+        """
+        Ask Graph for the inbox folder, which proves the token and the mailbox.
+
+        :return: None
+        :raises MailThunderAuthenticationException: there is no OAuth2 login, or Graph refused the token
+        :raises MailThunderConnectionException: Graph could not be reached
+        """
+        mail_thunder_logger.info("graph provider, check")
+        self.call("GET", "/me/mailFolders/inbox?%24select=id")
+
     def _authorization(self) -> str:
         """The ``Authorization`` header: the account's OAuth2 token, asked for with the Graph scopes."""
         auth = self._account.authentication()

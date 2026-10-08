@@ -53,10 +53,19 @@ class MailServers:
         return STARTTLS_PORT if self.smtp_starttls else IMPLICIT_TLS_PORT
 
 
-# The servers of the providers MailThunder knows, taken from the OAuth2 presets so both name the same hosts.
+# Providers that log in with an app password over SMTP and IMAP.
+_PASSWORD_PRESETS = {
+    "yahoo": MailServers("smtp.mail.yahoo.com", IMPLICIT_TLS_PORT, False, "imap.mail.yahoo.com"),
+    "icloud": MailServers("smtp.mail.me.com", STARTTLS_PORT, True, "imap.mail.me.com"),
+    "zoho": MailServers("smtp.zoho.com", IMPLICIT_TLS_PORT, False, "imap.zoho.com"),
+    "fastmail": MailServers("smtp.fastmail.com", IMPLICIT_TLS_PORT, False, "imap.fastmail.com"),
+}
+# The servers of the providers MailThunder knows. Google's and Microsoft's are taken from the OAuth2 presets, so
+# both name the same hosts.
 SERVER_PRESETS: Mapping[str, MailServers] = MappingProxyType({
-    name: MailServers(preset.smtp_host, preset.smtp_port, preset.smtp_starttls, preset.imap_host)
-    for name, preset in OAUTH2_PROVIDERS.items()
+    **{name: MailServers(preset.smtp_host, preset.smtp_port, preset.smtp_starttls, preset.imap_host)
+       for name, preset in OAUTH2_PROVIDERS.items()},
+    **_PASSWORD_PRESETS,
 })
 
 
@@ -65,8 +74,9 @@ class MailAccount:
     """
     An account and how it is reached.
 
-    :param provider: a registered provider name: ``"google"`` (or ``"gmail"``), ``"microsoft"``, or ``"smtp"``
-        for any other SMTP / IMAP server, which needs ``servers``
+    :param provider: a registered provider name: ``"google"`` (or ``"gmail"``), ``"microsoft"``,
+        ``"microsoft_graph"``, ``"yahoo"``, ``"icloud"``, ``"zoho"``, ``"fastmail"``, ``"file"``, or ``"smtp"`` for
+        any other SMTP / IMAP server, which needs ``servers``
     :param auth: how the account logs in; by default what ``mail_thunder_content.json`` or the environment
         holds, looked up when the account first connects
     :param servers: the SMTP and IMAP servers, replacing the provider's own

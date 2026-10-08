@@ -9,6 +9,7 @@ from je_mail_thunder.core.mail import Mail, mail_instance
 from je_mail_thunder.core.message import MailMessage
 # Providers
 from je_mail_thunder.providers.base import MailProvider, MailSender, MailStore
+from je_mail_thunder.providers.file import FileProvider
 from je_mail_thunder.providers.imap import IMAPProvider
 from je_mail_thunder.providers.microsoft_graph import MicrosoftGraphProvider
 from je_mail_thunder.providers.registry import register_provider, registered_providers
@@ -21,6 +22,10 @@ from je_mail_thunder.triggers.graph import GraphPollingBackend, GraphWebhookBack
 from je_mail_thunder.triggers.imap import IMAPIdleBackend, IMAPPollingBackend
 from je_mail_thunder.triggers.polling import PollingBackend
 from je_mail_thunder.triggers.trigger import MailTriggerBackend
+# Monitoring
+from je_mail_thunder.monitoring.audit import AuditLog
+from je_mail_thunder.monitoring.health import ProviderHealth
+from je_mail_thunder.triggers.webhook import WebhookForwarder
 # Templates
 from je_mail_thunder.templates.engine import render_string
 from je_mail_thunder.templates.loader import TemplateLoader
@@ -64,7 +69,7 @@ __all__ = [
     "registered_providers",
     "EVENT_NAMES", "MailEvent", "MailFilter", "EventDispatcher", "MailTriggerBackend", "PollingBackend",
     "IMAPPollingBackend", "IMAPIdleBackend", "GraphPollingBackend", "GraphWebhookBackend",
-    "MicrosoftGraphProvider",
+    "MicrosoftGraphProvider", "FileProvider", "AuditLog", "ProviderHealth", "WebhookForwarder",
     "MailTemplate", "RenderedTemplate", "TemplateLoader", "render_string",
     "Authentication", "PasswordAuth", "AppPasswordAuth", "OAuth2Auth", "XOAUTH2Auth", "resolve_authentication",
     "Attachment", "AttachmentPolicy", "DEFAULT_ATTACHMENT_POLICY", "validate_attachments",

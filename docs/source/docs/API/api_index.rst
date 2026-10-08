@@ -57,6 +57,12 @@ All public APIs are accessible from the top-level ``je_mail_thunder`` package:
        GraphPollingBackend,      # Graph polling by received time
        GraphWebhookBackend,      # Graph change notifications
 
+       # Monitoring and more providers
+       AuditLog,                 # Append-only record of mail events
+       ProviderHealth,           # healthy / degraded / down per provider
+       WebhookForwarder,         # Posts events to an HTTPS address
+       FileProvider,             # Keeps mail as .eml files (dry runs)
+
        # Authentication objects
        Authentication,           # Interface of the login mechanisms
        PasswordAuth,             # The account's password
@@ -159,6 +165,14 @@ Module Map
      - ``https_request()``, ``decode_json()``
    * - ``je_mail_thunder.triggers.graph``
      - ``GraphPollingBackend``, ``GraphWebhookBackend``
+   * - ``je_mail_thunder.monitoring.audit``
+     - ``AuditLog``, ``audit_entry()``, ``default_audit_file()``
+   * - ``je_mail_thunder.monitoring.health``
+     - ``ProviderHealth``
+   * - ``je_mail_thunder.triggers.webhook``
+     - ``WebhookForwarder``, ``webhook_payload()``, ``sign()``
+   * - ``je_mail_thunder.providers.file``
+     - ``FileProvider``
    * - ``je_mail_thunder.auth.base``
      - ``Authentication`` class
    * - ``je_mail_thunder.auth.password``

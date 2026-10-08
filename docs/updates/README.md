@@ -58,6 +58,7 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | ID | Date | Title | Tags | Batch |
 |---|---|---|---|---|
+| U-20261008-09 | 2026-10-08 | Audit log, provider health, event webhooks, and more providers | #done #monitoring #providers #roadmap-2.0 | [2026-10](2026-10.md) |
 | U-20261008-08 | 2026-10-08 | Microsoft Graph provider with polling and webhook trigger backends | #done #providers #graph #triggers #roadmap-2.0 | [2026-10](2026-10.md) |
 | U-20261008-07 | 2026-10-08 | Mail events and triggers: mail.on, filters, polling and IMAP IDLE backends | #done #triggers #events #roadmap-2.0 | [2026-10](2026-10.md) |
 | U-20261008-06 | 2026-10-08 | Mail templates with a Jinja2-style language in the standard library | #done #templates #roadmap-2.0 | [2026-10](2026-10.md) |
@@ -101,5 +102,5 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | File | Period | Entries |
 |---|---|---:|
-| [2026-10.md](2026-10.md) | 2026-10 | 17 |
+| [2026-10.md](2026-10.md) | 2026-10 | 18 |
 | [2026-09.md](2026-09.md) | 2026-09 | 21 |

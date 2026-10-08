@@ -33,6 +33,7 @@ MailThunder is organized into the following core modules:
      providers/               # MailSender / MailStore interfaces, SMTPProvider, IMAPProvider
      templates/               # Mail templates: template language, MailTemplate, TemplateLoader
      triggers/                # Mail events: filters, dispatcher, polling and IDLE backends
+     monitoring/              # AuditLog and ProviderHealth, fed by the mail events
      smtp/
        smtp_wrapper.py        # SMTPWrapper — extends smtplib.SMTP_SSL
      imap/
@@ -92,4 +93,5 @@ Next Steps
 - :doc:`mail_templates` — Reusable mail templates
 - :doc:`mail_triggers` — Mail events and triggers
 - :doc:`microsoft_graph` — Microsoft 365 mail over Microsoft Graph
+- :doc:`monitoring` — Audit log, provider health and webhooks
 - :doc:`scripting_engine` — Automate workflows with JSON scripts

@@ -539,3 +539,33 @@ Microsoft Graph
 
 **Raises:** ``MailThunderAuthenticationException`` (HTTP 401 / 403, or a login that is not OAuth2),
 ``MailThunderConnectionException``, ``MailThunderSendException``, ``MailThunderProviderException``.
+
+----
+
+Monitoring and More Providers
+-----------------------------
+
+**Modules:** ``je_mail_thunder.monitoring.audit``, ``je_mail_thunder.monitoring.health``,
+``je_mail_thunder.triggers.webhook``, ``je_mail_thunder.providers.file``
+
+.. list-table::
+   :header-rows: 1
+   :widths: 45 55
+
+   * - Name
+     - Description
+   * - ``AuditLog(path=None, subjects=True)``
+     - ``attach(dispatcher)``, ``record(event)``, ``entries(limit=100)``; ``audit_entry(event, subjects=True)``
+       is the entry of one event; ``default_audit_file()`` is where it goes
+   * - ``ProviderHealth(failure_threshold=3)``
+     - ``attach(dispatcher)``, ``record(event)``, ``probe(providers)``, ``status(provider)``, ``report()``
+   * - ``WebhookForwarder(url, secret=None, bodies=False, queue_size=1000, transport=https_request)``
+     - An event handler: calling it queues the event; ``deliver(event)`` posts one now; ``flush()``;
+       ``close()``. ``webhook_payload(event, bodies=False)`` and ``sign(secret, body)`` build what is posted
+   * - ``MailProvider.check()``
+     - Connect and log in without sending or reading mail; every provider has it
+   * - ``FileProvider(directory=None)``
+     - A ``MailSender`` and ``MailStore`` over ``.eml`` files, registered as ``file``
+   * - ``SERVER_PRESETS``
+     - ``je_mail_thunder.core.account``: the SMTP / IMAP servers of ``google``, ``microsoft``, ``yahoo``,
+       ``icloud``, ``zoho`` and ``fastmail``

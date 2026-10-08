@@ -24,6 +24,15 @@ class MailProvider(ABC):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
+    def check(self) -> None:
+        """
+        Prove that the provider can do its work: reach its server and log in, without sending or reading mail.
+        A provider with nothing to prove passes.
+
+        :return: None
+        :raises MailThunderException: the server cannot be reached, or refuses the login
+        """
+
     @abstractmethod
     def close(self) -> None:
         """

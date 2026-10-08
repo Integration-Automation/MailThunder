@@ -157,6 +157,16 @@
    * - ``microsoft_graph``
      - Microsoft Graph（只能用 OAuth2），見 :doc:`microsoft_graph`
      - Microsoft Graph
+   * - ``yahoo``、``zoho``、``fastmail``
+     - 465 埠的 SMTP，隱含式 TLS（``smtp.mail.yahoo.com``、``smtp.zoho.com``、``smtp.fastmail.com``）；
+       以應用程式密碼登入
+     - IMAP（``imap.mail.yahoo.com``、``imap.zoho.com``、``imap.fastmail.com``）
+   * - ``icloud``
+     - SMTP，``smtp.mail.me.com:587``，STARTTLS；以應用程式密碼登入
+     - IMAP，``imap.mail.me.com``
+   * - ``file``
+     - 不會寄出任何東西：見下方「以檔案供應商試跑」
+     - 資料夾裡的 ``.eml`` 檔
    * - ``smtp``
      - 帳號 ``MailServers`` 指定的 SMTP：465 埠的隱含式 TLS，或 ``smtp_starttls=True`` 的 587 埠
      - 帳號 ``MailServers`` 指定的 IMAP
@@ -166,6 +176,26 @@
 連線一律使用 TLS。
 
 ``MailServers`` 另外接受 ``smtp_port`` 與 ``drafts_folder``。
+
+以檔案供應商試跑
+~~~~~~~~~~~~~~~~
+
+``file`` 供應商把郵件留在磁碟上而不寄出，所以不需要信箱也能試跑自動化流程：
+
+.. code-block:: python
+
+   from je_mail_thunder import FileProvider, Mail
+
+   with Mail(provider="file") as mail:              # 或在設定檔寫 "mail_provider": "file"
+       mail.send(to="qa@example.com", subject="Dry run", text="...", sender="ci@example.com")
+       print([message.subject for message in mail.get_messages("Sent")])
+
+   Mail(providers=[FileProvider("build/mail")])     # 使用另一個目錄
+
+``send`` 寫入 ``<directory>/Sent/<id>.eml``，``create_draft`` 寫入 ``<directory>/Drafts/<id>.eml``。
+讀取的呼叫會列出資料夾裡的 ``.eml`` 檔，最新的在前，所以放進 ``<directory>/INBOX`` 的檔案就是收到的郵件，
+``mail.watch()`` 也看得到。目錄預設是工作目錄下的 ``mail_outbox``，可用 ``MAIL_THUNDER_FILE_PROVIDER_DIR`` 或
+``FileProvider(directory)`` 指定。不需要登入；``query`` 是主旨必須包含的文字，``unread_only`` 沒有作用。
 
 新增供應商
 ~~~~~~~~~~

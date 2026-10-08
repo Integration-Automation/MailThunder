@@ -162,6 +162,16 @@ Accounts and Providers
    * - ``microsoft_graph``
      - Microsoft Graph (OAuth2 only), see :doc:`microsoft_graph`
      - Microsoft Graph
+   * - ``yahoo``, ``zoho``, ``fastmail``
+     - SMTP on 465, implicit TLS (``smtp.mail.yahoo.com``, ``smtp.zoho.com``, ``smtp.fastmail.com``);
+       log in with an app password
+     - IMAP (``imap.mail.yahoo.com``, ``imap.zoho.com``, ``imap.fastmail.com``)
+   * - ``icloud``
+     - SMTP, ``smtp.mail.me.com:587``, STARTTLS; log in with an app password
+     - IMAP, ``imap.mail.me.com``
+   * - ``file``
+     - Nothing is sent: see *Dry Runs with the File Provider* below
+     - The ``.eml`` files of a folder
    * - ``smtp``
      - SMTP on the account's ``MailServers``: implicit TLS on 465, or ``smtp_starttls=True`` on 587
      - IMAP on the account's ``MailServers``
@@ -171,6 +181,29 @@ else of the config file or the environment), else Gmail: the same servers ``smtp
 ``imap_instance`` use. Connections always use TLS.
 
 ``MailServers`` also takes ``smtp_port`` and ``drafts_folder``.
+
+Dry Runs with the File Provider
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``file`` provider keeps mail on disk instead of sending it, so an automation run can be tried
+without a mailbox:
+
+.. code-block:: python
+
+   from je_mail_thunder import FileProvider, Mail
+
+   with Mail(provider="file") as mail:              # or "mail_provider": "file" in the config file
+       mail.send(to="qa@example.com", subject="Dry run", text="...", sender="ci@example.com")
+       print([message.subject for message in mail.get_messages("Sent")])
+
+   Mail(providers=[FileProvider("build/mail")])     # another directory
+
+``send`` writes ``<directory>/Sent/<id>.eml`` and ``create_draft`` ``<directory>/Drafts/<id>.eml``. The
+reading calls list the ``.eml`` files of a folder, newest first, so a file dropped into
+``<directory>/INBOX`` is received mail, also for ``mail.watch()``. The directory is ``mail_outbox``
+under the working directory unless ``MAIL_THUNDER_FILE_PROVIDER_DIR`` or ``FileProvider(directory)``
+names another. No login is needed; ``query`` is text the subject must hold, and ``unread_only`` has no
+effect.
 
 Adding a Provider
 ~~~~~~~~~~~~~~~~~

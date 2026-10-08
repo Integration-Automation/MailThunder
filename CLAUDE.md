@@ -27,6 +27,7 @@ je_mail_thunder/
   attachments/              # Attachment, AttachmentPolicy, validate_attachments
   templates/                # Mail templates: engine (Jinja2-style subset), MailTemplate, TemplateLoader
   triggers/                 # Mail events: MailFilter, EventDispatcher, trigger backends (polling, IMAP IDLE)
+  monitoring/               # AuditLog, ProviderHealth: listeners of the mail events
   smtp/smtp_wrapper.py      # SMTPClientMixin; SMTPWrapper (SMTP_SSL), SMTPStartTLSWrapper (SMTP + STARTTLS)
   imap/imap_wrapper.py      # IMAPWrapper (extends IMAP4_SSL)
   utils/
