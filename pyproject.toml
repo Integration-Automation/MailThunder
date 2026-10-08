@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "je_mail_thunder"
-version = "0.0.29"
+version = "0.0.30"
 authors = [
     { name = "JE-Chen", email = "jechenmailman@gmail.com" },
 ]
@@ -15,13 +15,28 @@ maintainers = [
 ]
 description = "Provider-agnostic email automation framework for Python: SMTP, IMAP, Microsoft Graph, OAuth2, templates, triggers, attachment policies and JSON-scripted workflows"
 keywords = [
-    "email", "mail", "smtp", "imap", "oauth2", "xoauth2", "gmail", "microsoft-365", "microsoft-graph",
-    "templates", "triggers", "attachments", "automation",
+    "email",
+    "mail",
+    "smtp",
+    "imap",
+    "oauth2",
+    "xoauth2",
+    "gmail",
+    "microsoft-365",
+    "microsoft-graph",
+    "templates",
+    "triggers",
+    "attachments",
+    "automation",
 ]
 requires-python = ">=3.10"
 license = "MIT"
-license-files = ["LICENSE"]
-dependencies = ["je_action_core>=0.0.1"]
+license-files = [
+    "LICENSE",
+]
+dependencies = [
+    "je_action_core>=0.0.1",
+]
 classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
