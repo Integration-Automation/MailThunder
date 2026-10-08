@@ -14,9 +14,8 @@ Cross-repo and workspace items live in `D:\Codes\progress.md` (relevant here: X-
 
 ## MailThunder 2.0 roadmap
 
-From `docs/MAILTHUNDER-2.0-ROADMAP.md` (PR #45), in its priority order. One item is one focused change. Done so far (P0): the attachment policy (`docs/updates` U-20261008-01), the authentication abstraction (U-20261008-02) and the core mail API with its provider interface (U-20261008-03).
+From `docs/MAILTHUNDER-2.0-ROADMAP.md` (PR #45), in its priority order. One item is one focused change. P0 is done except for #21 and #24: the attachment policy (`docs/updates` U-20261008-01), the authentication abstraction (U-20261008-02), the core mail API with its provider interface (U-20261008-03) and the PyPI metadata (U-20261008-04).
 
-- **#13** [P0] PyPI metadata: description, keywords, classifiers, maintainers and project URLs in `pyproject.toml` and `dev.toml`.
 - **#14** [P1] Template engine (`je_mail_thunder/templates/`: `engine.py`, `template.py`, `loader.py`).
   - What: subject / text / HTML templates with variables and metadata; shared and project-local template directories; context validation; structured rendering errors; `Mail.send(template="name", context={...})`.
   - Decide first: the roadmap prefers Jinja2-style syntax, and the package uses only the standard library (CLAUDE.md › Dependency Security). Either a small `{{ name }}` renderer in the standard library, or Jinja2 as an optional extra.

@@ -11,7 +11,13 @@ version = "0.0.40"
 authors = [
     { name = "JE-Chen", email = "jechenmailman@gmail.com" },
 ]
-description = ""
+maintainers = [
+    { name = "JE-Chen", email = "jechenmailman@gmail.com" },
+]
+description = "Provider-agnostic email automation for Python: SMTP, IMAP, OAuth2 (XOAUTH2), attachment policies and JSON-scripted workflows"
+keywords = [
+    "email", "mail", "smtp", "imap", "oauth2", "xoauth2", "gmail", "microsoft-365", "attachments", "automation",
+]
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.10"
 dependencies = ["je_action_core>=0.0.1"]
@@ -24,14 +30,20 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Development Status :: 2 - Pre-Alpha",
-    "Environment :: Win32 (MS Windows)",
-    "Environment :: MacOS X",
-    "Environment :: X11 Applications",
-    "Operating System :: OS Independent"
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Topic :: Communications :: Email",
+    "Topic :: Communications :: Email :: Post-Office :: IMAP",
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
 [project.urls]
 "Homepage" = "https://github.com/Integration-Automation/MailThunder"
+"Documentation" = "https://mailthunder.readthedocs.io/"
+"Repository" = "https://github.com/Integration-Automation/MailThunder"
+"Issues" = "https://github.com/Integration-Automation/MailThunder/issues"
+"Changelog" = "https://github.com/Integration-Automation/MailThunder/releases"
 
 [tool.setuptools.packages]
 find = { namespaces = false }

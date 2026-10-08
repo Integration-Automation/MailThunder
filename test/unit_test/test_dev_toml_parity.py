@@ -37,6 +37,26 @@ def test_python_floor_matches():
     assert DEV["requires-python"] == STABLE["requires-python"]
 
 
+@pytest.mark.parametrize("field", ["description", "authors", "maintainers", "license", "readme", "urls"])
+def test_what_the_pypi_page_shows_matches(field):
+    # One project under two names: both PyPI pages describe it the same way.
+    assert DEV[field] == STABLE[field]
+
+
+@pytest.mark.parametrize("field", ["keywords", "classifiers"])
+def test_keywords_and_classifiers_match(field):
+    assert sorted(DEV[field]) == sorted(STABLE[field])
+
+
+def test_the_pypi_page_is_filled_in():
+    # The description was an empty string, and the only link was the repository.
+    assert STABLE["description"].strip()
+    assert STABLE["keywords"]
+    assert {"Homepage", "Documentation", "Repository", "Issues", "Changelog"} <= set(STABLE["urls"])
+    assert all(url.startswith("https://") for url in STABLE["urls"].values())
+    assert any(classifier.startswith("Topic :: Communications :: Email") for classifier in STABLE["classifiers"])
+
+
 def test_optional_dependency_groups_match():
     assert DEV.get("optional-dependencies", {}) == STABLE.get("optional-dependencies", {})
 
