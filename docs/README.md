@@ -33,6 +33,7 @@ docs/
         send_google_mail.rst             #   Sending emails (SMTP)
         read_google_mail.rst             #   Reading emails (IMAP)
         attachment_policy.rst            #   Attachment policy & validation
+        mail_templates.rst               #   Reusable mail templates
         scripting_engine.rst             #   JSON scripting engine
         project_templates.rst            #   Project template scaffolding
         cli.rst                          #   Command-line interface
@@ -48,6 +49,7 @@ docs/
         send_google_mail.rst             #   寄送郵件 (SMTP)
         read_google_mail.rst             #   讀取郵件 (IMAP)
         attachment_policy.rst            #   附件政策與驗證
+        mail_templates.rst               #   可重複使用的郵件模板
         scripting_engine.rst             #   JSON 腳本引擎
         project_templates.rst            #   專案模板
         cli.rst                          #   命令列介面

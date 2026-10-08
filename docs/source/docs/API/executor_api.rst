@@ -67,6 +67,8 @@ Executor Class
      - ``mail_instance.delete_message``
    * - ``MT_mail_close``
      - ``mail_instance.close``
+   * - ``MT_mail_render_template``
+     - ``core.actions.mail_render_template`` (``mail_instance.render`` as a dict)
    * - ``MT_set_mail_thunder_os_environ``
      - ``set_mail_thunder_os_environ``
    * - ``MT_get_mail_thunder_os_environ``

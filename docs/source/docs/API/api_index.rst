@@ -36,6 +36,12 @@ All public APIs are accessible from the top-level ``je_mail_thunder`` package:
        IMAPWrapper,              # IMAP wrapper class
        imap_instance,            # Pre-created IMAP instance (or None)
 
+       # Templates
+       MailTemplate,             # Subject / text / HTML template
+       RenderedTemplate,         # What a template gave for a context
+       TemplateLoader,           # Finds templates by name
+       render_string,            # Render template text
+
        # Authentication objects
        Authentication,           # Interface of the login mechanisms
        PasswordAuth,             # The account's password
@@ -112,6 +118,12 @@ Module Map
      - ``register_provider()``, ``registered_providers()``, ``create_providers()``
    * - ``je_mail_thunder.providers.session``
      - ``WrapperProvider`` (the connection of a provider built on a wrapper)
+   * - ``je_mail_thunder.templates.engine``
+     - ``CompiledTemplate``, ``render_string()``, ``SafeText``
+   * - ``je_mail_thunder.templates.template``
+     - ``MailTemplate``, ``RenderedTemplate``, ``TemplateVariable``
+   * - ``je_mail_thunder.templates.loader``
+     - ``TemplateLoader``, ``shared_template_directory()``
    * - ``je_mail_thunder.auth.base``
      - ``Authentication`` class
    * - ``je_mail_thunder.auth.password``

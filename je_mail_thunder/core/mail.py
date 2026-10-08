@@ -5,7 +5,7 @@ provider is.
 import threading
 from contextlib import contextmanager
 from dataclasses import replace
-from typing import Iterator, Optional, Sequence, Tuple
+from typing import Any, Iterator, Mapping, Optional, Sequence, Tuple, Union
 
 from je_mail_thunder.attachments.policy import DEFAULT_ATTACHMENT_POLICY, AttachmentPolicy
 from je_mail_thunder.attachments.validator import validate_attachments
@@ -15,6 +15,8 @@ from je_mail_thunder.core.account import DEFAULT_PROVIDER, MailAccount, default_
 from je_mail_thunder.core.message import MailMessage, check_outgoing, message_from_fields
 from je_mail_thunder.providers.base import DEFAULT_FOLDER, MailProvider, MailSender, MailStore
 from je_mail_thunder.providers.registry import create_providers
+from je_mail_thunder.templates.loader import TemplateLoader
+from je_mail_thunder.templates.template import MailTemplate, RenderedTemplate
 from je_mail_thunder.utils.exception.exceptions import MailThunderException, MailThunderProviderException
 from je_mail_thunder.utils.logging.loggin_instance import mail_thunder_logger
 
@@ -48,7 +50,8 @@ class Mail:
 
     def __init__(self, provider: Optional[str] = None, auth: Optional[Authentication] = None,
                  account: Optional[MailAccount] = None, policy: Optional[AttachmentPolicy] = None,
-                 providers: Optional[Sequence[MailProvider]] = None) -> None:
+                 providers: Optional[Sequence[MailProvider]] = None,
+                 templates: Optional[TemplateLoader] = None) -> None:
         """
         :param provider: a registered provider name (``"google"``, ``"microsoft"``, ...); without one, the
             provider the OAuth2 settings name (those of ``auth``, else of the content file or the environment),
@@ -57,6 +60,8 @@ class Mail:
         :param account: the whole account, instead of ``provider`` and ``auth``
         :param policy: what attachments are checked against before sending; 25 MiB of any type by default
         :param providers: ready providers to use instead of the ones the account's provider name stands for
+        :param templates: where ``send(template=...)`` finds its templates; by default the project's
+            ``mail/templates`` directory, then the shared one
         :raises MailThunderProviderException: ``account`` is given together with ``provider`` or ``auth``
         """
         if account is not None and (provider is not None or auth is not None):
@@ -67,6 +72,7 @@ class Mail:
         self._providers: Optional[Tuple[MailProvider, ...]] = None if providers is None else tuple(providers)
         self._uses_given_providers = providers is not None
         self.policy = policy if policy is not None else DEFAULT_ATTACHMENT_POLICY
+        self.templates = templates if templates is not None else TemplateLoader()
         self._lock = threading.RLock()
 
     def __enter__(self):
@@ -98,10 +104,39 @@ class Mail:
                 return provider
         raise MailThunderProviderException(f"no configured provider can {operation}")
 
+    def render(self, template: Union[str, MailTemplate], context: Optional[Mapping[str, Any]] = None
+               ) -> RenderedTemplate:
+        """
+        Render a template without sending anything, to see what ``send(template=...)`` would send.
+
+        :param template: a template's name, looked up in ``templates``, or a :class:`MailTemplate`
+        :param context: the values for this mail
+        :return: the rendered subject, text and HTML
+        :raises MailThunderTemplateException: the template is not found, not valid, or the context lacks a variable
+        """
+        with _logged("mail_render"):
+            loaded = template if isinstance(template, MailTemplate) else self.templates.load(template)
+            return loaded.render(context)
+
+    def _templated(self, message_fields: dict) -> dict:
+        """Message fields with ``template`` and ``context`` replaced by what the template renders."""
+        fields = dict(message_fields)
+        template, context = fields.pop("template", None), fields.pop("context", None)
+        if template is None:
+            if context is not None:
+                raise MailThunderProviderException("a context needs the template it is for")
+            return fields
+        for part, rendered in self.render(template, context).to_dict().items():
+            if rendered is not None:
+                # A field given beside the template wins over what the template renders.
+                fields.setdefault(part, rendered)
+        return fields
+
     def _outgoing(self, message: Optional[MailMessage], message_fields: dict) -> MailMessage:
         """The message to send or draft: complete, valid, and within the attachment policy."""
         if message is not None and message_fields:
             raise MailThunderProviderException("give a MailMessage or message fields, not both")
+        message_fields = self._templated(message_fields)
         if message is None:
             message = message_from_fields(message_fields)
         if not isinstance(message, MailMessage):
@@ -118,10 +153,12 @@ class Mail:
 
         :param message: a ready :class:`MailMessage`, or
         :param message_fields: its fields: ``to``, ``cc``, ``bcc``, ``subject``, ``text``, ``html``,
-            ``attachments``, ``sender``, ``reply_to``, ``headers``
+            ``attachments``, ``sender``, ``reply_to``, ``headers``; or ``template`` (a name or a
+            :class:`MailTemplate`) and ``context``, which render the subject and the bodies
         :return: the message as it was sent (the account's user as ``sender`` when none was given)
         :raises MailThunderMessageException: no recipient, or an address, subject or header that is not valid
         :raises MailThunderAttachmentException: an attachment is missing or breaks the policy
+        :raises MailThunderTemplateException: the template is not found or cannot be rendered with the context
         :raises MailThunderProviderException: the provider could not connect, log in or send
         """
         with _logged("mail_send"), self._lock:

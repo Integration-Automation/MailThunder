@@ -12,6 +12,10 @@ from je_mail_thunder.providers.base import MailProvider, MailSender, MailStore
 from je_mail_thunder.providers.imap import IMAPProvider
 from je_mail_thunder.providers.registry import register_provider, registered_providers
 from je_mail_thunder.providers.smtp import SMTPProvider
+# Templates
+from je_mail_thunder.templates.engine import render_string
+from je_mail_thunder.templates.loader import TemplateLoader
+from je_mail_thunder.templates.template import MailTemplate, RenderedTemplate
 # Authentication
 from je_mail_thunder.auth.base import Authentication
 from je_mail_thunder.auth.oauth2 import OAuth2Auth
@@ -49,6 +53,7 @@ __all__ = [
     "Mail", "mail_instance", "MailAccount", "MailServers", "MailMessage", "legacy_message", "mail_from_wrappers",
     "MailProvider", "MailSender", "MailStore", "SMTPProvider", "IMAPProvider", "register_provider",
     "registered_providers",
+    "MailTemplate", "RenderedTemplate", "TemplateLoader", "render_string",
     "Authentication", "PasswordAuth", "AppPasswordAuth", "OAuth2Auth", "XOAUTH2Auth", "resolve_authentication",
     "Attachment", "AttachmentPolicy", "DEFAULT_ATTACHMENT_POLICY", "validate_attachments",
     "OAUTH2_PROVIDERS", "OAuth2Provider", "OAuth2Settings", "OAuth2TokenCache", "oauth2_token_cache",

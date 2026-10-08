@@ -33,6 +33,7 @@
   - [OAuth2（Google 與 Microsoft）](#oauth2google-與-microsoft)
   - [驗證物件](#驗證物件)
 - [附件政策](#附件政策)
+- [郵件模板](#郵件模板)
 - [腳本引擎](#腳本引擎)
   - [Action JSON 格式](#action-json-格式)
   - [可用的腳本指令](#可用的腳本指令)
@@ -56,6 +57,7 @@
 ## 功能特色
 
 - **與供應商無關的 `Mail` API** — 一個物件就能寄送、讀取、建立草稿與刪除郵件；背後是可以接上新後端的供應商介面（目前為 SMTP 與 IMAP）
+- **郵件模板** — 主旨、純文字與 HTML 模板，支援 Jinja2 風格的 `{{ }}`、`{% if %}` 與 `{% for %}`，以標準函式庫實作：`mail.send(template=..., context=...)`
 - **SMTP 支援** — 透過隱含式 TLS 寄送郵件，預設使用 Gmail，也可自訂其他 SMTP 服務；或透過 STARTTLS（Microsoft 365）
 - **IMAP4 支援** — 透過 IMAP4 SSL 讀取、搜尋和匯出郵件
 - **附件處理** — 自動偵測文字、圖片、音訊和二進位檔案的 MIME 類型
@@ -451,6 +453,53 @@ Windows 不接受的字元都會被移除，因此檔案不會落在 `directory`
 
 ---
 
+## 郵件模板
+
+郵件模板包含主旨、純文字內文與 HTML 內文，三者共用同一份 context，所以報表郵件只要寫一次，就能帶入不同的數字寄出：
+
+```python
+from je_mail_thunder import Mail
+
+with Mail() as mail:
+    mail.send(
+        to="qa@example.com",
+        template="test_report",
+        context={"project": "APITestka", "passed": 98, "failed": 2, "failures": [{"name": "login"}]},
+    )
+```
+
+`Mail` 以名稱尋找模板：先找專案的 `mail/templates/` 目錄，再找共用目錄（`~/.je_mail_thunder/templates`，或
+`$MAIL_THUNDER_TEMPLATE_DIR`）。模板可以是一個 JSON 檔 `test_report.json`（`subject` / `text` / `html` / `variables` /
+`metadata`），也可以是一個目錄：
+
+```
+mail/templates/test_report/
+  subject.txt      [{{ project }}] {{ passed }} passed, {{ failed }} failed
+  body.txt         plain-text body
+  body.html        HTML body (values are HTML-escaped)
+  template.json    {"variables": {"project": {}, "failed": {"default": 0}}, "metadata": {"owner": "qa"}}
+```
+
+語法是 Jinja2 中郵件用得到的部分，以標準函式庫實作：
+
+| 語法 | 意義 |
+|---|---|
+| `{{ user.name }}` | 一個值；以點號取得 dict、list（`items.0`）與公開屬性的內容 |
+| `{{ name \| upper }}` | 過濾器：`upper`、`lower`、`title`、`trim`、`length`、`join(", ")`、`default("x")`、`safe` |
+| `{% if failed > 0 %} … {% elif skipped %} … {% else %} … {% endif %}` | 條件：一個值、`not`，或一次比較（`== != < <= > >=`） |
+| `{% for test in failures %} {{ loop.index }}. {{ test.name }} {% endfor %}` | 迴圈，可用 `loop.index`、`loop.first`、`loop.last`、`loop.length` |
+| `{# note #}` | 註解 |
+
+模板只能讀取 context：其中沒有任何內容會被當成 Python 執行，HTML 內文中的每個值都會做 HTML 跳脫，除非經過 `safe`。
+在 `variables` 宣告的變數會在產生內容之前檢查，`TemplateContextError.missing` 會列出所有缺少的變數；有 `default` 的變數
+是選用的。`mail.render("test_report", context)` 回傳產生出來的主旨、純文字與 HTML，不會寄出；與 `template=` 同時給的
+欄位（例如 `subject=`）優先於模板產生的結果。錯誤都是 `MailThunderTemplateException` 的子類別：`TemplateNotFound`、
+`TemplateSyntaxError`、`TemplateContextError`、`TemplateRenderError`。
+
+模板也可以在程式中建立：`mail.templates.add(MailTemplate("welcome", subject="Hi {{ name }}", text="..."))`。
+
+---
+
 ## 腳本引擎
 
 MailThunder 內建 JSON 腳本引擎，讓你無需撰寫 Python 程式碼即可自動化郵件工作流程。
@@ -493,6 +542,7 @@ MailThunder 內建 JSON 腳本引擎，讓你無需撰寫 Python 程式碼即可
 | `MT_mail_get_message` | 依識別碼取得一封郵件 | `{"message_id": str, "folder": str}` |
 | `MT_mail_delete_message` | 依識別碼刪除一封郵件 | `{"message_id": str, "folder": str}` |
 | `MT_mail_close` | 關閉供應商的連線 | 無 |
+| `MT_mail_render_template` | 產生郵件模板的內容，不寄出 | `{"template": str, "context": dict}` |
 | `MT_set_mail_thunder_os_environ` | 設定驗證環境變數 | `{"mail_thunder_user": str, "mail_thunder_user_password": str}` |
 | `MT_get_mail_thunder_os_environ` | 取得驗證環境變數 | 無 |
 | `MT_add_package_to_executor` | 載入 Python 套件至執行器 | `["套件名稱"]` |
@@ -805,6 +855,7 @@ MailThunder/
     auth/                    # 驗證機制：密碼、應用程式密碼、OAuth2、XOAUTH2
     core/                    # Mail（與供應商無關的 API）、MailMessage、MailAccount
     providers/               # MailSender / MailStore 介面、SMTPProvider、IMAPProvider、註冊表
+    templates/               # 郵件模板：模板語法、MailTemplate、TemplateLoader
     smtp/
       smtp_wrapper.py        # SMTPClientMixin、SMTPWrapper、SMTPStartTLSWrapper
     imap/

@@ -16,9 +16,6 @@ Cross-repo and workspace items live in `D:\Codes\progress.md` (relevant here: X-
 
 From `docs/MAILTHUNDER-2.0-ROADMAP.md` (PR #45), in its priority order. One item is one focused change. P0 is done except for #24: the attachment policy (`docs/updates` U-20261008-01), the authentication abstraction (U-20261008-02), the core mail API with its provider interface (U-20261008-03) and the PyPI metadata (U-20261008-04).
 
-- **#14** [P1] Template engine (`je_mail_thunder/templates/`: `engine.py`, `template.py`, `loader.py`).
-  - What: subject / text / HTML templates with variables and metadata; shared and project-local template directories; context validation; structured rendering errors; `Mail.send(template="name", context={...})`.
-  - Decide first: the roadmap prefers Jinja2-style syntax, and the package uses only the standard library (CLAUDE.md › Dependency Security). Either a small `{{ name }}` renderer in the standard library, or Jinja2 as an optional extra.
 - **#15** [P1] `MicrosoftGraphProvider` (`je_mail_thunder/providers/microsoft_graph.py`).
   - What: send, drafts, message retrieval and attachments over Microsoft Graph with an OAuth2 bearer token; Graph errors mapped to MailThunder exceptions.
   - How: one class that is a `MailSender` and a `MailStore`, registered with `register_provider`; `OAuth2Auth.authorization()` is the bearer header; HTTP with `urllib`, as `utils/oauth2/oauth2.py` does.

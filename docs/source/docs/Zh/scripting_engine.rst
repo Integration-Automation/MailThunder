@@ -142,6 +142,8 @@ MailThunder 內建強大的 JSON 腳本引擎，讓您無需撰寫 Python 程式
      - 依識別碼刪除一封郵件（``message_id``、``folder``）
    * - ``MT_mail_close``
      - 關閉供應商的連線
+   * - ``MT_mail_render_template``
+     - 產生郵件模板的內容，不寄出（``template``、``context``）
 
 **認證命令：**
 

@@ -25,6 +25,11 @@ Exception Hierarchy
            ├── MailThunderProviderException
            │     ├── MailThunderConnectionException
            │     └── MailThunderSendException
+           ├── MailThunderTemplateException
+           │     ├── TemplateNotFound
+           │     ├── TemplateSyntaxError
+           │     ├── TemplateContextError
+           │     └── TemplateRenderError
            └── MailThunderAttachmentException
                  ├── AttachmentNotFound
                  ├── AttachmentTooLarge
@@ -72,6 +77,16 @@ Exception Reference
      - The provider's server could not be reached, or the connection was lost
    * - ``MailThunderSendException``
      - The server refused the message, or some of its recipients (``refused``)
+   * - ``MailThunderTemplateException``
+     - Base of the mail template errors; also raised for a malformed template file
+   * - ``TemplateNotFound``
+     - No directory has the template (``name``, ``searched``)
+   * - ``TemplateSyntaxError``
+     - A template part is not valid template syntax (``line``)
+   * - ``TemplateContextError``
+     - The context lacks variables the template needs (``missing``, ``template``)
+   * - ``TemplateRenderError``
+     - A value does not fit what the template does with it, or the output is too large
    * - ``MailThunderAttachmentException``
      - Base of the attachment errors; also raised for an invalid ``AttachmentPolicy`` or ``Attachment``
    * - ``AttachmentNotFound``

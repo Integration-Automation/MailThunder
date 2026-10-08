@@ -33,6 +33,7 @@
   - [OAuth2（Google 与 Microsoft）](#oauth2google-与-microsoft)
   - [验证对象](#验证对象)
 - [附件策略](#附件策略)
+- [邮件模板](#邮件模板)
 - [脚本引擎](#脚本引擎)
   - [Action JSON 格式](#action-json-格式)
   - [可用的脚本指令](#可用的脚本指令)
@@ -56,6 +57,7 @@
 ## 功能特色
 
 - **与提供商无关的 `Mail` API** — 一个对象就能发送、读取、创建草稿与删除邮件；背后是可以接上新后端的提供商接口（目前为 SMTP 与 IMAP）
+- **邮件模板** — 主题、纯文本与 HTML 模板，支持 Jinja2 风格的 `{{ }}`、`{% if %}` 与 `{% for %}`，以标准库实现：`mail.send(template=..., context=...)`
 - **SMTP 支持** — 通过隐式 TLS 发送邮件，默认使用 Gmail，也可自定义其他 SMTP 服务；或通过 STARTTLS（Microsoft 365）
 - **IMAP4 支持** — 通过 IMAP4 SSL 读取、搜索和导出邮件
 - **附件处理** — 自动检测文本、图片、音频和二进制文件的 MIME 类型
@@ -451,6 +453,53 @@ Windows 不接受的字符都会被移除，因此文件不会落在 `directory`
 
 ---
 
+## 邮件模板
+
+邮件模板包含主题、纯文本正文与 HTML 正文，三者共用同一份 context，所以报表邮件只要写一次，就能带入不同的数字发出：
+
+```python
+from je_mail_thunder import Mail
+
+with Mail() as mail:
+    mail.send(
+        to="qa@example.com",
+        template="test_report",
+        context={"project": "APITestka", "passed": 98, "failed": 2, "failures": [{"name": "login"}]},
+    )
+```
+
+`Mail` 以名称寻找模板：先找项目的 `mail/templates/` 目录，再找共用目录（`~/.je_mail_thunder/templates`，或
+`$MAIL_THUNDER_TEMPLATE_DIR`）。模板可以是一个 JSON 档 `test_report.json`（`subject` / `text` / `html` / `variables` /
+`metadata`），也可以是一个目录：
+
+```
+mail/templates/test_report/
+  subject.txt      [{{ project }}] {{ passed }} passed, {{ failed }} failed
+  body.txt         plain-text body
+  body.html        HTML body (values are HTML-escaped)
+  template.json    {"variables": {"project": {}, "failed": {"default": 0}}, "metadata": {"owner": "qa"}}
+```
+
+语法是 Jinja2 中邮件用得到的部分，以标准库实现：
+
+| 语法 | 意义 |
+|---|---|
+| `{{ user.name }}` | 一个值；以点号取得 dict、list（`items.0`）与公开属性的内容 |
+| `{{ name \| upper }}` | 过滤器：`upper`、`lower`、`title`、`trim`、`length`、`join(", ")`、`default("x")`、`safe` |
+| `{% if failed > 0 %} … {% elif skipped %} … {% else %} … {% endif %}` | 条件：一个值、`not`，或一次比较（`== != < <= > >=`） |
+| `{% for test in failures %} {{ loop.index }}. {{ test.name }} {% endfor %}` | 循环，可用 `loop.index`、`loop.first`、`loop.last`、`loop.length` |
+| `{# note #}` | 注释 |
+
+模板只能读取 context：其中没有任何内容会被当成 Python 运行，HTML 正文中的每个值都会做 HTML 转义，除非经过 `safe`。
+在 `variables` 声明的变量会在产生内容之前检查，`TemplateContextError.missing` 会列出所有缺少的变量；有 `default` 的变量
+是可选的。`mail.render("test_report", context)` 返回产生出来的主题、纯文本与 HTML，不会发出；与 `template=` 同时给的
+字段（例如 `subject=`）优先于模板产生的结果。错误都是 `MailThunderTemplateException` 的子类：`TemplateNotFound`、
+`TemplateSyntaxError`、`TemplateContextError`、`TemplateRenderError`。
+
+模板也可以在程序中创建：`mail.templates.add(MailTemplate("welcome", subject="Hi {{ name }}", text="..."))`。
+
+---
+
 ## 脚本引擎
 
 MailThunder 内置 JSON 脚本引擎，让你无需编写 Python 代码即可自动化邮件工作流程。
@@ -493,6 +542,7 @@ MailThunder 内置 JSON 脚本引擎，让你无需编写 Python 代码即可自
 | `MT_mail_get_message` | 按标识符取得一封邮件 | `{"message_id": str, "folder": str}` |
 | `MT_mail_delete_message` | 按标识符删除一封邮件 | `{"message_id": str, "folder": str}` |
 | `MT_mail_close` | 关闭提供商的连接 | 无 |
+| `MT_mail_render_template` | 产生邮件模板的内容，不发出 | `{"template": str, "context": dict}` |
 | `MT_set_mail_thunder_os_environ` | 设置验证环境变量 | `{"mail_thunder_user": str, "mail_thunder_user_password": str}` |
 | `MT_get_mail_thunder_os_environ` | 获取验证环境变量 | 无 |
 | `MT_add_package_to_executor` | 加载 Python 包至执行器 | `["包名称"]` |
@@ -753,7 +803,7 @@ smtp = SMTPStartTLSWrapper()
 | `select_mailbox(mailbox="INBOX", readonly=False)` | 选择邮箱，返回 `bool` |
 | `search_mailbox(search_str="ALL", charset=None)` | 搜索并返回原始邮件详细信息列表 |
 | `mail_content_list(search_str="ALL", charset=None)` | 返回已解析的邮件内容字典列表 |
-| `output_all_mail_as_file(search_str="ALL", charset=None)` | 以主旨为文件名导出所有邮件；路径分隔符号、控制字符与 `: * ? " < > \|` 会被换成 `_` |
+| `output_all_mail_as_file(search_str="ALL", charset=None)` | 以主题为文件名导出所有邮件；路径分隔符号、控制字符与 `: * ? " < > \|` 会被换成 `_` |
 | `oauth2_login(user, access_token)` | 以 SASL `XOAUTH2` 登录；被拒时抛出 `imaplib.IMAP4.error` |
 | `quit()` | 关闭邮箱并登出 |
 
@@ -805,6 +855,7 @@ MailThunder/
     auth/                    # 验证机制：密码、应用专用密码、OAuth2、XOAUTH2
     core/                    # Mail（与提供商无关的 API）、MailMessage、MailAccount
     providers/               # MailSender / MailStore 接口、SMTPProvider、IMAPProvider、注册表
+    templates/               # 邮件模板：模板语法、MailTemplate、TemplateLoader
     smtp/
       smtp_wrapper.py        # SMTPClientMixin、SMTPWrapper、SMTPStartTLSWrapper
     imap/

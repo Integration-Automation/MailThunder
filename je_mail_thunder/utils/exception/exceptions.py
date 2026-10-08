@@ -1,4 +1,4 @@
-from typing import Mapping, Optional
+from typing import Mapping, Optional, Sequence
 
 
 class MailThunderException(Exception):
@@ -110,3 +110,38 @@ class TotalAttachmentSizeExceeded(MailThunderAttachmentException):
         super().__init__(f"attachments total {size} bytes, over the limit of {limit}")
         self.size = size
         self.limit = limit
+
+
+class MailThunderTemplateException(MailThunderException):
+    """A mail template cannot be found, parsed or rendered."""
+
+
+class TemplateNotFound(MailThunderTemplateException):
+    """No template of that name is in the directories that were searched."""
+
+    def __init__(self, name: str, searched: Sequence[str] = ()) -> None:
+        super().__init__(f"no mail template {name!r} in {list(searched)}")
+        self.name = name
+        self.searched = tuple(searched)
+
+
+class TemplateSyntaxError(MailThunderTemplateException):
+    """A template's text is not valid template syntax."""
+
+    def __init__(self, message: str, line: int = 0) -> None:
+        super().__init__(f"{message} (line {line})" if line else message)
+        self.line = line
+
+
+class TemplateContextError(MailThunderTemplateException):
+    """The context does not hold what the template needs; ``missing`` names every variable that is absent."""
+
+    def __init__(self, missing: Sequence[str], template: str = "") -> None:
+        where = f"the template {template!r}" if template else "the template"
+        super().__init__(f"{where} needs the variables {sorted(missing)}")
+        self.missing = tuple(sorted(missing))
+        self.template = template
+
+
+class TemplateRenderError(MailThunderTemplateException):
+    """A template could not be rendered with the values it was given."""

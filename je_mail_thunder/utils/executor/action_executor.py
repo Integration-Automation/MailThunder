@@ -16,7 +16,13 @@ from je_action_core import (
     safe_builtin_commands,
 )
 
-from je_mail_thunder.core.actions import mail_create_draft, mail_get_message, mail_get_messages, mail_send
+from je_mail_thunder.core.actions import (
+    mail_create_draft,
+    mail_get_message,
+    mail_get_messages,
+    mail_render_template,
+    mail_send,
+)
 from je_mail_thunder.core.mail import mail_instance
 from je_mail_thunder.imap.imap_wrapper import imap_instance
 from je_mail_thunder.smtp.smtp_wrapper import smtp_instance
@@ -92,6 +98,7 @@ class Executor(ActionExecutor):
             "MT_imap_quit": deferred(imap_instance, "quit"),
             # Mail: the provider-agnostic API, on mail_instance (it connects on first use)
             "MT_mail_send": mail_send,
+            "MT_mail_render_template": mail_render_template,
             "MT_mail_create_draft": mail_create_draft,
             "MT_mail_get_messages": mail_get_messages,
             "MT_mail_get_message": mail_get_message,

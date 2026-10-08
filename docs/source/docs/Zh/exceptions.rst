@@ -25,6 +25,11 @@ MailThunder 為不同的錯誤情境定義了一組自訂例外類別。
            ├── MailThunderProviderException
            │     ├── MailThunderConnectionException
            │     └── MailThunderSendException
+           ├── MailThunderTemplateException
+           │     ├── TemplateNotFound
+           │     ├── TemplateSyntaxError
+           │     ├── TemplateContextError
+           │     └── TemplateRenderError
            └── MailThunderAttachmentException
                  ├── AttachmentNotFound
                  ├── AttachmentTooLarge
@@ -71,6 +76,16 @@ MailThunder 為不同的錯誤情境定義了一組自訂例外類別。
      - 無法連上供應商的伺服器，或連線中斷
    * - ``MailThunderSendException``
      - 伺服器拒絕這封郵件，或拒絕其中部分收件者（``refused``）
+   * - ``MailThunderTemplateException``
+     - 郵件模板錯誤的基底；模板檔格式不正確時也會引發
+   * - ``TemplateNotFound``
+     - 沒有任何目錄包含該模板（``name``、``searched``）
+   * - ``TemplateSyntaxError``
+     - 模板的某個部分不是有效的模板語法（``line``）
+   * - ``TemplateContextError``
+     - context 缺少模板需要的變數（``missing``、``template``）
+   * - ``TemplateRenderError``
+     - 某個值不適用於模板對它做的事，或輸出過大
    * - ``MailThunderAttachmentException``
      - 附件錯誤的基底；``AttachmentPolicy`` 或 ``Attachment`` 無效時也會引發
    * - ``AttachmentNotFound``

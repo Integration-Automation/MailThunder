@@ -31,6 +31,7 @@ MailThunder is organized into the following core modules:
      auth/                    # Authentication: password, app password, OAuth2, XOAUTH2
      core/                    # Mail (provider-agnostic API), MailMessage, MailAccount
      providers/               # MailSender / MailStore interfaces, SMTPProvider, IMAPProvider
+     templates/               # Mail templates: template language, MailTemplate, TemplateLoader
      smtp/
        smtp_wrapper.py        # SMTPWrapper — extends smtplib.SMTP_SSL
      imap/
@@ -87,4 +88,5 @@ Next Steps
 - :doc:`send_google_mail` — Send your first email
 - :doc:`read_google_mail` — Read emails from your inbox
 - :doc:`attachment_policy` — Check attachments before they are sent
+- :doc:`mail_templates` — Reusable mail templates
 - :doc:`scripting_engine` — Automate workflows with JSON scripts

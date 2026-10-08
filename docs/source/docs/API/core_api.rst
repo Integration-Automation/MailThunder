@@ -417,3 +417,40 @@ Bridges from the Wrapper API
        (any case) become fields, the rest ``headers``
    * - ``mail_from_wrappers(smtp=None, imap=None, policy=None)``
      - A ``Mail`` on wrappers that are already connected and logged in. They stay the caller's
+
+----
+
+Templates
+---------
+
+**Modules:** ``je_mail_thunder.templates.template``, ``je_mail_thunder.templates.loader``,
+``je_mail_thunder.templates.engine``
+
+.. list-table::
+   :header-rows: 1
+   :widths: 45 55
+
+   * - Name
+     - Description
+   * - ``MailTemplate(name, subject=None, text=None, html=None, variables=(), metadata={})``
+     - A template. ``render(context)`` returns a ``RenderedTemplate``; ``context_for(context)`` adds the
+       declared defaults and raises ``TemplateContextError`` for missing variables; ``referenced_variables``
+       is every name the parts read; ``to_dict()`` is JSON-ready; ``MailTemplate.from_mapping(name, values)``
+       builds one from the content of a template file
+   * - ``RenderedTemplate(subject, text, html)``
+     - What a template gave for one context; a part the template lacks is ``None``
+   * - ``TemplateVariable(name, description="", default=<required>)``
+     - A declared variable; ``required`` is true when it has no default
+   * - ``TemplateLoader(directories=None)``
+     - Finds templates by name: ``load(name)``, ``names()``, ``add(template)``, ``directories``. By default
+       the project's ``mail/templates``, then ``shared_template_directory()``
+   * - ``render_string(source, context=None, autoescape=False)``
+     - Render template text in one step; ``CompiledTemplate(source)`` parses once and renders often
+       (``names`` holds the context names it reads)
+   * - ``Mail.render(template, context=None)``
+     - The ``RenderedTemplate`` of a template name or ``MailTemplate``, without sending
+   * - ``Mail(templates=...)`` / ``mail.templates``
+     - The ``TemplateLoader`` ``send(template=...)`` uses
+
+**Raises:** ``TemplateNotFound``, ``TemplateSyntaxError``, ``TemplateContextError`` or
+``TemplateRenderError`` (all ``MailThunderTemplateException``).

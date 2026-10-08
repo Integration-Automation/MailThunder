@@ -25,6 +25,7 @@ without naming a protocol; it is the foundation of the MailThunder 2.0 roadmap
 | `je_mail_thunder/imap/imap_wrapper.py` | `IMAPWrapper(IMAP4_SSL)` (default `imap.gmail.com`; `oauth2_login`), `default_imap_client()` and the module instance `imap_instance` (a `LazyInstance` of it) |
 | `je_mail_thunder/core/` | The provider-agnostic API: `mail.Mail` (send, create_draft, get_messages, get_message, delete_message, close; checks a message and its attachments, then hands it to a provider; one lock per instance) and the module instance `mail_instance`; `message.MailMessage` (frozen; `check_outgoing` refuses what cannot be sent); `rfc822` (to and from `email.message.EmailMessage`); `account.MailAccount` / `MailServers` / `default_account()`; `actions` (the `MT_mail_*` commands, JSON-ready); `compat` (`legacy_message`, `mail_from_wrappers`) |
 | `je_mail_thunder/providers/` | Backends behind `Mail`: `base.MailProvider` with the roles `MailSender` and `MailStore`; `session.WrapperProvider` (a wrapper connection opened and logged in on first use, pinged after 30 idle seconds, replaced when dead; an already connected wrapper is used as it is); `smtp.SMTPProvider`; `imap.IMAPProvider` (UIDs, `BODY.PEEK[]`, `\Drafts` lookup, modified UTF-7 folder names); `registry` (`register_provider`, `create_providers`; `google`, `microsoft`, `smtp`) |
+| `je_mail_thunder/templates/` | Mail templates: `engine` (a Jinja2-style subset in the standard library: `{{ }}` with filters, `{% if %}`, `{% for %}`; reads the context only, HTML-escapes on request, output capped at 5 MiB), `template.MailTemplate` (subject / text / HTML, declared variables with defaults, metadata; `render` → `RenderedTemplate`), `loader.TemplateLoader` (`<name>.json` or `<name>/` in `./mail/templates`, then `$MAIL_THUNDER_TEMPLATE_DIR` or `~/.je_mail_thunder/templates`; names are never paths) |
 | `je_mail_thunder/auth/` | How an account logs in, behind one interface: `base.Authentication` (`user`, `mechanism`, `login(client)` for the SMTP / IMAP wrappers, `authorization()` for HTTP; what a mechanism cannot do raises `MailThunderAuthenticationException`), `password.PasswordAuth` / `AppPasswordAuth`, `oauth2.OAuth2Auth` (bearer token from `utils/oauth2`'s cache), `xoauth2.XOAUTH2Auth` (the same token as SASL `XOAUTH2`); secrets stay out of every `repr` |
 | `je_mail_thunder/attachments/` | What a message may carry: `attachment.Attachment` (a file to send by `path`, or one that arrived as `content`; `save` writes it under `mime.safe_filename`), `policy.AttachmentPolicy` / `DEFAULT_ATTACHMENT_POLICY` (count, size, extension and MIME-type limits), `validator.validate_attachments` (count → existence → size → extension → MIME type → total size; raises the `MailThunderAttachmentException` subclasses), `mime` (type and extension from the file name) |
 | `je_mail_thunder/utils/oauth2/oauth2.py` | OAuth2 with the standard library: `OAUTH2_PROVIDERS` (`google`, `microsoft`: token URL, scope, SMTP/IMAP hosts), `OAuth2Settings` (secrets out of `repr`), `refresh_access_token` (https only), `OAuth2TokenCache` / `oauth2_token_cache`, `xoauth2_string` |
@@ -45,6 +46,7 @@ without naming a protocol; it is the foundation of the MailThunder 2.0 roadmap
   - core mail API: `Mail`, `mail_instance`, `MailMessage`, `MailAccount`, `MailServers`, `MailProvider`, `MailSender`, `MailStore`,
     `SMTPProvider`, `IMAPProvider`, `register_provider`, `registered_providers`, `legacy_message`, `mail_from_wrappers`;
   - attachments: `Attachment`, `AttachmentPolicy`, `DEFAULT_ATTACHMENT_POLICY`, `validate_attachments`;
+  - templates: `MailTemplate`, `RenderedTemplate`, `TemplateLoader`, `render_string`;
   - authentication: `Authentication`, `PasswordAuth`, `AppPasswordAuth`, `OAuth2Auth`, `XOAUTH2Auth`, `resolve_authentication`;
   - execution: `execute_action`, `execute_files`, `add_command_to_executor`, `read_action_json`,
     `get_dir_files_as_list`, `create_project_dir`;
@@ -57,7 +59,8 @@ without naming a protocol; it is the foundation of the MailThunder 2.0 roadmap
   `MT_imap_select_mailbox`, `MT_imap_output_all_mail_as_file` and `MT_add_package_to_executor`.
   `MT_smtp_quit` closes the SMTP connection; its pre-prefix name `smtp_quit` is still registered.
   `MT_mail_send`, `MT_mail_create_draft`, `MT_mail_get_messages`, `MT_mail_get_message`, `MT_mail_delete_message` and
-  `MT_mail_close` are the core mail API on `mail_instance`, with JSON-ready arguments and results (`core/actions.py`).
+  `MT_mail_close` are the core mail API on `mail_instance`, with JSON-ready arguments and results (`core/actions.py`);
+  `MT_mail_render_template` previews a template.
 - **CLI**: `python -m je_mail_thunder` takes:
   - `-e/--execute_file <json>`, `-d/--execute_dir <dir>`, `-c/--create_project <path>` and `--execute_str <json>`;
   - on `win32`/`cygwin`/`msys`, `--execute_str` is decoded with `json.loads` twice;
@@ -105,7 +108,7 @@ MT_smtp_later_init / MT_imap_later_init → try_to_login_with_env_or_content
 **Core mail API**
 
 ```
-Mail.send(**fields) / MT_mail_send → message_from_fields → sender defaults to account.authentication().user
+Mail.send(**fields) / MT_mail_send → template + context rendered into subject / text / html (TemplateLoader) → message_from_fields → sender defaults to account.authentication().user
   → check_outgoing (a recipient, valid addresses, one-line subject and headers) → validate_attachments(policy)
   → the first MailSender of create_providers(account) → SMTPProvider._live_client()
        first use: account.authentication() → SMTPWrapper / SMTPStartTLSWrapper → auth.login(client)

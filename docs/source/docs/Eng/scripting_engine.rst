@@ -144,6 +144,8 @@ Built-in Commands
      - Delete one message by its id (``message_id``, ``folder``)
    * - ``MT_mail_close``
      - Close the provider connections
+   * - ``MT_mail_render_template``
+     - Render a mail template without sending (``template``, ``context``)
 
 **Authentication commands:**
 

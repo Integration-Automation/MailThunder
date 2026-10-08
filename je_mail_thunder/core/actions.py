@@ -2,7 +2,7 @@
 The ``MT_mail_*`` actions: the :class:`~je_mail_thunder.core.mail.Mail` API on ``mail_instance``, taking and
 returning JSON-ready values so an action file or the socket server can use it.
 """
-from typing import List, Optional
+from typing import Any, List, Mapping, Optional
 
 from je_mail_thunder.core.mail import mail_instance
 from je_mail_thunder.providers.base import DEFAULT_FOLDER
@@ -13,10 +13,21 @@ def mail_send(**message_fields) -> dict:
     ``MT_mail_send``: send a message through the configured provider.
 
     :param message_fields: ``to``, ``cc``, ``bcc``, ``subject``, ``text``, ``html``, ``attachments`` (paths),
-        ``sender``, ``reply_to``, ``headers``
+        ``sender``, ``reply_to``, ``headers``; or ``template`` (a template name) with ``context``
     :return: the message as it was sent
     """
     return mail_instance.send(**message_fields).to_dict()
+
+
+def mail_render_template(template: str, context: Optional[Mapping[str, Any]] = None) -> dict:
+    """
+    ``MT_mail_render_template``: what a template gives for a context, without sending anything.
+
+    :param template: a template's name
+    :param context: the values for this mail
+    :return: ``{"subject": ..., "text": ..., "html": ...}``
+    """
+    return mail_instance.render(template, context).to_dict()
 
 
 def mail_create_draft(folder: Optional[str] = None, **message_fields) -> Optional[str]:

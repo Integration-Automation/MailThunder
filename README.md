@@ -33,6 +33,7 @@
   - [OAuth2 (Google and Microsoft)](#oauth2-google-and-microsoft)
   - [Authentication Objects](#authentication-objects)
 - [Attachment Policy](#attachment-policy)
+- [Mail Templates](#mail-templates)
 - [Scripting Engine](#scripting-engine)
   - [Action JSON Format](#action-json-format)
   - [Available Script Commands](#available-script-commands)
@@ -56,6 +57,7 @@
 ## Features
 
 - **Provider-agnostic `Mail` API** — One object sends, reads, drafts and deletes mail, behind a provider interface new backends plug into (SMTP and IMAP today)
+- **Mail templates** — Subject, text and HTML templates with Jinja2-style `{{ }}`, `{% if %}` and `{% for %}`, rendered with the standard library: `mail.send(template=..., context=...)`
 - **SMTP support** — Send emails over implicit TLS with Gmail (default) or any SMTP provider, or over STARTTLS (Microsoft 365)
 - **IMAP4 support** — Read, search, and export emails via IMAP4 SSL
 - **Attachment handling** — Automatically detect MIME types for text, image, audio, and binary files
@@ -459,6 +461,55 @@ policy, or `None` to turn the check off): a refused file is logged and the messa
 
 ---
 
+## Mail Templates
+
+A mail template holds a subject, a text body and an HTML body that share one context, so a report mail is written
+once and sent with different numbers:
+
+```python
+from je_mail_thunder import Mail
+
+with Mail() as mail:
+    mail.send(
+        to="qa@example.com",
+        template="test_report",
+        context={"project": "APITestka", "passed": 98, "failed": 2, "failures": [{"name": "login"}]},
+    )
+```
+
+`Mail` looks a template up by name in the project's `mail/templates/` directory, then in the shared one
+(`~/.je_mail_thunder/templates`, or `$MAIL_THUNDER_TEMPLATE_DIR`). A template is one JSON file, `test_report.json`
+(`subject` / `text` / `html` / `variables` / `metadata`), or a directory:
+
+```
+mail/templates/test_report/
+  subject.txt      [{{ project }}] {{ passed }} passed, {{ failed }} failed
+  body.txt         plain-text body
+  body.html        HTML body (values are HTML-escaped)
+  template.json    {"variables": {"project": {}, "failed": {"default": 0}}, "metadata": {"owner": "qa"}}
+```
+
+The syntax is the part of Jinja2 a mail needs, implemented with the standard library:
+
+| Syntax | Meaning |
+|---|---|
+| `{{ user.name }}` | a value; dots reach into dicts, lists (`items.0`) and public attributes |
+| `{{ name \| upper }}` | a filter: `upper`, `lower`, `title`, `trim`, `length`, `join(", ")`, `default("x")`, `safe` |
+| `{% if failed > 0 %} … {% elif skipped %} … {% else %} … {% endif %}` | a condition: a value, `not`, or one comparison (`== != < <= > >=`) |
+| `{% for test in failures %} {{ loop.index }}. {{ test.name }} {% endfor %}` | a loop, with `loop.index`, `loop.first`, `loop.last`, `loop.length` |
+| `{# note #}` | a comment |
+
+A template only reads the context: nothing in it is evaluated as Python, and in the HTML body every value is
+HTML-escaped unless it goes through `safe`. Variables declared in `variables` are checked before rendering, and
+`TemplateContextError.missing` names every absent one; a variable with a `default` is optional.
+`mail.render("test_report", context)` returns the rendered subject, text and HTML without sending, and a field given
+beside `template=` (for example `subject=`) wins over the rendered one. Errors are `MailThunderTemplateException`
+subclasses: `TemplateNotFound`, `TemplateSyntaxError`, `TemplateContextError`, `TemplateRenderError`.
+
+Templates can also be built in code: `mail.templates.add(MailTemplate("welcome", subject="Hi {{ name }}", text="..."))`.
+
+---
+
 ## Scripting Engine
 
 MailThunder includes a JSON-based scripting engine that lets you automate email workflows without writing Python code.
@@ -501,6 +552,7 @@ Action files use a list of commands. Each command is an array where the first el
 | `MT_mail_get_message` | Get one message by its id | `{"message_id": str, "folder": str}` |
 | `MT_mail_delete_message` | Delete one message by its id | `{"message_id": str, "folder": str}` |
 | `MT_mail_close` | Close the provider connections | None |
+| `MT_mail_render_template` | Render a mail template without sending | `{"template": str, "context": dict}` |
 | `MT_set_mail_thunder_os_environ` | Set auth env vars | `{"mail_thunder_user": str, "mail_thunder_user_password": str}` |
 | `MT_get_mail_thunder_os_environ` | Get auth env vars | None |
 | `MT_add_package_to_executor` | Load a Python package into executor | `["package_name"]` |
@@ -814,6 +866,7 @@ MailThunder/
     auth/                    # Authentication: password, app password, OAuth2, XOAUTH2
     core/                    # Mail (the provider-agnostic API), MailMessage, MailAccount
     providers/               # MailSender / MailStore interfaces, SMTPProvider, IMAPProvider, registry
+    templates/               # Mail templates: the template language, MailTemplate, TemplateLoader
     smtp/
       smtp_wrapper.py        # SMTPClientMixin, SMTPWrapper, SMTPStartTLSWrapper
     imap/
