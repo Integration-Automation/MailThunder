@@ -32,6 +32,7 @@ Exception Hierarchy
            │     └── TemplateRenderError
            ├── MailThunderTriggerException
            ├── MailThunderProjectException
+           ├── MailThunderStudioException
            └── MailThunderAttachmentException
                  ├── AttachmentNotFound
                  ├── AttachmentTooLarge
@@ -93,6 +94,8 @@ Exception Reference
      - An event name, a filter rule or a trigger backend is not usable as it was given
    * - ``MailThunderProjectException``
      - A project has no mail layer, or a file of it cannot be used
+   * - ``MailThunderStudioException``
+     - A request to MailThunder Studio is not one it can answer
    * - ``MailThunderAttachmentException``
      - Base of the attachment errors; also raised for an invalid ``AttachmentPolicy`` or ``Attachment``
    * - ``AttachmentNotFound``

@@ -38,6 +38,7 @@
 - [Microsoft Graph](#microsoft-graph)
 - [Monitoring](#monitoring)
 - [Project Mail Layer](#project-mail-layer)
+- [MailThunder Studio](#mailthunder-studio)
 - [Scripting Engine](#scripting-engine)
   - [Action JSON Format](#action-json-format)
   - [Available Script Commands](#available-script-commands)
@@ -67,6 +68,7 @@
 - **Monitoring** — An append-only audit log, a health report per provider, and signed outgoing webhooks, all fed by the mail events
 - **More providers** — Yahoo, iCloud, Zoho and Fastmail presets, and a `file` provider that keeps mail on disk for dry runs
 - **Project mail layer** — A project keeps its provider, policy, templates and triggers in `mail/`, and `project_mail()` gives its code a ready `Mail`
+- **MailThunder Studio** — A local page (`python -m je_mail_thunder.studio`) for the account, templates, triggers, policies, the project's mail layer and the logs, served by the standard library
 - **SMTP support** — Send emails over implicit TLS with Gmail (default) or any SMTP provider, or over STARTTLS (Microsoft 365)
 - **IMAP4 support** — Read, search, and export emails via IMAP4 SSL
 - **Attachment handling** — Automatically detect MIME types for text, image, audio, and binary files
@@ -673,6 +675,40 @@ Python files of the project: load only the layer of a project you trust. No acti
 
 ---
 
+## MailThunder Studio
+
+MailThunder Studio is a local page for looking at and trying what the mail API is set up to do. It is served by the
+standard library, needs no extra package, and only talks to the [Core Mail API](#core-mail-api), so it works the same
+on every provider:
+
+```bash
+python -m je_mail_thunder.studio                       # the account of the config file or the environment
+python -m je_mail_thunder.studio --project MyProject   # the mail layer of a project (runs its mail/config.py and mail/triggers.py)
+python -m je_mail_thunder.studio --port 9950 --no-browser
+```
+
+It prints an address such as `http://localhost:9947/#token=...` and opens it. The page has English and 中文.
+
+| Page | What it shows and does |
+|---|---|
+| Dashboard | the account (never its secret), each provider's health, counts, the newest audit entries, and a form that sends a mail |
+| Accounts | the account and its servers, the registered providers, and a button that asks every provider to connect and log in |
+| Templates | every template with its variables; a context typed in as JSON is rendered without sending |
+| Triggers | the events, the subscribed handlers and their filters, the trigger backends, and a button that looks for new mail once |
+| Policies | the attachment policy, changeable for as long as Studio runs |
+| Projects | the files and templates of the project's mail layer; nothing of it is run |
+| Logs | the end of the log file and the audit log |
+| Settings | where MailThunder keeps its files, the registered providers and the versions it runs on |
+
+Studio is a tool for the person at the keyboard. It binds `localhost`; every API request needs the random token of
+that run, which travels in the address's fragment and is never sent to a server by the browser; a request with
+another `Host` is refused; the page loads nothing from elsewhere and writes everything as text, so nothing that
+arrived by mail can run in the browser; no answer holds a password or a token; and a mail sent from the page cannot
+name attachments. Stop it when it is not in use. `start_studio(mail)` in `je_mail_thunder.studio.server` starts it
+from Python.
+
+---
+
 ## Scripting Engine
 
 MailThunder includes a JSON-based scripting engine that lets you automate email workflows without writing Python code.
@@ -1037,6 +1073,7 @@ MailThunder/
     templates/               # Mail templates: the template language, MailTemplate, TemplateLoader
     triggers/                # Mail events: filters, dispatcher, polling and IMAP IDLE backends
     monitoring/              # AuditLog and ProviderHealth, fed by the mail events
+    studio/                  # MailThunder Studio: the local page, its API and its HTTP server
     smtp/
       smtp_wrapper.py        # SMTPClientMixin, SMTPWrapper, SMTPStartTLSWrapper
     imap/

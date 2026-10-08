@@ -28,6 +28,7 @@ je_mail_thunder/
   templates/                # Mail templates: engine (Jinja2-style subset), MailTemplate, TemplateLoader
   triggers/                 # Mail events: MailFilter, EventDispatcher, trigger backends (polling, IMAP IDLE)
   monitoring/               # AuditLog, ProviderHealth: listeners of the mail events
+  studio/                   # MailThunder Studio: StudioApi (JSON-ready), StudioServer, the page
   smtp/smtp_wrapper.py      # SMTPClientMixin; SMTPWrapper (SMTP_SSL), SMTPStartTLSWrapper (SMTP + STARTTLS)
   imap/imap_wrapper.py      # IMAPWrapper (extends IMAP4_SSL)
   utils/
@@ -101,6 +102,7 @@ je_mail_thunder/
 - IMAP uses `IMAP4_SSL` — always use SSL/TLS. Do not downgrade to plain IMAP.
 - Web API providers (`providers/http.py`, Microsoft Graph) request `https` URLs only, and a provider's token goes only to its own API host. The Graph webhook listener binds `localhost` by default and ignores notifications without its `clientState`.
 - Socket server binds to `localhost` by default. Do not change the default bind address to `0.0.0.0` without explicit user configuration.
+- MailThunder Studio (`studio/`) binds `localhost`, checks its per-run token and the `Host` header on every API request, serves no third-party script, writes page content as text only (`textContent`, never `innerHTML`), and never returns a credential. It consumes the core API (`Mail`, `StudioApi`), never a provider directly.
 
 ### Dependency Security
 - Keep dependencies minimal (`requirements.txt` is intentionally small).
@@ -138,7 +140,7 @@ Workspace rule shared by every repository under `D:\Codes` (full text: `D:\Codes
 ## Code Style
 
 - Follow existing project conventions — no type annotations on code you didn't write unless fixing a bug there.
-- Use `mail_thunder_logger` for all logging. No `print()` in library code (only in CLI/socket server output).
+- Use `mail_thunder_logger` for all logging. No `print()` in library code (only in CLI/socket server output, which includes `studio/__main__.py`).
 - Exception hierarchy rooted at `MailThunderException`. New exceptions must subclass it.
 - All public methods need docstrings following the existing `:param` / `:return:` style.
 

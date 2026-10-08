@@ -19,8 +19,9 @@ From `docs/MAILTHUNDER-2.0-ROADMAP.md` (PR #45), in its priority order. One item
 - **#18** [P2] [BLOCKED: the other repositories] Use the project mail layer from APITestka, WebRunner and LoadDensity.
   - Here it is done (`docs/updates` U-20261008-10): `project_mail()`, the `mail/` layout, and `create_project_dir` scaffolding it.
   - There: each project gets a `mail/` directory and sends its reports with `project_mail().send(template=...)`. That is a workspace item for `D:\Codes\progress.md`; `architecture.md` §6 names the contract.
-- **#19** [P3] [DECIDE] MailThunder Studio: a UI over the core API (Dashboard, Accounts, Templates, Triggers, Policies, Projects, Logs, Settings).
-  - Decide first: the UI toolkit, and whether it ships in this package or in its own.
+- **#26** MailThunder Studio follow-ups (`docs/updates` U-20261008-12 has what exists).
+  - Nothing is saved: a policy changed on the Policies page lasts until Studio stops, and accounts, templates and triggers are shown, not edited. Editing would mean writing `mail/config.py`, template files or `mail_thunder_content.json` from the page.
+  - The page has only been checked by parsing its script (esprima) and by driving the API over HTTP; nobody has looked at it in a browser yet. Check the eight pages, both languages and the dark colour scheme.
 - **#25** Microsoft Graph reaches only the signed-in user's mailbox (`/me`, a delegated token). A shared mailbox or an app-only token (client credentials, `/users/{id}`) needs a mailbox setting on `MailAccount` and a client-credentials grant in `utils/oauth2/oauth2.py`.
 - **#24** [UNVERIFIED] The core mail API has not been run against a real mailbox.
   - Tested so far: fake SMTP / IMAP clients, and a fake SMTP server on localhost for what reaches the wire (`test/unit_test/test_mail_providers.py`).

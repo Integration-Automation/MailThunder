@@ -594,3 +594,32 @@ Project Mail Layer
 
 **Raises:** ``MailThunderProjectException`` when the project has no ``mail`` directory, a setting has the
 wrong type, a file cannot be run, or ``triggers.py`` has no ``register``.
+
+----
+
+MailThunder Studio
+------------------
+
+**Modules:** ``je_mail_thunder.studio.api``, ``je_mail_thunder.studio.server``, ``je_mail_thunder.studio.page``
+(not re-exported from the package)
+
+.. list-table::
+   :header-rows: 1
+   :widths: 42 58
+
+   * - Name
+     - Description
+   * - ``StudioApi(mail=None, project=None, audit=None)``
+     - What the pages show and do, as methods that take and return JSON-ready values: ``dashboard``,
+       ``accounts``, ``check_accounts``, ``templates``, ``render_template``, ``triggers``, ``poll_triggers``,
+       ``policies``, ``set_policy``, ``projects``, ``logs``, ``settings``, ``send``. ``routes`` maps
+       ``(method, path)`` to them
+   * - ``StudioServer(api, host="localhost", port=9947)``
+     - The HTTP server: ``token``, ``url``, ``serve_in_background()``, ``stop()``
+   * - ``start_studio(mail=None, host="localhost", port=9947, project=None)``
+     - Start Studio on a daemon thread and return the server
+   * - ``python -m je_mail_thunder.studio [--host HOST] [--port PORT] [--project DIR] [--no-browser]``
+     - The command line
+
+**Raises:** ``MailThunderStudioException`` for a request body that is not a JSON object or names a field
+Studio does not take.

@@ -38,6 +38,7 @@ docs/
         microsoft_graph.rst              #   Microsoft 365 mail over Microsoft Graph
         monitoring.rst                   #   Audit log, provider health and webhooks
         project_mail_layer.rst           #   A project's own mail layer
+        studio.rst                       #   MailThunder Studio, the local page
         scripting_engine.rst             #   JSON scripting engine
         project_templates.rst            #   Project template scaffolding
         cli.rst                          #   Command-line interface
@@ -58,6 +59,7 @@ docs/
         microsoft_graph.rst              #   透過 Microsoft Graph 存取 Microsoft 365 郵件
         monitoring.rst                   #   稽核日誌、供應商健康狀態與 webhook
         project_mail_layer.rst           #   專案自己的郵件層
+        studio.rst                       #   MailThunder Studio 本機頁面
         scripting_engine.rst             #   JSON 腳本引擎
         project_templates.rst            #   專案模板
         cli.rst                          #   命令列介面

@@ -34,6 +34,7 @@ MailThunder is organized into the following core modules:
      templates/               # Mail templates: template language, MailTemplate, TemplateLoader
      triggers/                # Mail events: filters, dispatcher, polling and IDLE backends
      monitoring/              # AuditLog and ProviderHealth, fed by the mail events
+     studio/                  # MailThunder Studio: the local page, its API and HTTP server
      smtp/
        smtp_wrapper.py        # SMTPWrapper — extends smtplib.SMTP_SSL
      imap/
@@ -95,4 +96,5 @@ Next Steps
 - :doc:`microsoft_graph` — Microsoft 365 mail over Microsoft Graph
 - :doc:`monitoring` — Audit log, provider health and webhooks
 - :doc:`project_mail_layer` — A project's own mail layer
+- :doc:`studio` — MailThunder Studio, the local page
 - :doc:`scripting_engine` — Automate workflows with JSON scripts

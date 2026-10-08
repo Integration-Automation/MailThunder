@@ -32,6 +32,7 @@ MailThunder 為不同的錯誤情境定義了一組自訂例外類別。
            │     └── TemplateRenderError
            ├── MailThunderTriggerException
            ├── MailThunderProjectException
+           ├── MailThunderStudioException
            └── MailThunderAttachmentException
                  ├── AttachmentNotFound
                  ├── AttachmentTooLarge
@@ -92,6 +93,8 @@ MailThunder 為不同的錯誤情境定義了一組自訂例外類別。
      - 事件名稱、過濾規則或觸發器後端無法照給定的方式使用
    * - ``MailThunderProjectException``
      - 專案沒有郵件層，或其中的檔案無法使用
+   * - ``MailThunderStudioException``
+     - 送給 MailThunder Studio 的請求不是它能回應的內容
    * - ``MailThunderAttachmentException``
      - 附件錯誤的基底；``AttachmentPolicy`` 或 ``Attachment`` 無效時也會引發
    * - ``AttachmentNotFound``

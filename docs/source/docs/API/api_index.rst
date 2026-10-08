@@ -179,6 +179,10 @@ Module Map
      - ``FileProvider``
    * - ``je_mail_thunder.core.project``
      - ``project_mail()``, ``describe_mail_layer()``, ``mail_layer_directory()``
+   * - ``je_mail_thunder.studio.api``
+     - ``StudioApi``
+   * - ``je_mail_thunder.studio.server``
+     - ``StudioServer``, ``start_studio()``, ``DEFAULT_PORT``
    * - ``je_mail_thunder.auth.base``
      - ``Authentication`` class
    * - ``je_mail_thunder.auth.password``

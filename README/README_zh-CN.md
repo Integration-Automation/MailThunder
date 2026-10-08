@@ -38,6 +38,7 @@
 - [Microsoft Graph](#microsoft-graph)
 - [监控](#监控)
 - [项目邮件层](#项目邮件层)
+- [MailThunder Studio](#mailthunder-studio)
 - [脚本引擎](#脚本引擎)
   - [Action JSON 格式](#action-json-格式)
   - [可用的脚本指令](#可用的脚本指令)
@@ -67,6 +68,7 @@
 - **监控** — 只能附加的审计日志、每个提供商的健康报告，以及带签章的对外 webhook，全部由邮件事件驱动
 - **更多提供商** — Yahoo、iCloud、Zoho 与 Fastmail 的默认值，以及把邮件留在磁盘上、供试跑使用的 `file` 提供商
 - **项目邮件层** — 项目把提供商、策略、模板与触发器放在 `mail/`，`project_mail()` 就能给程序一个设置好的 `Mail`
+- **MailThunder Studio** — 本机页面（`python -m je_mail_thunder.studio`），可查看帐号、模板、触发器、策略、项目邮件层与日志，由标准库提供服务
 - **SMTP 支持** — 通过隐式 TLS 发送邮件，默认使用 Gmail，也可自定义其他 SMTP 服务；或通过 STARTTLS（Microsoft 365）
 - **IMAP4 支持** — 通过 IMAP4 SSL 读取、搜索和导出邮件
 - **附件处理** — 自动检测文本、图片、音频和二进制文件的 MIME 类型
@@ -656,6 +658,37 @@ mail.close()
 
 ---
 
+## MailThunder Studio
+
+MailThunder Studio 是一个在本机打开的页面，用来查看并试用邮件 API 目前的设置。它由标准库提供服务、不需要额外的
+套件，而且只会调用[内核邮件 API](#内核邮件-api)，所以不论使用哪一家提供商都一样运作：
+
+```bash
+python -m je_mail_thunder.studio                       # 使用配置文件或环境变量里的帐号
+python -m je_mail_thunder.studio --project MyProject   # 使用某个项目的邮件层（会运行它的 mail/config.py 与 mail/triggers.py）
+python -m je_mail_thunder.studio --port 9950 --no-browser
+```
+
+它会印出像 `http://localhost:9947/#token=...` 这样的地址并打开它。页面有 English 与中文两种语言。
+
+| 页面 | 显示与可运行的内容 |
+|---|---|
+| 仪表盘 | 帐号（绝不显示密码或令牌）、每个提供商的健康状态、各项数量、最新的审计纪录，以及一个可以寄信的表单 |
+| 帐号 | 帐号与其服务器、已注册的提供商，以及要求每个提供商连接并登录的按钮 |
+| 模板 | 每个模板与其变量；输入 JSON 格式的 context 就能产生内容，不会发出 |
+| 触发器 | 事件、已订阅的处理函数与过滤条件、触发器后端，以及立即查看一次新邮件的按钮 |
+| 策略 | 附件策略，可以修改，变更在 Studio 运行期间有效 |
+| 项目 | 项目邮件层的文件与模板；不会运行其中任何文件 |
+| 日志 | 日志档的结尾与审计日志 |
+| 设置 | MailThunder 存放文件的位置、已注册的提供商，以及运行环境的版本 |
+
+Studio 是给坐在这台电脑前的人使用的工具。它只绑定 `localhost`；每个 API 请求都需要该次运行的随机令牌，令牌放在地址的
+fragment 里，浏览器不会把它送给任何服务器；`Host` 不同的请求会被拒绝；页面不会从其他地方加载任何东西，所有内容都以
+文本写入，所以通过邮件送来的内容无法在浏览器中运行；任何回应都不包含密码或令牌；从页面发出的邮件也不能指定附件。
+不使用时请把它停掉。`je_mail_thunder.studio.server` 的 `start_studio(mail)` 可以从 Python 启动它。
+
+---
+
 ## 脚本引擎
 
 MailThunder 内置 JSON 脚本引擎，让你无需编写 Python 代码即可自动化邮件工作流程。
@@ -1019,6 +1052,7 @@ MailThunder/
     templates/               # 邮件模板：模板语法、MailTemplate、TemplateLoader
     triggers/                # 邮件事件：过滤器、dispatcher、轮询与 IMAP IDLE 后端
     monitoring/              # AuditLog 与 ProviderHealth，由邮件事件驱动
+    studio/                  # MailThunder Studio：本机页面、它的 API 与 HTTP 服务器
     smtp/
       smtp_wrapper.py        # SMTPClientMixin、SMTPWrapper、SMTPStartTLSWrapper
     imap/

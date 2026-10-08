@@ -28,6 +28,7 @@ without naming a protocol; it is the foundation of the MailThunder 2.0 roadmap
 | `je_mail_thunder/templates/` | Mail templates: `engine` (a Jinja2-style subset in the standard library: `{{ }}` with filters, `{% if %}`, `{% for %}`; reads the context only, HTML-escapes on request, output capped at 5 MiB), `template.MailTemplate` (subject / text / HTML, declared variables with defaults, metadata; `render` → `RenderedTemplate`), `loader.TemplateLoader` (`<name>.json` or `<name>/` in `./mail/templates`, then `$MAIL_THUNDER_TEMPLATE_DIR` or `~/.je_mail_thunder/templates`; names are never paths) |
 | `je_mail_thunder/triggers/` | Mail events: `filter.MailFilter` (sender, recipient, subject, body, attachments, time, metadata, predicate), `dispatcher.EventDispatcher` (`on` / `off` / `emit`; a handler that raises is logged, never propagated), `trigger.MailTriggerBackend` (`poll`, and `start` / `stop` on a daemon thread that survives failures) and `TriggerManager`, `polling.PollingBackend` (any `MailStore`; first look is the baseline), `imap.IMAPPollingBackend` (`UID n:*`) / `IMAPIdleBackend` (RFC 2177), `graph.GraphPollingBackend` (`receivedDateTime ge`) / `GraphWebhookBackend` (subscription plus a localhost listener for change notifications, checked by `clientState`), `webhook.WebhookForwarder` (an event handler that posts events to an https address from a queue, signed with HMAC-SHA256), `factory` (which backend watches which store) |
 | `je_mail_thunder/monitoring/` | Listeners of the mail events: `audit.AuditLog` (one JSON line per event in `$MAIL_THUNDER_AUDIT_FILE` or `~/.je_mail_thunder/audit/mail_audit.jsonl`; facts only, never a body, attachment content or credential; append-only, rotated at 10 MiB) and `health.ProviderHealth` (unknown / healthy / degraded / down per provider from the events, and `probe` through `MailProvider.check()`) |
+| `je_mail_thunder/studio/` | MailThunder Studio, a local web page over the core API only: `api.StudioApi` (JSON-ready methods for the eight pages: dashboard, accounts, templates, triggers, policies, projects, logs, settings; never returns a secret), `server.StudioServer` / `start_studio` (standard-library HTTP server on `localhost:9947`; token and `Host` checked on every request), `page` (the HTML, CSS and script as text), `__main__` (`python -m je_mail_thunder.studio`) |
 | `je_mail_thunder/auth/` | How an account logs in, behind one interface: `base.Authentication` (`user`, `mechanism`, `login(client)` for the SMTP / IMAP wrappers, `authorization()` for HTTP; what a mechanism cannot do raises `MailThunderAuthenticationException`), `password.PasswordAuth` / `AppPasswordAuth`, `oauth2.OAuth2Auth` (bearer token from `utils/oauth2`'s cache), `xoauth2.XOAUTH2Auth` (the same token as SASL `XOAUTH2`); secrets stay out of every `repr` |
 | `je_mail_thunder/attachments/` | What a message may carry: `attachment.Attachment` (a file to send by `path`, or one that arrived as `content`; `save` writes it under `mime.safe_filename`), `policy.AttachmentPolicy` / `DEFAULT_ATTACHMENT_POLICY` (count, size, extension and MIME-type limits), `validator.validate_attachments` (count → existence → size → extension → MIME type → total size; raises the `MailThunderAttachmentException` subclasses), `mime` (type and extension from the file name) |
 | `je_mail_thunder/utils/oauth2/oauth2.py` | OAuth2 with the standard library: `OAUTH2_PROVIDERS` (`google`, `microsoft`: token URL, scope, SMTP/IMAP hosts), `OAuth2Settings` (secrets out of `repr`), `refresh_access_token` (https only), `OAuth2TokenCache` / `oauth2_token_cache`, `xoauth2_string` |
@@ -90,7 +91,12 @@ without naming a protocol; it is the foundation of the MailThunder 2.0 roadmap
     `python -m build --no-isolation`, so the build backend is the locked `setuptools` too.
   - `test/unit_test/test_dev_toml_parity.py` keeps the dependencies, Python floor, entry points and
     `[tool.setuptools]` of `dev.toml` equal to `pyproject.toml`.
-- There is no MCP server, LSP, pytest plugin or GUI.
+- **MailThunder Studio**: `python -m je_mail_thunder.studio [--host HOST] [--port PORT] [--project DIR] [--no-browser]`, or
+  `je_mail_thunder.studio.server.start_studio(mail=None, host="localhost", port=9947, project=None)`.
+  - It serves one page, `/studio.js`, `/studio.css` and a JSON API under `/api/`; the facade does not re-export it.
+  - Every `/api/` request needs the header `X-MailThunder-Token` with the token of that run, and every request a `Host` of the
+    address it was started on.
+- There is no MCP server, LSP or pytest plugin, and no desktop GUI: Studio is a page in the browser.
 
 ## 4. Main flows
 
@@ -201,7 +207,7 @@ does not connect either. Login still waits until `later_init`.
   - FileAutomation still uses both old names;
   - the default port is 9942, the free slot next to the sibling servers (AutoControl 9938, APITestka 9939,
     LoadDensity 9940, WebRunner 9941, FileAutomation 9943–9945); it was 9944, FileAutomation's HTTP
-    action-server default.
+    action-server default. The Graph webhook listener takes 9946 and MailThunder Studio 9947.
 - **Builtins policy**: the executor registers only the `SAFE_BUILTINS` allowlist (22 side-effect-free
   builtins such as `print`, `len`, `sorted`); `eval`, `exec`, `open`, `__import__`, `getattr` and the
   like are not commands. LoadDensity and WebRunner register the same allowlist, and APITestka registers no
@@ -233,7 +239,8 @@ does not connect either. Login still waits until `later_init`.
 - Credentials come only from `mail_thunder_content.json` or env vars. Never hardcode, log or commit
   them (§ Security Requirements › Credential Handling).
 - SSL/TLS only: implicit TLS, or STARTTLS that must succeed before anything else is sent. OAuth2 token
-  endpoints must be `https`. The socket server binds `localhost` by default (§ Security Requirements › Network
+  endpoints and web API providers must be `https`. The socket server, the Graph webhook listener and MailThunder Studio
+  bind `localhost` by default (§ Security Requirements › Network
   Security).
 - Validate input at boundaries. Sanitize file names in `output_all_mail_as_file` and attachments.
   Cap socket reads (§ Security Requirements › Input Validation).
@@ -255,6 +262,7 @@ does not connect either. Login still waits until `later_init`.
 - An event name, a `MailFilter` rule or the `MailTriggerBackend` interface changes.
 - `__main__.py` flags, the Windows double decode, or the socket protocol (port, terminator,
   `quit_server`, payload limits) changes.
+- A Studio route, its token or `Host` check, or its command line changes.
 - The action format (`mail_thunder` key and its `auto_control` alias, `MT_` prefix), the builtins policy, or the import-time
   instance creation changes.
 - The credential sources (file name, env var names, lookup order) or the `mail_provider` setting change.

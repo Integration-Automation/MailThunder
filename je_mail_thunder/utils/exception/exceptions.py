@@ -153,3 +153,7 @@ class MailThunderTriggerException(MailThunderException):
 
 class MailThunderProjectException(MailThunderException):
     """A project has no mail layer, or a file of it cannot be used."""
+
+
+class MailThunderStudioException(MailThunderException):
+    """A request to MailThunder Studio is not one it can answer."""
