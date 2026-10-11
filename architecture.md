@@ -1,7 +1,7 @@
 # MailThunder Architecture
 
 > Short overview for people and agents.
-> Last verified: 2026-10-08 against `035a689` on `feat/mailthunder-2.0`.
+> Last verified: 2026-10-11 against the Pages release repair.
 
 ## 1. Purpose
 
@@ -40,6 +40,7 @@ without naming a protocol; it is the foundation of the MailThunder 2.0 roadmap
 | `je_mail_thunder/utils/project/` | `create_project_dir` scaffolding (`keyword/`, `executor/` and the project mail layer `mail/`); `template/template_keyword.py`, `template_executor.py` and `template_mail.py` hold the templates |
 | `je_mail_thunder/utils/{json,json_format,file_process,logging,exception}/` | Action JSON I/O (je_action_core's `ActionJsonFile`), JSON reformat, directory listing (je_action_core's), `mail_thunder_logger` (file at `$MAIL_THUNDER_LOG_FILE` or `~/.je_mail_thunder/logs/Mail_Thunder.log`, opened on first use), `MailThunderException` hierarchy |
 | `scripts/dev_release.py` | Release helper for the dev channel, run only by CI (standard library only): `prepare` writes `pyproject.toml` from `dev.toml` with the next version, `changed <dist>` compares the built wheel with the newest published one |
+| `scripts/prepare_pages.py` | CI-only Markdown preparation for the Pages Jekyll build; preserve front matter and quote literal mail-template delimiters, then check the rendered code examples in all three README languages |
 | `test/unit_test/` | pytest suite (`testpaths = ["test"]`). `manual_test/` holds scripts that need real mailboxes; its `conftest.py` excludes them from collection |
 | `docs/source/` | Sphinx docs (`docs/Eng`, `docs/Zh`, `docs/API`) |
 
@@ -98,6 +99,8 @@ without naming a protocol; it is the foundation of the MailThunder 2.0 roadmap
   - Every `/api/` request needs the header `X-MailThunder-Token` with the token of that run, and every request a `Host` of the
     address it was started on.
 - There is no MCP server, LSP or pytest plugin, and no desktop GUI: Studio is a page in the browser.
+
+- Documentation Pages: `.github/workflows/pages.yml` builds and verifies the site on main pull requests; only a main push deploys the verified artifact to GitHub Pages. Markdown preparation changes the disposable CI checkout only.
 
 ## 4. Main flows
 
