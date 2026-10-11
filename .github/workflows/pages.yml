@@ -31,7 +31,7 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
       - name: Preserve literal template examples
-        run: python scripts/prepare_pages.py
+        run: git ls-files -z -- '*.md' | python scripts/prepare_pages.py
       - name: Build documentation
         uses: actions/jekyll-build-pages@44a6e6beabd48582f863aeeb6cb2151cc1716697 # v1.0.13
         with:

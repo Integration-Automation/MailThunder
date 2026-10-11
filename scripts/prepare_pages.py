@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import argparse
 import re
-import subprocess
+import sys
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -26,14 +26,10 @@ def protect_markdown(text: str) -> str:
     return text[:boundary] + body
 
 
-def prepare_pages(root: Path) -> None:
+def prepare_pages(root: Path, names: list[str]) -> None:
     """Prepare tracked Markdown only; never follow a path outside the checkout."""
     root = root.resolve()
-    files = subprocess.run(
-        ["git", "ls-files", "-z", "--", "*.md"], cwd=root, check=True,
-        capture_output=True, text=True, timeout=30,
-    ).stdout.split("\0")
-    for name in filter(None, files):
+    for name in filter(None, names):
         path = (root / name).resolve()
         if not path.is_relative_to(root):
             raise ValueError("Markdown path leaves the checkout")
@@ -85,7 +81,8 @@ def main() -> None:
     if args.verify is not None:
         verify_pages(args.verify)
     else:
-        prepare_pages(Path.cwd())
+        names = sys.stdin.buffer.read().decode("utf-8").split("\0")
+        prepare_pages(Path.cwd(), names)
 
 
 if __name__ == "__main__":
