@@ -58,6 +58,7 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | ID | Date | Title | Tags | Batch |
 |---|---|---|---|---|
+| U-20261022-01 | 2026-10-22 | Preserve complete dependency locks | #bugfix #deps #ci | [2026-10](2026-10.md) |
 | U-20261011-01 | 2026-10-11 | Preserve mail template examples in GitHub Pages | #done #ci | [2026-10](2026-10.md) |
 | U-20261008-18 | 2026-10-08 | PR #46 is clean on SonarCloud and Codacy; the rules that caught it are in CLAUDE.md | #docs #sonarcloud #codacy | [2026-10](2026-10.md) |
 | U-20261008-17 | 2026-10-08 | The tests' findings on PR #46: one fact per assertion, one call per expected exception | #tests #refactor #sonarcloud #codacy | [2026-10](2026-10.md) |
