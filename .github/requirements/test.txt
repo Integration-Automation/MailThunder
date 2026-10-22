@@ -12,10 +12,10 @@ iniconfig==2.3.0 \
     --hash=sha256:c76315c77db068650d49c5b56314774a7804df16fee4402c1f19d6d15d8c4730 \
     --hash=sha256:f631c04d2c48c52b84d0d0549c99ff3859c98df65b3101406327ecc7d53fbf12
     # via pytest
-je-action-core==0.0.1 \
-    --hash=sha256:6d1bc94e793f2e682bfae536824dfcff3322f0049dce5109df18fdd440a31f94 \
-    --hash=sha256:84361b5b9bfa4489c15b3e5715c6e6d080f4fa25e1a10112806525bf00df241e
-    # via -r .github/requirements/test.in
+je-action-core==0.0.4 \
+    --hash=sha256:a996e667057b8935969ad5fe92364c7bc76134ac7e22f468cc4536cc602fa8f6 \
+    --hash=sha256:bd371fa6a8c88db94a25a05d2129b9b7ce88d621f2b361407ca2f58e8d52d9f7
+    # via -r test.in
 packaging==26.3 \
     --hash=sha256:94edc256424af38762eb31306eed28beb9f0efc50a8837492c9d6fd6004aed79 \
     --hash=sha256:d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c
@@ -31,7 +31,7 @@ pygments==2.21.0 \
 pytest==9.1.1 \
     --hash=sha256:1088fbde8f2b49d95a549a195707afa7a76a3ce9bcadc26b6d71f0ffda5fe313 \
     --hash=sha256:37a86b45efb9a47a61a36449063e8e18d0cab3161329fc099eb21783169c4f0c
-    # via -r .github/requirements/test.in
+    # via -r test.in
 tomli==2.4.1 ; python_full_version < '3.11' \
     --hash=sha256:01f520d4f53ef97964a240a035ec2a869fe1a37dde002b57ebc4417a27ccd853 \
     --hash=sha256:0d85819802132122da43cb86656f8d1f8c6587d54ae7dcaf30e90533028b49fe \
