@@ -55,6 +55,7 @@
   - [Executor Functions](#executor-functions)
   - [Utility Functions](#utility-functions)
 - [Project Structure](#project-structure)
+- [Security](#security)
 - [License](#license)
 
 ---
@@ -1104,6 +1105,10 @@ MailThunder/
 ```
 
 ---
+
+## Security
+
+Report vulnerabilities privately. The policy, supported versions, and operator notes are in [SECURITY.md](SECURITY.md).
 
 ## License
 
