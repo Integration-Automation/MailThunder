@@ -6,7 +6,7 @@ This page covers all the ways to install MailThunder.
 Requirements
 ------------
 
-- **Python 3.10** or later
+- **Python 3.11** or later
 - ``je_action_core``, installed with it: the action executor shared with APITestka, LoadDensity and
   FileAutomation, which itself uses only the Python standard library
 - ``pip`` for package installation
