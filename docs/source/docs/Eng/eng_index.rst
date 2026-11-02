@@ -78,7 +78,7 @@ How It Works
 Supported Platforms
 -------------------
 
-- **Python**: 3.10 or later
+- **Python**: 3.11 or later
 - **OS**: Windows, macOS, Linux
 - **Dependencies**: ``je_action_core`` only (the shared action executor; standard library only)
 
