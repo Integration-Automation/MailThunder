@@ -1,7 +1,7 @@
 # MailThunder
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
 [![PyPI](https://img.shields.io/pypi/v/je_mail_thunder)](https://pypi.org/project/je-mail-thunder/)
 
 **MailThunder** is a lightweight and flexible email automation tool for Python. Its provider-agnostic `Mail` API sends and reads mail the same way whatever the provider; it wraps SMTP and IMAP4 protocols, provides a JSON-based scripting engine and project templates, and makes sending, receiving, and managing email content effortless.
@@ -90,7 +90,7 @@
 
 ## Requirements
 
-- Python 3.10 or later
+- Python 3.11 or later
 - `je_action_core`, installed with it: the action executor MailThunder shares with APITestka, LoadDensity and FileAutomation (it uses only the Python standard library)
 
 ---

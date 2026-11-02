@@ -7,9 +7,9 @@ MailThunder
    :target: https://pypi.org/project/je-mail-thunder/
    :alt: PyPI
 
-.. image:: https://img.shields.io/badge/python-3.10%2B-blue.svg
+.. image:: https://img.shields.io/badge/python-3.11%2B-blue.svg
    :target: https://www.python.org/
-   :alt: Python 3.10+
+   :alt: Python 3.11+
 
 .. image:: https://img.shields.io/badge/license-MIT-blue.svg
    :target: https://github.com/Integration-Automation/MailThunder/blob/main/LICENSE

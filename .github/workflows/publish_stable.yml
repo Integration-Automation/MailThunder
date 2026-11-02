@@ -22,7 +22,7 @@ jobs:
       fail-fast: true
       matrix:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
-        python-version: [ "3.10", "3.11", "3.12", "3.13", "3.14" ]
+        python-version: [ "3.11", "3.12", "3.13", "3.14" ]
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -35,7 +35,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       # Hash-locked, wheels-only; regenerate with
-      #   uv pip compile .github/requirements/test.in --universal --python-version 3.10 \
+      #   uv pip compile .github/requirements/test.in --universal --python-version 3.11 \
       #     --generate-hashes --only-binary :all: -o .github/requirements/test.txt
       - name: Install dependencies
         run: |
